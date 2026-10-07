@@ -279,7 +279,7 @@ const PRECIO_LETRA = 1.00;           // cada letra (tecla + switch)
 const PRECIO_BASE = [[3, 1.00], [5, 2.00], [8, 3.00], [10, 4.00]];
 const precioBase = n => (PRECIO_BASE.find(([m])=>n<=m) || PRECIO_BASE[PRECIO_BASE.length-1])[1];
 const EXTRAS = [
-  {id:"carita", nombre:"Charm carita feliz",  desc:"impreso en 3D",            precio:1.00, color:true},
+  {id:"carita", nombre:"Charm carita feliz",  desc:"impreso en 3D",            precio:0.50, color:true},
   {id:"flor",   nombre:"Charm flor",          desc:"impreso en 3D",            precio:1.00, color:true},
 ];
 // Aros / mosquetones de resorte disponibles (cambia precios o agrega/quita colores aquí)
