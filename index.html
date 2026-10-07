@@ -56,6 +56,7 @@ h1{font-family:var(--display);font-weight:900;font-size:clamp(26px,6vw,40px);let
 .vt[aria-pressed=true]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 @media (max-width:879px){ .viewtools{right:20px;top:14px} }
 #capword b{color:var(--ink)}
+#caphint .nr,#caphint.near .far{display:none} #caphint.near .nr{display:inline}
 .t-mouse{display:none} @media (hover:hover) and (pointer:fine){ .t-touch{display:none} .t-mouse{display:inline} }
 .crow{display:grid;grid-template-columns:40px minmax(0,1fr) 36px;gap:10px;align-items:center;padding:10px;border:1.5px solid var(--brand);background:var(--brand-soft);border-radius:12px;margin-top:8px}
 .crow svg{width:40px;height:40px}
@@ -168,7 +169,7 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
       </div>
       <div id="view3d" role="img" aria-label="Vista 3D de tu clicker. Arrastra para girarlo."></div>
       <svg id="preview" viewBox="0 0 640 360" role="img" aria-label="Vista previa de tu clicker" hidden></svg>
-      <div class="stagecap"><span id="capword"></span><span id="caphint"><span class="t-touch">Un dedo: girar · dos dedos: mover y acercar</span><span class="t-mouse">Arrastra: girar · clic derecho o dos dedos en el trackpad: mover · rueda: acercar</span></span></div>
+      <div class="stagecap"><span id="capword"></span><span id="caphint"><span class="far"><span class="t-touch">Arrastra para girar · pellizca para acercar</span><span class="t-mouse">Arrastra para girar · rueda o pellizco para acercar</span></span><span class="nr"><span class="t-touch">De cerca: arrastra para moverlo · dos dedos para girar</span><span class="t-mouse">De cerca: arrastra para moverlo · clic derecho para girar</span></span></span></div>
     </div>
 
     <div class="panel">
@@ -999,6 +1000,12 @@ window.__render = render;
       dir.setLength(cur + (focus.d-cur)*.14); camera.position.copy(controls.target).add(dir);
       if(controls.target.distanceTo(focus.t) < .2 && Math.abs(cur-focus.d) < .4) focus = null;
     }
+    // de lejos, un dedo gira; de cerca (con zoom), un dedo mueve el llavero
+    const near = build.homeD && camera.position.distanceTo(controls.target) < build.homeD*0.78;
+    if(near !== loop.near){ loop.near = near;
+      controls.touches = {ONE: near ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE, TWO: near ? THREE.TOUCH.DOLLY_ROTATE : THREE.TOUCH.DOLLY_PAN};
+      controls.mouseButtons = {LEFT: near ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: near ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN};
+      const h = document.getElementById("caphint"); if(h) h.classList.toggle("near", near); }
     controls.update(); renderer.render(scene, camera);
   })(0);
 
