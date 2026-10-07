@@ -295,32 +295,32 @@ const AROS = [
     ["Menta","#8ED9C8","#F7D23A"],["Amarillo","#F8DA2E","#F0559A"],["Blanco","#F7F6F2","#F0559A"],["Negro","#1E1E1E","#FFFFFF"]]},
   {id:"flor", nombre:"Flor con giratorio",   desc:"",          precio:1.50, colores:[["Celeste","#8CC8EE","#F7B6D2"]]},
 ];
-const COLORES = [
-  ["Blanco","#F4F3EF"],["Negro","#232323"],["Rosado","#F6A9C3"],["Fucsia","#E8508E"],
-  ["Lila","#B8A2EA"],["Morado","#6E48C9"],["Celeste","#9CD4F4"],["Turquesa","#23B3AE"],
-  ["Lima","#CBE84B"],["Verde","#5CBA2E"],["Amarillo","#FFD447"],["Naranja","#FF8A3D"],
-  ["Rojo","#E5484D"],["Coral","#FF8673"]
+const COLORES = [   // filamentos disponibles en el taller
+  ["Blanco","#F2F1EC"],["Negro","#242424"],["Beige","#D9C7A7"],["Plata","#BFC2C6"],
+  ["Rojo","#D52A2F"],["Fucsia","#E0457F"],["Naranja","#F27B30"],["Amarillo","#F8D62A"],
+  ["Ámbar","#F3A21C"],["Cobre","#B5683F"],["Menta","#A3E3A0"],["Verde","#3DA857"],
+  ["Celeste","#8FCBF0"],["Aqua","#A3D8D8"],["Azul","#2A5BC9"],["Lila","#A57BDB"]
 ];
 /* ==================================================================== */
 
 const SYMS = {"♥":"corazón","★":"estrella","✿":"flor","☺":"carita"};
 const EXTRA_SYMS = ["!","?","&","#"];
 const FONTS = [["Inter","'Inter', system-ui, sans-serif","Inter"],["Comic","'Comic Neue', 'Comic Sans MS', cursive","Comic"],["Redonda","'Nunito', system-ui, sans-serif","Redonda"]];
-const MIX = ["Lila","Lima","Naranja","Turquesa","Fucsia","Amarillo","Celeste","Coral","Morado","Verde"];
-const LEGMIX = ["Turquesa","Lila","Fucsia","Naranja","Amarillo","Morado","Rosado","Verde","Blanco","Rojo"];
+const MIX = ["Amarillo","Azul","Menta","Rojo","Fucsia","Celeste","Naranja","Lila","Verde","Aqua"];
+const LEGMIX = ["Lila","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Fucsia"];
 const hex = n => (COLORES.find(c=>c[0]===n)||COLORES[0])[1];
 
 const st = {
-  word:"LUNA★", base:"Rosado", style:"lisa", mode:"mix", sel:0, font:0,
+  word:"LUNA★", base:"Fucsia", style:"lisa", mode:"mix", sel:0, font:0,
   tiles:[], legs:[], extras:{carita:{q:1,c:"Blanco"}, flor:{q:0,c:"Celeste"}}, aro:{t:"cor", c:"Fucsia"}
 };
-try{ const s=JSON.parse(localStorage.getItem("clicker-crea3d-v2")||"null"); if(s&&s.word!==undefined){ Object.assign(st,s); } }catch(e){}
+try{ const s=JSON.parse(localStorage.getItem("clicker-crea3d-v3")||"null"); if(s&&s.word!==undefined){ Object.assign(st,s); } }catch(e){}
 for(const x of EXTRAS) if(!st.extras[x.id]) st.extras[x.id]={q:0,c:"Blanco"};
 if(!st.aro) st.aro = {t:"cor", c:"Fucsia"};
 function aroSel(){ const a = AROS.find(x=>x.id===st.aro.t); if(!a) return null;
   const c = a.colores.find(k=>k[0]===st.aro.c) || a.colores[0]; return {tipo:a, nombre:c[0], color:c[1], dot:c[2]||null}; }
 window.aroSel = aroSel;
-function save(){ try{ localStorage.setItem("clicker-crea3d-v2",JSON.stringify(st)); }catch(e){} }
+function save(){ try{ localStorage.setItem("clicker-crea3d-v3",JSON.stringify(st)); }catch(e){} }
 
 const $ = id => document.getElementById(id);
 const money = v => "$" + v.toFixed(2).replace(".",",");
