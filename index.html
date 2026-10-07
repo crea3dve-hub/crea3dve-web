@@ -45,15 +45,17 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 h1{font-family:var(--display);font-weight:900;font-size:clamp(26px,6vw,40px);letter-spacing:.5px;line-height:1.05;margin:18px 0 6px;text-wrap:balance}
 .lead{color:var(--muted);margin:0 0 16px;max-width:60ch}
 .grid{display:grid;grid-template-columns:1fr;gap:16px}
-@media (min-width:880px){ .grid{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);align-items:start} .stagebox{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)} }
+@media (min-width:880px){ .grid{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);align-items:start} }
 .stagebox{background:var(--stage);border-radius:18px;padding:18px 14px 14px;min-width:0;position:relative}
 @media (max-width:879px){ .stagebox{position:sticky;top:0;z-index:6;border-radius:0 0 18px 18px;margin-inline:-16px;padding:8px 12px 8px;box-shadow:0 10px 18px -12px rgba(0,0,0,.35)}
   #view3d{height:clamp(190px,52vw,290px)!important} .stagecap{margin-top:4px;font-size:12px} }
-.lenbadge{position:absolute;left:22px;top:24px;z-index:3;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:12px;color:var(--muted);pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,.06)}
-.lenbadge b{color:var(--ink)}
-.lenbadge:empty{display:none}
-.homebtn{position:absolute;right:22px;top:22px;z-index:3;font:700 12px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:5px 10px;cursor:pointer;min-height:30px}
-@media (max-width:879px){ .lenbadge{left:20px;top:14px} .homebtn{right:20px;top:12px} }
+@media (min-width:880px){ .stagebox{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)} }
+.viewtools{position:absolute;right:22px;top:22px;z-index:3;display:flex;gap:6px}
+.vt{font:700 12.5px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:5px 11px;cursor:pointer;min-height:32px;display:inline-flex;align-items:center;gap:5px}
+.vt svg{width:15px;height:15px}
+.vt[aria-pressed=true]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+@media (max-width:879px){ .viewtools{right:20px;top:14px} }
+#capword b{color:var(--ink)}
 .crow{display:grid;grid-template-columns:40px minmax(0,1fr) 36px;gap:10px;align-items:center;padding:10px;border:1.5px solid var(--brand);background:var(--brand-soft);border-radius:12px;margin-top:8px}
 .crow svg{width:40px;height:40px}
 .crow .n{font-weight:700;font-size:14px;margin-bottom:6px}
@@ -160,11 +162,14 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
 
   <div class="grid">
     <div class="stagebox">
-      <div class="lenbadge" id="lenbadge" aria-live="polite"></div>
-      <button class="homebtn" id="homebtn" type="button">Centrar</button>
+      <div class="viewtools" role="group" aria-label="Controles de la vista 3D">
+        <button class="vt" id="vt-rot" type="button" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg>Girar</button>
+        <button class="vt" id="vt-pan" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/></svg>Mover</button>
+        <button class="vt" id="homebtn" type="button">Centrar</button>
+      </div>
       <div id="view3d" role="img" aria-label="Vista 3D de tu clicker. Arrastra para girarlo."></div>
       <svg id="preview" viewBox="0 0 640 360" role="img" aria-label="Vista previa de tu clicker" hidden></svg>
-      <div class="stagecap"><span id="capword"></span><span id="caphint">Arrastra para girarlo · dos dedos para moverlo y acercarlo</span></div>
+      <div class="stagecap"><span id="capword"></span><span id="caphint">Pellizca o usa la rueda para acercar</span></div>
     </div>
 
     <div class="panel">
@@ -543,6 +548,8 @@ $("symrow").innerHTML = Object.keys(SYMS).map(ch=>`<button class="btn sym" data-
 $("symrow").querySelectorAll("button").forEach(b=>b.onclick=()=>{ if([...st.word].length<10){ st.word+=b.dataset.s; st.sel=[...st.word].length-1; render(); } else { $("warn").hidden=false; $("warn").textContent="Máximo 10 teclas."; } });
 $("otro").addEventListener("input", e=>{ st.otro = e.target.value; pricing(); save(); });
 $("homebtn").onclick = ()=>{ if(window.__homeView) window.__homeView(); };
+function viewMode(m){ $("vt-rot").setAttribute("aria-pressed", m==="rot"); $("vt-pan").setAttribute("aria-pressed", m==="pan"); if(window.__3d && window.__3d.setMode) window.__3d.setMode(m); }
+$("vt-rot").onclick = ()=>viewMode("rot"); $("vt-pan").onclick = ()=>viewMode("pan");
 $("st-lisa").onclick=()=>{st.style="lisa";render();};
 $("st-acan").onclick=()=>{st.style="acanalada";render();};
 $("mode-one").onclick=()=>{
@@ -945,9 +952,9 @@ window.__render = render;
     build.homeD = Math.max(90, sph.radius/Math.sin(Math.min(vf,hf)/2)*0.88);
     if(!build.framed || build.lastN !== n){ const v = new THREE.Vector3(.18,.62,.78).normalize().multiplyScalar(build.homeD); camera.position.copy(v); controls.target.set(0, 8, 0); build.framed = true; build.lastN = n; }
     // medida real del llavero
-    const lb = document.getElementById("lenbadge");
+    const lb = document.getElementById("capword");
     if(lb){ const clk = (x0 + (n-1)*P + W/2) - (holeX - 4); const tot = bb.max.x - bb.min.x;
-      lb.innerHTML = ks.length ? `Clicker: <b>${(clk/10).toFixed(1).replace(".",",")} cm</b> · con cadena: <b>≈ ${(tot/10).toFixed(0)} cm</b>` : ""; }
+      lb.innerHTML = ks.length ? `Largo: <b>${(clk/10).toFixed(1).replace(".",",")} cm</b> · con cadena: <b>≈ ${(tot/10).toFixed(0)} cm</b>` : ""; }
     window.__homeView = ()=>{ focus = {t:new THREE.Vector3(0,8,0), d:build.homeD||150}; };
     // al editar una tecla, la cámara se acerca a esa tecla; al cerrar, vuelve a la vista completa
     group.updateMatrixWorld(true);
@@ -1044,7 +1051,13 @@ window.__render = render;
     window.__photo = false; resize(); build();
     return out;
   }
-  window.__3d = { update: build, photo, raw };
+  function setMode(m){
+    const pan = m==="pan";
+    controls.mouseButtons = {LEFT: pan ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: pan ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN};
+    controls.touches = {ONE: pan ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN};
+    controls.autoRotate = false; focus = null;
+  }
+  window.__3d = { update: build, photo, raw, setMode };
   window.__render();
   if(document.fonts) document.fonts.ready.then(()=>window.__render());
 })();
