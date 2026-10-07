@@ -157,7 +157,7 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
         <h2><span class="step">1</span>Tu palabra</h2>
         <input type="text" id="word" maxlength="10" autocomplete="off" spellcheck="false" aria-label="Tu palabra, hasta 10 teclas">
         <div class="row" style="margin-top:8px" id="symrow" aria-label="Agregar símbolo"></div>
-        <p class="hint">Hasta 10 teclas. Letras A–Z, números y los símbolos de arriba.</p>
+        <p class="hint">Hasta 10 teclas. Letras A–Z, números y los símbolos de arriba.<br><b>Cada letra $1</b> + base con cadena: $1 (1–3 letras), $2 (4–5), $3 (6–8), $4 (9–10).</p>
         <p class="warn" id="warn" hidden></p>
       </section>
 
@@ -274,23 +274,25 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
 /* ====== CONFIGURACIÓN: cambia aquí precios, colores y teléfono ====== */
 const WHATSAPP = "584242674222";
 const LINK_PAGINA = "https://crea3dve.com/";   // link público de esta página
-const PRECIO_PRIMERA_TECLA = 2.00;   // clicker de 1 tecla
-const PRECIO_TECLA_EXTRA   = 1.00;   // cada tecla adicional
+const PRECIO_LETRA = 1.00;           // cada letra (tecla + switch)
+// base + cadena de bolitas, según cuántas teclas lleva: [hasta N teclas, precio]
+const PRECIO_BASE = [[3, 1.00], [5, 2.00], [8, 3.00], [10, 4.00]];
+const precioBase = n => (PRECIO_BASE.find(([m])=>n<=m) || PRECIO_BASE[PRECIO_BASE.length-1])[1];
 const EXTRAS = [
-  {id:"carita", nombre:"Charm carita feliz",  desc:"impreso en 3D",            precio:0.50, color:true},
+  {id:"carita", nombre:"Charm carita feliz",  desc:"impreso en 3D",            precio:1.00, color:true},
   {id:"flor",   nombre:"Charm flor",          desc:"impreso en 3D",            precio:1.00, color:true},
 ];
 // Aros / mosquetones de resorte disponibles (cambia precios o agrega/quita colores aquí)
 // cada color: [nombre, color, color de los puntitos]
 const AROS = [
-  {id:"peq",  nombre:"Aro redondo pequeño",  desc:"brillante", precio:0.50, colores:[
+  {id:"peq",  nombre:"Aro redondo pequeño",  desc:"brillante", precio:1.00, colores:[
     ["Blanco","#F7F6F2"],["Crema","#F2E8C9"],["Rosado claro","#F8CAD5"],["Rosado","#F59AB8"],["Fucsia","#E0408A"],
     ["Rojo","#D3242E"],["Lila","#C2A6F0"],["Celeste","#86CDF2"],["Menta","#93E0AE"],["Verde","#67D163"],
     ["Lima","#C8E63C"],["Amarillo","#FBE36A"],["Nude","#D9C2B0"],["Marrón","#8A5A3C"],["Negro","#1E1E1E"]]},
-  {id:"gra",  nombre:"Aro redondo grande",   desc:"mate",      precio:0.75, colores:[
+  {id:"gra",  nombre:"Aro redondo grande",   desc:"mate",      precio:1.50, colores:[
     ["Rosado","#F27FAA"],["Fucsia","#C9346F"],["Rojo","#D8333A"],["Naranja","#F27A2B"],
     ["Amarillo","#F7DF4A"],["Verde","#6CD45A"],["Crema","#EBD9B8"],["Marrón","#6E4038"]]},
-  {id:"cor",  nombre:"Corazón con puntitos", desc:"",          precio:1.00, colores:[
+  {id:"cor",  nombre:"Corazón con puntitos", desc:"",          precio:1.50, colores:[
     ["Fucsia","#E0367E","#F7D23A"],["Rojo","#C8202A","#F7D23A"],["Azul","#2347B8","#F7D23A"],["Lila","#B590E6","#F0559A"],
     ["Menta","#8ED9C8","#F7D23A"],["Amarillo","#F8DA2E","#F0559A"],["Blanco","#F7F6F2","#F0559A"],["Negro","#1E1E1E","#FFFFFF"]]},
   {id:"flor", nombre:"Flor con giratorio",   desc:"",          precio:1.50, colores:[["Celeste","#8CC8EE","#F7B6D2"]]},
@@ -466,7 +468,9 @@ function pricing(){
   const n = keys().length;
   const lines = [];
   let tot = 0;
-  if(n){ const c = PRECIO_PRIMERA_TECLA + (n-1)*PRECIO_TECLA_EXTRA; lines.push([`Clicker de ${n} ${n===1?"tecla":"teclas"} + cadena de bolitas`, c]); tot+=c; }
+  if(n){ const b = precioBase(n), l = n*PRECIO_LETRA;
+    lines.push([`Base de ${n} ${n===1?"tecla":"teclas"} + cadena de bolitas`, b]);
+    lines.push([`${n} ${n===1?"letra":"letras"} × ${money(PRECIO_LETRA)}`, l]); tot += b + l; }
   const ar = aroSel(); if(ar){ lines.push([`${ar.tipo.nombre} (${ar.nombre.toLowerCase()})`, ar.tipo.precio]); tot+=ar.tipo.precio; }
   EXTRAS.forEach(x=>{ const e=st.extras[x.id]; if(e.q>0){ const c=e.q*x.precio; lines.push([`${e.q} × ${x.nombre} (${e.c.toLowerCase()})`, c]); tot+=c; } });
   $("breakdown").innerHTML = lines.map(([a,b])=>`<dt>${a}</dt><dd>${money(b)}</dd>`).join("") + `<dt class="tot">Total</dt><dd class="tot">${money(tot)}</dd>`;
@@ -474,7 +478,7 @@ function pricing(){
   const ks = keys();
   const teclas = ks.map((ch,i)=>`  ${i+1}. ${SYMS[ch]?SYMS[ch]:ch} · tecla ${st.tiles[i].toLowerCase()}, letra ${st.legs[i].toLowerCase()}`).join("\n");
   let txt = `¡Hola Crea3d! Quiero este clicker:\n\nPalabra: ${ks.map(c=>SYMS[c]?`[${SYMS[c]}]`:c).join("")||"(sin palabra)"}\nBase: ${st.base.toLowerCase()}, ${st.style}\nLetra: ${FONTS[st.font][2]}\nTeclas:\n${teclas}`;
-  const exs = lines.slice(n?1:0).map(l=>`  • ${l[0]}`).join("\n");
+  const exs = lines.slice(n?2:0).map(l=>`  • ${l[0]}`).join("\n");
   if(exs) txt += `\nExtras:\n${exs}`;
   txt += `\n\nTotal: ${money(tot)} (tasa BCV)\n\n(A continuación te envío la foto de mi diseño)`;
   $("summary").textContent = txt;
