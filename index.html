@@ -112,6 +112,11 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
 .qty button{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:800 16px var(--body);cursor:pointer}
 .qty output{min-width:18px;text-align:center;font-weight:800;font-variant-numeric:tabular-nums}
 .extra .sub{grid-column:1/-1}
+.aros{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px}
+.aro{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);cursor:pointer;font:600 13px var(--body);text-align:center}
+.aro[aria-pressed=true]{border-color:var(--brand);background:var(--brand-soft)}
+.aro svg{width:44px;height:44px}
+.aro small{color:var(--muted);font-variant-numeric:tabular-nums}
 .notice{font-size:12.5px;color:var(--muted)}
 .bar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));z-index:5}
 .bar .in{max-width:1080px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -186,6 +191,11 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
       <section class="sec">
         <h2><span class="step">3</span>Charms y extras</h2>
         <p class="incl">Todos los llaveros incluyen su <b>cadena de bolitas</b>.</p>
+        <span class="label">Aro para colgar</span>
+        <div class="aros" id="aros"></div>
+        <div class="swatches" id="aro-colors" style="margin-top:10px"></div>
+        <p class="hint" id="aro-name"></p>
+        <span class="label">Charms</span>
         <div class="extras" id="extras"></div>
       </section>
 
@@ -269,9 +279,23 @@ const LINK_PAGINA = "https://crea3dve.com/";   // link público de esta página
 const PRECIO_PRIMERA_TECLA = 2.00;   // clicker de 1 tecla
 const PRECIO_TECLA_EXTRA   = 1.00;   // cada tecla adicional
 const EXTRAS = [
-  {id:"mosq",   nombre:"Mosquetón de color",  desc:"flor, corazón o cuadrado", precio:0.50, color:true},
   {id:"carita", nombre:"Charm carita feliz",  desc:"impreso en 3D",            precio:0.50, color:true},
   {id:"flor",   nombre:"Charm flor",          desc:"impreso en 3D",            precio:1.00, color:true},
+];
+// Aros / mosquetones de resorte disponibles (cambia precios o agrega/quita colores aquí)
+// cada color: [nombre, color, color de los puntitos]
+const AROS = [
+  {id:"peq",  nombre:"Aro redondo pequeño",  desc:"brillante", precio:0.50, colores:[
+    ["Blanco","#F7F6F2"],["Crema","#F2E8C9"],["Rosado claro","#F8CAD5"],["Rosado","#F59AB8"],["Fucsia","#E0408A"],
+    ["Rojo","#D3242E"],["Lila","#C2A6F0"],["Celeste","#86CDF2"],["Menta","#93E0AE"],["Verde","#67D163"],
+    ["Lima","#C8E63C"],["Amarillo","#FBE36A"],["Nude","#D9C2B0"],["Marrón","#8A5A3C"],["Negro","#1E1E1E"]]},
+  {id:"gra",  nombre:"Aro redondo grande",   desc:"mate",      precio:0.75, colores:[
+    ["Rosado","#F27FAA"],["Fucsia","#C9346F"],["Rojo","#D8333A"],["Naranja","#F27A2B"],
+    ["Amarillo","#F7DF4A"],["Verde","#6CD45A"],["Crema","#EBD9B8"],["Marrón","#6E4038"]]},
+  {id:"cor",  nombre:"Corazón con puntitos", desc:"",          precio:1.00, colores:[
+    ["Fucsia","#E0367E","#F7D23A"],["Rojo","#C8202A","#F7D23A"],["Azul","#2347B8","#F7D23A"],["Lila","#B590E6","#F0559A"],
+    ["Menta","#8ED9C8","#F7D23A"],["Amarillo","#F8DA2E","#F0559A"],["Blanco","#F7F6F2","#F0559A"],["Negro","#1E1E1E","#FFFFFF"]]},
+  {id:"flor", nombre:"Flor con giratorio",   desc:"",          precio:1.50, colores:[["Celeste","#8CC8EE","#F7B6D2"]]},
 ];
 const COLORES = [
   ["Blanco","#F4F3EF"],["Negro","#232323"],["Rosado","#F6A9C3"],["Fucsia","#E8508E"],
@@ -290,10 +314,14 @@ const hex = n => (COLORES.find(c=>c[0]===n)||COLORES[0])[1];
 
 const st = {
   word:"LUNA★", base:"Rosado", style:"lisa", mode:"mix", sel:0, font:0,
-  tiles:[], legs:[], extras:{mosq:{q:1,c:"Amarillo"}, carita:{q:1,c:"Blanco"}, flor:{q:0,c:"Celeste"}}
+  tiles:[], legs:[], extras:{carita:{q:1,c:"Blanco"}, flor:{q:0,c:"Celeste"}}, aro:{t:"cor", c:"Fucsia"}
 };
 try{ const s=JSON.parse(localStorage.getItem("clicker-crea3d-v2")||"null"); if(s&&s.word!==undefined){ Object.assign(st,s); } }catch(e){}
 for(const x of EXTRAS) if(!st.extras[x.id]) st.extras[x.id]={q:0,c:"Blanco"};
+if(!st.aro) st.aro = {t:"cor", c:"Fucsia"};
+function aroSel(){ const a = AROS.find(x=>x.id===st.aro.t); if(!a) return null;
+  const c = a.colores.find(k=>k[0]===st.aro.c) || a.colores[0]; return {tipo:a, nombre:c[0], color:c[1], dot:c[2]||null}; }
+window.aroSel = aroSel;
 function save(){ try{ localStorage.setItem("clicker-crea3d-v2",JSON.stringify(st)); }catch(e){} }
 
 const $ = id => document.getElementById(id);
@@ -343,7 +371,8 @@ function drawPreview(){
   // aro / cadena / charms colgando del lazo
   const lx=W/2, ly=by-6;
   const ex = st.extras;
-  if(ex.mosq.q>0) s += `<rect x="${lx-26}" y="${ly-74}" width="52" height="50" rx="18" fill="none" stroke="${hex(ex.mosq.c)}" stroke-width="7"/>`;
+  const ar = aroSel();
+  if(ar) s += `<circle cx="${lx}" cy="${ly-48}" r="${ar.tipo.id==="gra"?28:24}" fill="none" stroke="${ar.color}" stroke-width="7"/>`;
   else s += `<circle cx="${lx}" cy="${ly-44}" r="22" fill="none" stroke="#B9BDB4" stroke-width="5"/>`;
   { for(let i=0;i<7;i++) s+=`<circle cx="${lx+30+i*9}" cy="${ly-40+i*5}" r="3.6" fill="#BFC3BA"/>`; }
   // charms
@@ -399,6 +428,26 @@ function render(){
   swatches($("sw-leg"), st.legs[i]||st.legs[0], n=>{ if(st.mode==="one") st.legs=st.legs.map(()=>n); else st.legs[i]=n; render(); });
   $("fonts").innerHTML = FONTS.map((f,j)=>`<button class="btn" aria-pressed="${j===st.font}" data-j="${j}" style="font-family:${f[1]};font-weight:800">${f[2]} Aa</button>`).join("");
   $("fonts").querySelectorAll(".btn").forEach(b=>b.onclick=()=>{st.font=+b.dataset.j; render();});
+  // aros
+  const ICON = {
+    peq:c=>`<circle cx="22" cy="22" r="12" fill="none" stroke="${c}" stroke-width="4.5"/>`,
+    gra:c=>`<circle cx="22" cy="22" r="16" fill="none" stroke="${c}" stroke-width="5"/>`,
+    cor:c=>`<path d="M22 35 C9 26 6 19 9 13 C12 7 19 8 22 14 C25 8 32 7 35 13 C38 19 35 26 22 35Z" fill="none" stroke="${c}" stroke-width="4" stroke-linejoin="round"/>`,
+    flor:c=>{ let d=""; for(let k=0;k<5;k++){ const a=k*Math.PI*2/5-Math.PI/2; d+=`<circle cx="${22+Math.cos(a)*8}" cy="${22+Math.sin(a)*8}" r="6" fill="none" stroke="${c}" stroke-width="3.5"/>`; } return d; },
+    no:()=>`<line x1="12" y1="12" x2="32" y2="32" stroke="#999" stroke-width="3"/><circle cx="22" cy="22" r="14" fill="none" stroke="#bbb" stroke-width="3" stroke-dasharray="4 4"/>`
+  };
+  const cur = aroSel();
+  $("aros").innerHTML = AROS.map(a=>{ const col = (cur&&cur.tipo.id===a.id?cur.color:({peq:"#C2A6F0",gra:"#F27FAA"}[a.id]||a.colores[0][1]));
+    return `<button class="aro" type="button" data-a="${a.id}" aria-pressed="${st.aro.t===a.id}"><svg viewBox="0 0 44 44">${ICON[a.id](col)}</svg>${a.nombre}<small>${money(a.precio)}</small></button>`; }).join("")
+    + `<button class="aro" type="button" data-a="" aria-pressed="${!cur}"><svg viewBox="0 0 44 44">${ICON.no()}</svg>Sin aro<small>${money(0)}</small></button>`;
+  $("aros").querySelectorAll(".aro").forEach(b=>b.onclick=()=>{ const a = AROS.find(x=>x.id===b.dataset.a);
+    st.aro.t = b.dataset.a; if(a && !a.colores.some(k=>k[0]===st.aro.c)) st.aro.c = a.colores[0][0]; render(); });
+  if(cur){
+    $("aro-colors").hidden = false; $("aro-name").hidden = false;
+    $("aro-colors").innerHTML = cur.tipo.colores.map(([n,h,d])=>`<button class="sw" style="background:${d?`radial-gradient(circle at 35% 35%, ${d} 0 3px, transparent 3.5px), radial-gradient(circle at 68% 62%, ${d} 0 3px, transparent 3.5px), ${h}`:h}" title="${n}" aria-label="${n}" aria-pressed="${n===cur.nombre}" data-n="${n}"></button>`).join("");
+    $("aro-colors").querySelectorAll(".sw").forEach(b=>b.onclick=()=>{ st.aro.c = b.dataset.n; render(); });
+    $("aro-name").textContent = `${cur.tipo.nombre}${cur.tipo.desc?` (${cur.tipo.desc})`:""} · color ${cur.nombre.toLowerCase()}`;
+  } else { $("aro-colors").hidden = true; $("aro-name").hidden = true; }
   // extras
   $("extras").innerHTML = EXTRAS.map(x=>{ const e=st.extras[x.id]; return `<div class="extra ${e.q>0?'on':''}">
       <div><div class="n">${x.nombre}</div><div class="p">${money(x.precio)} c/u · ${x.desc}</div></div>
@@ -416,6 +465,7 @@ function pricing(){
   const lines = [];
   let tot = 0;
   if(n){ const c = PRECIO_PRIMERA_TECLA + (n-1)*PRECIO_TECLA_EXTRA; lines.push([`Clicker de ${n} ${n===1?"tecla":"teclas"} + cadena de bolitas`, c]); tot+=c; }
+  const ar = aroSel(); if(ar){ lines.push([`${ar.tipo.nombre} (${ar.nombre.toLowerCase()})`, ar.tipo.precio]); tot+=ar.tipo.precio; }
   EXTRAS.forEach(x=>{ const e=st.extras[x.id]; if(e.q>0){ const c=e.q*x.precio; lines.push([`${e.q} × ${x.nombre} (${e.c.toLowerCase()})`, c]); tot+=c; } });
   $("breakdown").innerHTML = lines.map(([a,b])=>`<dt>${a}</dt><dd>${money(b)}</dd>`).join("") + `<dt class="tot">Total</dt><dd class="tot">${money(tot)}</dd>`;
   $("total").textContent = money(tot);
@@ -503,7 +553,7 @@ const CN = COLORES.map(c=>c[0]);
 function encodeDesign(){
   const o = {w:st.word, b:CN.indexOf(st.base), s:st.style==="acanalada"?1:0, f:st.font,
     t:st.tiles.map(c=>CN.indexOf(c)), l:st.legs.map(c=>CN.indexOf(c)),
-    e:EXTRAS.map(x=>[st.extras[x.id].q, CN.indexOf(st.extras[x.id].c)])};
+    e:EXTRAS.map(x=>[st.extras[x.id].q, CN.indexOf(st.extras[x.id].c)]), a:[st.aro.t, st.aro.c]};
   const bytes = new TextEncoder().encode(JSON.stringify(o)); let bin = ""; bytes.forEach(b=>bin+=String.fromCharCode(b));
   return "c_" + btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 }
@@ -514,7 +564,8 @@ function decodeDesign(h){
     const bin = atob(b), o = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, c=>c.charCodeAt(0))));
     st.word = clean(o.w||"").out; st.base = CN[o.b]||st.base; st.style = o.s?"acanalada":"lisa"; st.font = o.f||0; st.mode = "mix";
     st.tiles = (o.t||[]).map(k=>CN[k]||"Lila"); st.legs = (o.l||[]).map(k=>CN[k]||"Blanco");
-    EXTRAS.forEach((x,i)=>{ const e=(o.e||[])[i]; if(e) st.extras[x.id] = {q:e[0], c:CN[e[1]]||"Blanco"}; });
+    if(o.a) st.aro = {t:o.a[0], c:o.a[1]}; const oe = (o.e||[]).length===3 ? o.e.slice(1) : (o.e||[]);
+    EXTRAS.forEach((x,i)=>{ const e=oe[i]; if(e) st.extras[x.id] = {q:e[0], c:CN[e[1]]||"Blanco"}; });
     return true;
   }catch(err){ return false; }
 }
@@ -730,20 +781,43 @@ window.__render = render;
     } else { pts.push(S1a, S1a.clone().lerp(S1b,.5)); }
     // 3) la punta: pasa por el mosquetón
     add(far+10, Y, 12); add(far+3, Y, 7);
-    if(ex.mosq.q>0){
-      // mosquetón de resorte (≈30 × 26 mm), metal pintado, acostado sobre la mesa; la cadena pasa por dentro
-      const MW = 30, MH = 25, TR = 1.9, cx = far - MW/2 + TR + 3.5;
+    const ar = window.aroSel ? window.aroSel() : null;
+    if(ar){
+      // aro de resorte acostado sobre la mesa; la cadena pasa por dentro de su borde derecho
+      const id = ar.tipo.id, TR = id==="gra" ? 2.1 : id==="peq" ? 1.6 : 1.75;
+      const paint = new THREE.MeshStandardMaterial({color:toLin(ar.color), roughness: id==="gra" ? .62 : .2, metalness: id==="gra" ? .1 : .3});
+      const path = [], N = 220;
+      if(id==="peq" || id==="gra"){
+        const R = id==="gra" ? 13.2 : 10.4;
+        for(let k=0;k<N;k++){ const t=k/N*Math.PI*2; path.push(V(R*Math.cos(t), R*Math.sin(t), 0)); }
+      } else if(id==="cor"){
+        // corazón con la punta hacia la cadena (+x)
+        const k0 = .78;
+        for(let k=0;k<N;k++){ const t=k/N*Math.PI*2, hx=16*Math.pow(Math.sin(t),3), hy=13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);
+          path.push(V(-hy*k0 - 2.5, hx*k0, 0)); }
+      } else {
+        // flor de 5 pétalos
+        for(let k=0;k<N;k++){ const t=k/N*Math.PI*2, r = 11 + 2.6*Math.cos(5*t); path.push(V(r*Math.cos(t), r*Math.sin(t), 0)); }
+      }
+      const curveA = new THREE.CatmullRomCurve3(path, true);
+      const cb = new THREE.Group();
+      cb.add(new THREE.Mesh(new THREE.TubeGeometry(curveA, 300, TR, 18, true), paint));
+      // juntas de la compuerta del resorte
+      const seamM = new THREE.MeshStandardMaterial({color:toLin(shade(ar.color,-.4)), roughness:.5});
+      [.30,.42].forEach(u=>{ const q = curveA.getPointAt(u), tg = curveA.getTangentAt(u);
+        const m = new THREE.Mesh(new THREE.TorusGeometry(TR*1.03, .2, 8, 24), seamM); m.position.copy(q);
+        m.quaternion.setFromUnitVectors(V(0,0,1), tg); cb.add(m); });
+      // puntitos de colores (corazón y flor)
+      if(ar.dot){ const dm = new THREE.MeshStandardMaterial({color:toLin(ar.dot), roughness:.3});
+        const nd = id==="cor" ? 14 : 15;
+        for(let k=0;k<nd;k++){ const q = curveA.getPointAt((k+.5)/nd); const d = new THREE.Mesh(new THREE.SphereGeometry(.62,10,8), dm);
+          d.position.set(q.x, q.y, TR*.92); d.scale.z = .45; cb.add(d); } }
+      // giratorio de la flor
+      if(id==="flor"){ const sw = new THREE.Mesh(new THREE.TorusGeometry(3.4, 1.15, 12, 28), paint); sw.position.set(-17.5, 0, 0); cb.add(sw);
+        const neck = new THREE.Mesh(new THREE.CylinderGeometry(1.6,1.6,4.5,16), paint); neck.rotation.z = Math.PI/2; neck.position.set(-13.3,0,0); cb.add(neck); }
+      let rx = -1e9; path.forEach(q=>{ if(q.x>rx) rx=q.x; });
+      const cx = far + TR + 3.5 - rx;
       add(far+6, TR*2+1.2, 3.6); add(far+1.2, Y+.15, 2.2); add(far+1.2, Y+.15, -2.2); add(far+6, TR*2+1.2, -3.6);
-      const paint = new THREE.MeshStandardMaterial({color:toLin(hex(ex.mosq.c)), roughness:.22, metalness:.4});
-      const N = 200, p = 3.2, path = [];
-      for(let k=0;k<N;k++){ const a = k/N*Math.PI*2, c = Math.cos(a), s = Math.sin(a);
-        path.push(V(MW/2*Math.sign(c)*Math.pow(Math.abs(c),2/p), MH/2*Math.sign(s)*Math.pow(Math.abs(s),2/p), 0)); }
-      const ring = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(path, true), 260, TR, 18, true), paint);
-      // compuerta: tramo recto un poco más delgado con sus dos juntas
-      const g0 = path[Math.round(N*.40)], g1 = path[Math.round(N*.60)];
-      const gate = new THREE.Mesh(new THREE.TubeGeometry(new THREE.LineCurve3(g0.clone().add(V(.2,0,.15)), g1.clone().add(V(.2,0,.15))), 4, TR*.82, 16, false), paint);
-      const seam = (q)=>{ const m = new THREE.Mesh(new THREE.TorusGeometry(TR*1.02, .22, 8, 24), new THREE.MeshStandardMaterial({color:toLin(shade(hex(ex.mosq.c),-.45)), roughness:.5})); m.position.copy(q); m.rotation.x = Math.PI/2; return m; };
-      const cb = new THREE.Group(); cb.add(ring, gate, seam(g0), seam(g1));
       cb.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
       cb.rotation.x = -Math.PI/2; cb.position.set(cx, TR, 0); group.add(cb);
     } else { add(far, Y, 0); }
