@@ -56,6 +56,7 @@ h1{font-family:var(--display);font-weight:900;font-size:clamp(26px,6vw,40px);let
 .vt[aria-pressed=true]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 @media (max-width:879px){ .viewtools{right:20px;top:14px} }
 #capword b{color:var(--ink)}
+.t-mouse{display:none} @media (hover:hover) and (pointer:fine){ .t-touch{display:none} .t-mouse{display:inline} }
 .crow{display:grid;grid-template-columns:40px minmax(0,1fr) 36px;gap:10px;align-items:center;padding:10px;border:1.5px solid var(--brand);background:var(--brand-soft);border-radius:12px;margin-top:8px}
 .crow svg{width:40px;height:40px}
 .crow .n{font-weight:700;font-size:14px;margin-bottom:6px}
@@ -163,13 +164,11 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
   <div class="grid">
     <div class="stagebox">
       <div class="viewtools" role="group" aria-label="Controles de la vista 3D">
-        <button class="vt" id="vt-rot" type="button" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg>Girar</button>
-        <button class="vt" id="vt-pan" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/></svg>Mover</button>
         <button class="vt" id="homebtn" type="button">Centrar</button>
       </div>
       <div id="view3d" role="img" aria-label="Vista 3D de tu clicker. Arrastra para girarlo."></div>
       <svg id="preview" viewBox="0 0 640 360" role="img" aria-label="Vista previa de tu clicker" hidden></svg>
-      <div class="stagecap"><span id="capword"></span><span id="caphint">Pellizca o usa la rueda para acercar</span></div>
+      <div class="stagecap"><span id="capword"></span><span id="caphint"><span class="t-touch">Un dedo: girar · dos dedos: mover y acercar</span><span class="t-mouse">Arrastra: girar · clic derecho o dos dedos en el trackpad: mover · rueda: acercar</span></span></div>
     </div>
 
     <div class="panel">
@@ -548,8 +547,7 @@ $("symrow").innerHTML = Object.keys(SYMS).map(ch=>`<button class="btn sym" data-
 $("symrow").querySelectorAll("button").forEach(b=>b.onclick=()=>{ if([...st.word].length<10){ st.word+=b.dataset.s; st.sel=[...st.word].length-1; render(); } else { $("warn").hidden=false; $("warn").textContent="Máximo 10 teclas."; } });
 $("otro").addEventListener("input", e=>{ st.otro = e.target.value; pricing(); save(); });
 $("homebtn").onclick = ()=>{ if(window.__homeView) window.__homeView(); };
-function viewMode(m){ $("vt-rot").setAttribute("aria-pressed", m==="rot"); $("vt-pan").setAttribute("aria-pressed", m==="pan"); if(window.__3d && window.__3d.setMode) window.__3d.setMode(m); }
-$("vt-rot").onclick = ()=>viewMode("rot"); $("vt-pan").onclick = ()=>viewMode("pan");
+
 $("st-lisa").onclick=()=>{st.style="lisa";render();};
 $("st-acan").onclick=()=>{st.style="acanalada";render();};
 $("mode-one").onclick=()=>{
@@ -1057,6 +1055,18 @@ window.__render = render;
     controls.touches = {ONE: pan ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN};
     controls.autoRotate = false; focus = null;
   }
+  // trackpad: deslizar con dos dedos mueve el llavero; pellizcar (o la rueda del mouse) acerca
+  box.addEventListener("wheel", e=>{
+    const trackpadScroll = !e.ctrlKey && e.deltaMode===0 && (e.deltaX!==0 || !Number.isInteger(e.deltaY) || Math.abs(e.deltaY) < 50);
+    if(!trackpadScroll) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    controls.autoRotate = false; focus = null;
+    const dist = camera.position.distanceTo(controls.target);
+    const k = dist * 0.0016;
+    const right = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0), up = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
+    const move = right.multiplyScalar(e.deltaX*k).add(up.multiplyScalar(-e.deltaY*k));
+    camera.position.add(move); controls.target.add(move);
+  }, {capture:true, passive:false});
   window.__3d = { update: build, photo, raw, setMode };
   window.__render();
   if(document.fonts) document.fonts.ready.then(()=>window.__render());
