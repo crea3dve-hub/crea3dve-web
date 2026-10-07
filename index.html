@@ -299,7 +299,10 @@ const COLORES = [   // filamentos disponibles en el taller
   ["Blanco","#F2F1EC"],["Negro","#242424"],["Beige","#D9C7A7"],["Plata","#BFC2C6"],
   ["Rojo","#D52A2F"],["Fucsia","#E0457F"],["Naranja","#F27B30"],["Amarillo","#F8D62A"],
   ["Ámbar","#F3A21C"],["Cobre","#B5683F"],["Menta","#A3E3A0"],["Verde","#3DA857"],
-  ["Celeste","#8FCBF0"],["Aqua","#A3D8D8"],["Azul","#2A5BC9"],["Lila","#A57BDB"]
+  ["Celeste","#8FCBF0"],["Aqua","#A3D8D8"],["Azul","#2A5BC9"],["Lila","#A57BDB"],
+  ["Dorado","#BFA548"],
+  ["Mármol","#E7E6E2","radial-gradient(circle at 30% 35%, #9a9a9a 0 1.5px, transparent 2px), radial-gradient(circle at 65% 60%, #8c8c8c 0 1.5px, transparent 2px), radial-gradient(circle at 45% 75%, #a5a5a5 0 1px, transparent 1.5px), #E7E6E2"],
+  ["Arcoíris","#D9342C","linear-gradient(135deg, #D9342C 0%, #E8742A 35%, #2E8B57 70%, #1F6E4A 100%)"]
 ];
 /* ==================================================================== */
 
@@ -309,6 +312,8 @@ const FONTS = [["Inter","'Inter', system-ui, sans-serif","Inter"],["Comic","'Com
 const MIX = ["Amarillo","Azul","Menta","Rojo","Fucsia","Celeste","Naranja","Lila","Verde","Aqua"];
 const LEGMIX = ["Lila","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Fucsia"];
 const hex = n => (COLORES.find(c=>c[0]===n)||COLORES[0])[1];
+const bg = n => { const c = COLORES.find(c=>c[0]===n)||COLORES[0]; return c[2]||c[1]; };   // fondo para botones (degradados)
+window.SPECIAL = {"#D9342C":"rainbow", "#E7E6E2":"marble"};
 
 const st = {
   word:"LUNA★", base:"Fucsia", style:"lisa", mode:"mix", sel:0, font:0,
@@ -405,7 +410,7 @@ function drawPreview(){
 
 /* ---------- controles ---------- */
 function swatches(el, current, onPick){
-  el.innerHTML = COLORES.map(([n,h])=>`<button class="sw" style="background:${h}" title="${n}" aria-label="${n}" aria-pressed="${n===current}" data-n="${n}"></button>`).join("");
+  el.innerHTML = COLORES.map(([n,h,css])=>`<button class="sw" style="background:${css||h}" title="${n}" aria-label="${n}" aria-pressed="${n===current}" data-n="${n}"></button>`).join("");
   el.querySelectorAll(".sw").forEach(b=>b.onclick=()=>onPick(b.dataset.n));
 }
 function render(){
@@ -416,7 +421,7 @@ function render(){
   $("st-lisa").setAttribute("aria-pressed", st.style==="lisa"); $("st-acan").setAttribute("aria-pressed", st.style==="acanalada");
   $("mode-one").setAttribute("aria-pressed", st.mode==="one"); $("mode-mix").setAttribute("aria-pressed", st.mode==="mix");
   // chips
-  $("keychips").innerHTML = ks.map((ch,i)=>`<button class="keychip" data-i="${i}" aria-pressed="${st.mode==='mix'&&i===st.sel}" aria-label="Tecla ${i+1}: ${SYMS[ch]||ch}" style="background:${hex(st.tiles[i])};color:${hex(st.legs[i])}">${SYMS[ch]?`<svg viewBox="0 0 40 40">${symPath(ch,20,20,34,hex(st.legs[i]))}</svg>`:ch.replace("&","&amp;")}</button>`).join("");
+  $("keychips").innerHTML = ks.map((ch,i)=>`<button class="keychip" data-i="${i}" aria-pressed="${st.mode==='mix'&&i===st.sel}" aria-label="Tecla ${i+1}: ${SYMS[ch]||ch}" style="background:${bg(st.tiles[i])};color:${hex(st.legs[i])}">${SYMS[ch]?`<svg viewBox="0 0 40 40">${symPath(ch,20,20,34,hex(st.legs[i]))}</svg>`:ch.replace("&","&amp;")}</button>`).join("");
   $("keychips").hidden = st.mode==="one" || !ks.length;
   $("keychips").querySelectorAll(".keychip").forEach(b=>b.onclick=()=>openSheet(+b.dataset.i));
   $("mixhint").hidden = st.mode==="one" || !ks.length;
@@ -587,7 +592,7 @@ function renderSheet(){
   if(!sheetOpen) return;
   const ks = keys(), n = ks.length; if(!n){ closeSheet(); return; }
   const i = st.sel, ch = ks[i], one = st.mode==="one";
-  const k = $("sh-key"); k.style.background = hex(st.tiles[i]); k.style.color = hex(st.legs[i]); k.innerHTML = keyFace(ch, hex(st.tiles[i]), hex(st.legs[i]));
+  const k = $("sh-key"); k.style.background = bg(st.tiles[i]); k.style.color = hex(st.legs[i]); k.innerHTML = keyFace(ch, hex(st.tiles[i]), hex(st.legs[i]));
   $("sh-title").textContent = `Tecla ${i+1} de ${n}: ${SYMS[ch] ? SYMS[ch] : ch}`;
   $("sh-sub").textContent = one ? "Con “Todas iguales”, el color se aplica a todas las teclas" : "Cambia su color o su letra";
   const setT = c=>{ if(one) st.tiles = st.tiles.map(()=>c); else st.tiles[i] = c; render(); };
@@ -647,7 +652,24 @@ window.__render = render;
   ground.rotation.x = -Math.PI/2; ground.position.y = -0.62; ground.receiveShadow = true; scene.add(ground);
 
   const toLin = h => new THREE.Color(h).convertSRGBToLinear();
-  const mat = (h, rough=.62) => new THREE.MeshStandardMaterial({color:toLin(h), roughness:rough, metalness:0});
+  const texCache = {};
+  function specialTex(kind){
+    if(texCache[kind]) return texCache[kind];
+    const c = document.createElement("canvas"); c.width = c.height = 256; const x = c.getContext("2d");
+    if(kind==="rainbow"){
+      const g = x.createLinearGradient(0,0,0,256);
+      [["#D9342C",0],["#E8742A",.25],["#2E8B57",.5],["#1F6E4A",.62],["#E8742A",.82],["#D9342C",1]].forEach(([col,p])=>g.addColorStop(p,col));
+      x.fillStyle = g; x.fillRect(0,0,256,256);
+    } else {
+      x.fillStyle = "#E7E6E2"; x.fillRect(0,0,256,256);
+      for(let k=0;k<900;k++){ const r = Math.random()*1.6+.4; x.fillStyle = `rgba(80,80,80,${Math.random()*.5+.2})`; x.beginPath(); x.arc(Math.random()*256, Math.random()*256, r, 0, Math.PI*2); x.fill(); }
+    }
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(kind==="rainbow"?.05:.08, kind==="rainbow"?.05:.08);
+    t.encoding = THREE.sRGBEncoding; t.__keep = true; return texCache[kind] = t;
+  }
+  const mat = (h, rough=.62) => { const k = (window.SPECIAL||{})[h];
+    if(k) return new THREE.MeshStandardMaterial({color:0xffffff, map:specialTex(k), roughness:rough, metalness:0});
+    return new THREE.MeshStandardMaterial({color:toLin(h), roughness:rough, metalness:0}); };
   function rr(w,h,r){
     const s = new THREE.Shape(), x=-w/2, y=-h/2;
     s.moveTo(x+r,y); s.lineTo(x+w-r,y); s.absarc(x+w-r,y+r,r,-Math.PI/2,0,false);
@@ -697,7 +719,7 @@ window.__render = render;
   }
 
   let group = null, keyGroups = [], focus = null;
-  const disposeAll = o => o.traverse(n=>{ if(n.geometry) n.geometry.dispose(); if(n.material){ (Array.isArray(n.material)?n.material:[n.material]).forEach(m=>{ if(m.map) m.map.dispose(); m.dispose(); }); } });
+  const disposeAll = o => o.traverse(n=>{ if(n.geometry) n.geometry.dispose(); if(n.material){ (Array.isArray(n.material)?n.material:[n.material]).forEach(m=>{ if(m.map && !m.map.__keep) m.map.dispose(); m.dispose(); }); } });
 
   function build(){
     if(group){ scene.remove(group); disposeAll(group); }
