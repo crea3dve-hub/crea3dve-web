@@ -53,6 +53,11 @@ h1{font-family:var(--display);font-weight:900;font-size:clamp(26px,6vw,40px);let
 .viewtools{position:absolute;right:22px;top:22px;z-index:3;display:flex;gap:6px}
 .vt{font:700 12.5px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:5px 11px;cursor:pointer;min-height:32px;display:inline-flex;align-items:center;gap:5px}
 .vt svg{width:15px;height:15px}
+.vt.dice{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.vt.dice .d{display:inline-block;transition:transform .35s}
+.vt.dice.spin .d,.randbtn.spin .d{transform:rotate(360deg)}
+.btn.randbtn{width:100%;justify-content:center;display:flex;align-items:center;gap:8px;background:var(--brand);color:var(--brand-ink);border-color:var(--brand);margin:0 0 12px;min-height:42px;font-size:15px}
+.btn.randbtn .d{display:inline-block;transition:transform .35s}
 .vt[aria-pressed=true]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 @media (max-width:879px){ .viewtools{right:20px;top:14px} }
 #capword b{color:var(--ink)}
@@ -165,6 +170,7 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
   <div class="grid">
     <div class="stagebox">
       <div class="viewtools" role="group" aria-label="Controles de la vista 3D">
+        <button class="vt dice" id="randtop" type="button" aria-label="Colores al azar"><span class="d">🎲</span> Al azar</button>
         <button class="vt" id="homebtn" type="button">Centrar</button>
       </div>
       <div id="view3d" role="img" aria-label="Vista 3D de tu clicker. Arrastra para girarlo."></div>
@@ -183,6 +189,8 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
 
       <section class="sec">
         <h2><span class="step">2</span>Colores</h2>
+        <button class="btn randbtn" id="randbtn" type="button"><span class="d">🎲</span> Colores al azar</button>
+        <p class="hint" style="margin:-4px 0 10px">¿No sabes qué colores escoger? Toca las veces que quieras hasta que te guste.</p>
         <span class="label">Base</span>
         <div class="swatches" id="sw-base"></div>
         <div class="row" style="margin-top:10px">
@@ -547,6 +555,55 @@ $("word").addEventListener("input", e=>{
 $("symrow").innerHTML = Object.keys(SYMS).map(ch=>`<button class="btn sym" data-s="${ch}" aria-label="Agregar ${SYMS[ch]}"><svg viewBox="0 0 40 40">${symPath(ch,20,20,34,"currentColor")}</svg></button>`).join("") + EXTRA_SYMS.map(ch=>`<button class="btn sym" data-s="${ch}" aria-label="Agregar ${ch}">${ch.replace("&","&amp;")}</button>`).join("");
 $("symrow").querySelectorAll("button").forEach(b=>b.onclick=()=>{ if([...st.word].length<10){ st.word+=b.dataset.s; st.sel=[...st.word].length-1; render(); } else { $("warn").hidden=false; $("warn").textContent="Máximo 10 teclas."; } });
 $("otro").addEventListener("input", e=>{ st.otro = e.target.value; pricing(); save(); });
+/* ---------- colores al azar ---------- */
+const pick = a => a[Math.floor(Math.random()*a.length)];
+const shuffle = a => { a=[...a]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+function lumOf(n){ const h=hex(n).slice(1); const [r,g,b]=[0,2,4].map(i=>parseInt(h.substr(i,2),16)/255).map(c=>c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)); return .2126*r+.7152*g+.0722*b; }
+function contrast(a,b){ const x=lumOf(a), y=lumOf(b); return (Math.max(x,y)+.05)/(Math.min(x,y)+.05); }
+function legFor(tile, accents){
+  const ok = shuffle(accents).filter(c=>c!==tile && contrast(c,tile)>=2.6);
+  if(ok.length && Math.random()<.6) return ok[0];
+  return contrast("Blanco",tile) >= contrast("Negro",tile) ? "Blanco" : "Negro";
+}
+const TEMAS = [
+  {n:"pastel",    bases:["Blanco","Lila","Menta","Celeste","Beige"], tiles:["Celeste","Menta","Aqua","Lila","Amarillo","Blanco","Beige"], acc:["Lila","Fucsia","Azul","Celeste","Menta","Amarillo"]},
+  {n:"vibrante",  bases:["Negro","Blanco","Azul","Fucsia"],          tiles:["Rojo","Fucsia","Naranja","Amarillo","Azul","Verde","Lila","Celeste"], acc:["Blanco","Amarillo","Negro"]},
+  {n:"arcoiris",  bases:["Blanco","Negro"],                          seq:["Rojo","Naranja","Amarillo","Verde","Celeste","Azul","Lila","Fucsia"], acc:["Blanco"]},
+  {n:"dos tonos", bases:["Blanco","Negro","Beige","Plata"],          tiles:["Fucsia","Celeste","Lila","Menta","Amarillo","Azul","Rojo","Naranja","Verde","Aqua","Negro","Blanco"], acc:["Blanco","Negro","Amarillo","Fucsia"]},
+  {n:"elegante",  bases:["Negro","Blanco","Plata","Beige"],          tiles:["Blanco","Negro","Dorado","Plata","Mármol","Beige","Cobre"], acc:["Dorado","Negro","Blanco"], one:true},
+  {n:"un color",  bases:["Blanco","Negro","Plata"],                  tiles:["Fucsia","Lila","Celeste","Menta","Rojo","Azul","Amarillo","Aqua","Naranja","Verde"], acc:["Blanco","Negro","Amarillo","Lila","Fucsia"], one:true},
+];
+let lastRand = "";
+function randomize(){
+  const n = keys().length; let sig="", tries=0;
+  do{
+    const t = pick(TEMAS.concat(TEMAS.slice(0,2)));   // pastel y vibrante salen un poco más
+    let tiles=[];
+    if(t.seq){ const off=Math.floor(Math.random()*t.seq.length); tiles=Array.from({length:n},(_,i)=>t.seq[(off+i)%t.seq.length]); }
+    else if(t.one){ const c=pick(t.tiles); tiles=Array.from({length:n},()=>c); }
+    else if(t.n==="dos tonos"){ const [a,b]=shuffle(t.tiles); tiles=Array.from({length:n},(_,i)=>i%2?b:a); }
+    else { let bag=[]; while(bag.length<n) bag=bag.concat(shuffle(t.tiles)); tiles=bag.slice(0,n);
+      for(let i=1;i<n;i++) if(tiles[i]===tiles[i-1]) tiles[i]=pick(t.tiles.filter(c=>c!==tiles[i-1])); }
+    let base = pick(t.bases.filter(b=>!tiles.every(x=>x===b)));
+    let legs;
+    if(t.one || t.n==="dos tonos"){ const l = legFor(tiles[0], t.acc); legs = tiles.map(x=> contrast(l,x)>=2.6 ? l : legFor(x,t.acc)); }
+    else legs = tiles.map(x=>legFor(x,t.acc));
+    st.tiles=tiles; st.legs=legs; st.base=base; st.mode = t.one ? "one" : "mix";
+    st.style = Math.random()<.3 ? "acanalada" : "lisa";
+    sig = st.base+st.style+tiles.join()+legs.join(); tries++;
+  } while(sig===lastRand && tries<8);
+  lastRand = sig; st.mixTiles=null; st.mixLegs=null;
+  // aro y charms: solo cambia el color, no lo que la persona escogió
+  const a = AROS.find(x=>x.id===st.aro.t); if(a) st.aro.c = pick(a.colores)[0];
+  const CH = ["Amarillo","Celeste","Fucsia","Menta","Lila","Blanco","Naranja","Rojo","Aqua","Azul"];
+  st.charms.forEach(c=>{ c.c = pick(CH.filter(x=>!st.tiles.includes(x)).concat(CH).slice(0,CH.length)); });
+  render();
+}
+function spinDice(btn){ btn.classList.remove("spin"); void btn.offsetWidth; btn.classList.add("spin"); setTimeout(()=>btn.classList.remove("spin"),380); }
+["randtop","randbtn"].forEach(id=>$(id).onclick=()=>{
+  if(!keys().length){ $("word").focus(); return; }
+  spinDice($(id)); randomize();
+});
 $("homebtn").onclick = ()=>{ if(window.__homeView) window.__homeView(); };
 
 $("st-lisa").onclick=()=>{st.style="lisa";render();};
