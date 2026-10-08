@@ -544,7 +544,7 @@ function pricing(){
   $("total").textContent = money(tot);
   const ks = keys();
   const EMO = {"Rojo":"🔴","Naranja":"🟠","Amarillo":"🟡","Marrón":"🟤","Verde":"🟢","Azul":"🔵","Morado metalizado":"🟣"};
-  const col = n => EMO[n] ? `${EMO[n]} ${n.toLowerCase()}` : n.toLowerCase();
+  const col = n => EMO[n] ? `${EMO[n]} *${n.toLowerCase()}*` : `*${n.toLowerCase()}*`;
   const charmEmo = {carita:"😊", flor:"🌼"};
   const teclas = ks.map((ch,i)=>`${i+1}. *${SYMS[ch]?SYMS[ch]:ch}* → tecla ${col(st.tiles[i])} · letra ${col(st.legs[i])}`).join("\n");
   let txt = `✨ ¡Hola Crea3d! Quiero este clicker ✨\n\n`
@@ -553,9 +553,9 @@ function pricing(){
     + `✍️ Tipografía: ${FONTS[st.font][2]}\n\n`
     + `⌨️ Teclas:\n${teclas}`;
   const extras = [];
-  if(ar) extras.push(`🔗 ${ar.tipo.nombre} (${ar.nombre.toLowerCase()}) — ${money(ar.tipo.precio)}`);
-  st.charms.forEach(ch=>{ const x = charmInfo(ch.t); extras.push(`${charmEmo[ch.t]||"🎀"} Charm ${x.nombre.toLowerCase()} ${col(ch.c)} — ${money(x.precio)}`); });
-  if(otro!==null) extras.push(`🎀 Charm personalizado: ${otro} (precio a confirmar)`);
+  if(ar) extras.push(`*${ar.tipo.nombre}* color *${ar.nombre.toLowerCase()}* — ${money(ar.tipo.precio)}`);
+  st.charms.forEach(ch=>{ const x = charmInfo(ch.t); extras.push(`Charm ${x.nombre.toLowerCase()} ${col(ch.c)} — ${money(x.precio)}`); });
+  if(otro!==null) extras.push(`Charm personalizado: ${otro} (precio a confirmar)`);
   if(extras.length) txt += `\n\nExtras:\n${extras.join("\n")}`;
   txt += `\n\n💰 *Total: ${money(tot)}*${otro!==null?" + charm personalizado":""} (tasa BCV)\n\n📸 A continuación te envío la foto de mi diseño 💚`;
   $("summary").textContent = txt;
