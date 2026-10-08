@@ -65,6 +65,12 @@ h1{font-family:var(--display);font-weight:900;font-size:clamp(26px,6vw,40px);let
 .t-mouse{display:none} @media (hover:hover) and (pointer:fine){ .t-touch{display:none} .t-mouse{display:inline} }
 .crow{display:grid;grid-template-columns:40px minmax(0,1fr) 36px;gap:10px;align-items:center;padding:10px;border:1.5px solid var(--brand);background:var(--brand-soft);border-radius:12px;margin-top:8px}
 .crow svg{width:40px;height:40px}
+.cart{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.citem{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg)}
+.citem .t{font-weight:700;font-size:14px}.citem .t small{display:block;font-weight:500;color:var(--muted,#666);font-size:12px}
+.citem .btn{min-height:32px;padding:5px 10px;font-size:13px}
+.ccur{font:800 12px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--brand-ink);background:var(--brand);border-radius:999px;padding:4px 10px;display:inline-block;margin-bottom:8px}
+.btn.addclk{width:100%;margin-top:12px;min-height:44px;font-size:15px;border-color:var(--brand);color:var(--ink)}
 .crow .n{font-weight:700;font-size:14px;margin-bottom:6px}
 .crow .sw{width:26px;height:26px}
 .crow .x{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:800 15px var(--body);cursor:pointer}
@@ -225,10 +231,9 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
       <section class="sec">
         <h2><span class="step">3</span>Charms y extras</h2>
         <p class="incl">Todos los llaveros incluyen su <b>cadena de bolitas</b>.</p>
-        <span class="label">Aro para colgar</span>
+        <span class="label">Aros para colgar <span class="notice">(toca uno para agregarlo; puedes poner varios)</span></span>
         <div class="aros" id="aros"></div>
-        <div class="swatches" id="aro-colors" style="margin-top:10px"></div>
-        <p class="hint" id="aro-name"></p>
+        <div id="arolist"></div>
         <span class="label">Charms <span class="notice">(toca uno para agregarlo; puedes poner varios)</span></span>
         <div class="aros" id="charmcards"></div>
         <div id="charmlist"></div>
@@ -245,7 +250,10 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
 
       <section class="sec">
         <h2><span class="step">4</span>Tu pedido</h2>
+        <div id="cartbox"></div>
         <dl class="breakdown" id="breakdown"></dl>
+        <button class="btn addclk" id="addclk" type="button">＋ Armar otro clicker</button>
+        <p class="hint" style="margin-top:6px">¿Quieres varios? Guarda este y arma el siguiente: todos van en el mismo pedido.</p>
         <p class="notice" style="margin:10px 0 8px">Precios en dólares a tasa BCV del día. Pagas por pago móvil, Zelle o Binance.</p>
         <pre class="summary" id="summary"></pre>
         <div class="row copy">
@@ -381,7 +389,7 @@ window.SPECIAL = {"#D9342C":"rainbow", "#E7E6E2":"marble"};
 
 const st = {
   word:"LUNA★", base:"Fucsia", style:"lisa", mode:"mix", sel:0, font:0,
-  tiles:[], legs:[], charms:[{t:"carita",c:"Amarillo"}], objs:[], otro:null, aro:{t:"cor", c:"Fucsia"}
+  tiles:[], legs:[], charms:[{t:"carita",c:"Amarillo"}], objs:[], otro:null, aros:[{t:"cor", c:"Fucsia"}], cart:[]
 };
 try{ const s=JSON.parse(localStorage.getItem("clicker-crea3d-v3")||"null"); if(s&&s.word!==undefined){ Object.assign(st,s); } }catch(e){}
 if(!Array.isArray(st.charms)){   // diseños guardados con el formato anterior
@@ -401,11 +409,22 @@ const charmInfo = t => CHARMS.find(x=>x.id===t);
 window.charmList = ()=> st.charms.map(x=>({t:x.t, c:hex(x.c)})).concat(st.objs.map(o=>({t:'obj', c:null, img:objImg(o)})));
 const objInfo = t => OBJETOS.find(x=>x.id===t);
 const objPrice = i => keys().length ? objInfo(st.objs[i].t).extra : (i===0 ? objInfo(st.objs[i].t).solo : objInfo(st.objs[i].t).extra);
-const canOrder = () => keys().length>0 || st.objs.length>0;
-if(!st.aro) st.aro = {t:"cor", c:"Fucsia"};
-function aroSel(){ const a = AROS.find(x=>x.id===st.aro.t); if(!a) return null;
-  const c = a.colores.find(k=>k[0]===st.aro.c) || a.colores[0]; return {tipo:a, nombre:c[0], color:c[1], dot:c[2]||null}; }
-window.aroSel = aroSel;
+const canOrder = () => keys().length>0 || st.objs.length>0 || st.cart.some(hasContent);
+if(!Array.isArray(st.aros)) st.aros = (st.aro && st.aro.t) ? [{t:st.aro.t, c:st.aro.c}] : [];
+delete st.aro;
+if(!Array.isArray(st.cart)) st.cart = [];
+const MAX_AROS = 4;
+function aroInfo(x){ const a = AROS.find(y=>y.id===x.t); if(!a) return null;
+  const c = a.colores.find(k=>k[0]===x.c) || a.colores[0]; return {tipo:a, nombre:c[0], color:c[1], dot:c[2]||null}; }
+function aroList(){ return st.aros.map(aroInfo).filter(Boolean); }
+function aroSel(){ return aroList()[0] || null; }
+window.aroSel = aroSel; window.aroList = aroList;
+// ---------- varios clickers en un pedido ----------
+const DKEYS = ["word","base","style","mode","font","tiles","legs","charms","objs","otro","aros"];
+const snap = () => JSON.parse(JSON.stringify(Object.fromEntries(DKEYS.map(k=>[k, st[k]]))));
+function loadDesign(d){ Object.assign(st, JSON.parse(JSON.stringify(d))); st.sel = 0; st.mixTiles = null; st.mixLegs = null; }
+function withDesign(d, fn){ const keep = snap(), ks = st.sel; loadDesign(d); try{ return fn(); } finally{ loadDesign(keep); st.sel = ks; } }
+const hasContent = d => (d.word && d.word.length) || (d.objs && d.objs.length);
 function save(){ try{ localStorage.setItem("clicker-crea3d-v3",JSON.stringify(st)); }catch(e){} }
 
 const $ = id => document.getElementById(id);
@@ -527,18 +546,27 @@ function render(){
     flor:c=>{ let d=""; for(let k=0;k<5;k++){ const a=k*Math.PI*2/5-Math.PI/2; d+=`<circle cx="${22+Math.cos(a)*8}" cy="${22+Math.sin(a)*8}" r="6" fill="none" stroke="${c}" stroke-width="3.5"/>`; } return d; },
     no:()=>`<line x1="12" y1="12" x2="32" y2="32" stroke="#999" stroke-width="3"/><circle cx="22" cy="22" r="14" fill="none" stroke="#bbb" stroke-width="3" stroke-dasharray="4 4"/>`
   };
-  const cur = aroSel();
-  $("aros").innerHTML = AROS.map(a=>{ const col = (cur&&cur.tipo.id===a.id?cur.color:({peq:"#C2A6F0",gra:"#F27FAA"}[a.id]||a.colores[0][1]));
-    return `<button class="aro" type="button" data-a="${a.id}" aria-pressed="${st.aro.t===a.id}"><svg viewBox="0 0 44 44">${ICON[a.id](col)}</svg>${a.nombre}<small>${money(a.precio)}</small></button>`; }).join("")
-    + `<button class="aro" type="button" data-a="" aria-pressed="${!cur}"><svg viewBox="0 0 44 44">${ICON.no()}</svg>Sin aro<small>${money(0)}</small></button>`;
-  $("aros").querySelectorAll(".aro").forEach(b=>b.onclick=()=>{ const a = AROS.find(x=>x.id===b.dataset.a);
-    st.aro.t = b.dataset.a; if(a && !a.colores.some(k=>k[0]===st.aro.c)) st.aro.c = a.colores[0][0]; render(); });
-  if(cur){
-    $("aro-colors").hidden = false; $("aro-name").hidden = false;
-    $("aro-colors").innerHTML = cur.tipo.colores.map(([n,h,d])=>`<button class="sw" style="background:${d?`radial-gradient(circle at 35% 35%, ${d} 0 3px, transparent 3.5px), radial-gradient(circle at 68% 62%, ${d} 0 3px, transparent 3.5px), ${h}`:h}" title="${n}" aria-label="${n}" aria-pressed="${n===cur.nombre}" data-n="${n}"></button>`).join("");
-    $("aro-colors").querySelectorAll(".sw").forEach(b=>b.onclick=()=>{ st.aro.c = b.dataset.n; render(); });
-    $("aro-name").textContent = `${cur.tipo.nombre}${cur.tipo.desc?` (${cur.tipo.desc})`:""} · color ${cur.nombre.toLowerCase()}`;
-  } else { $("aro-colors").hidden = true; $("aro-name").hidden = true; }
+  const afull = st.aros.length >= MAX_AROS;
+  $("aros").innerHTML = AROS.map(a=>{ const col = ({peq:"#C2A6F0",gra:"#F27FAA"}[a.id]||a.colores[0][1]);
+    return `<button class="aro" type="button" data-a="${a.id}" ${afull?"disabled":""}><svg viewBox="0 0 44 44">${ICON[a.id](col)}</svg>${a.nombre}<small>${money(a.precio)} c/u</small></button>`; }).join("");
+  $("aros").querySelectorAll(".aro").forEach(b=>b.onclick=()=>{ if(st.aros.length>=MAX_AROS) return; const a = AROS.find(x=>x.id===b.dataset.a);
+    const used = st.aros.filter(x=>x.t===a.id).map(x=>x.c); const c = (a.colores.find(k=>!used.includes(k[0]))||a.colores[0])[0];
+    st.aros.push({t:a.id, c}); render(); });
+  $("arolist").innerHTML = st.aros.map((x,i)=>{ const r = aroInfo(x); if(!r) return "";
+    return `<div class="crow"><svg viewBox="0 0 44 44">${ICON[r.tipo.id](r.color)}</svg>
+      <div><div class="n">${r.tipo.nombre} · ${r.nombre.toLowerCase()} <span class="notice">${money(r.tipo.precio)}</span></div>
+      <div class="swatches">${r.tipo.colores.map(([n,h,d])=>`<button class="sw" style="background:${d?`radial-gradient(circle at 35% 35%, ${d} 0 3px, transparent 3.5px), radial-gradient(circle at 68% 62%, ${d} 0 3px, transparent 3.5px), ${h}`:h}" title="${n}" aria-label="${n}" aria-pressed="${n===r.nombre}" data-ai="${i}" data-n="${n}"></button>`).join("")}</div></div>
+      <button class="x" type="button" data-adel="${i}" aria-label="Quitar ${r.tipo.nombre}">✕</button></div>`; }).join("")
+    + (afull ? `<p class="hint">Máximo ${MAX_AROS} aros por llavero.</p>` : (st.aros.length ? "" : `<p class="hint">Sin aro: solo la cadena de bolitas.</p>`));
+  $("arolist").querySelectorAll("[data-ai]").forEach(b=>b.onclick=()=>{ st.aros[+b.dataset.ai].c = b.dataset.n; render(); });
+  $("arolist").querySelectorAll("[data-adel]").forEach(b=>b.onclick=()=>{ st.aros.splice(+b.dataset.adel,1); render(); });
+  // pedido con varios clickers
+  $("cartbox").innerHTML = st.cart.length ? `<div class="cart">${st.cart.map((d,i)=>{ const c = withDesign(d, designCalc);
+      const nm = d.word ? [...d.word].map(ch=>SYMS[ch]?`[${SYMS[ch]}]`:ch).join("") : (d.objs.length ? objInfo(d.objs[0].t).nombre : "(vacío)");
+      return `<div class="citem"><div class="t">Clicker ${i+1}: ${nm.replace(/[<&>]/g,"")}<small>${money(c.tot)}</small></div><button class="btn" type="button" data-cedit="${i}">Editar</button><button class="btn" type="button" data-cdel="${i}">Quitar</button></div>`; }).join("")}</div><span class="ccur">Clicker ${st.cart.length+1} (el que estás armando)</span>` : "";
+  $("cartbox").querySelectorAll("[data-cedit]").forEach(b=>b.onclick=()=>{ const i=+b.dataset.cedit, cur = snap();
+    loadDesign(st.cart[i]); if(hasContent(cur)) st.cart[i] = cur; else st.cart.splice(i,1); if(window.closeSheetIfOpen) window.closeSheetIfOpen(); render(); window.scrollTo({top:0, behavior:"smooth"}); });
+  $("cartbox").querySelectorAll("[data-cdel]").forEach(b=>b.onclick=()=>{ st.cart.splice(+b.dataset.cdel,1); render(); });
   // charms
   const full = st.charms.length >= MAX_CHARMS;
   $("charmcards").innerHTML = CHARMS.map(x=>`<button class="aro" type="button" data-c="${x.id}" ${full?"disabled":""}><svg viewBox="0 0 44 44">${charmIcon(x.id, hex(x.color))}</svg>${x.nombre}<small>${money(x.precio)} c/u</small></button>`).join("")
@@ -571,38 +599,47 @@ function render(){
 }
 
 let waURL = "";
-function pricing(){
-  const n = keys().length;
-  const lines = [];
-  let tot = 0;
-  if(n){ const l = n*PRECIO_LETRA;
-    lines.push([`${n} ${n===1?"letra":"letras"} × ${money(PRECIO_LETRA)} (base y cadena incluidas)`, l]); tot += l; }
-  const ar = aroSel(); if(ar){ lines.push([`${ar.tipo.nombre} (${ar.nombre.toLowerCase()})`, ar.tipo.precio]); tot+=ar.tipo.precio; }
+const EMO = {"Rojo":"🔴","Naranja":"🟠","Amarillo":"🟡","Marrón":"🟤","Verde":"🟢","Azul":"🔵","Morado metalizado":"🟣"};
+const colTxt = n => EMO[n] ? `${EMO[n]} *${n.toLowerCase()}*` : `*${n.toLowerCase()}*`;
+function designCalc(){   // usa el diseño cargado en st
+  const n = keys().length, ks = keys(), lines = []; let tot = 0;
+  if(n){ const l = n*PRECIO_LETRA; lines.push([`${n} ${n===1?"letra":"letras"} × ${money(PRECIO_LETRA)} (base y cadena incluidas)`, l]); tot += l; }
+  aroList().forEach(ar=>{ lines.push([`${ar.tipo.nombre} (${ar.nombre.toLowerCase()})`, ar.tipo.precio]); tot+=ar.tipo.precio; });
   st.charms.forEach(ch=>{ const x = charmInfo(ch.t); lines.push([`Charm ${x.nombre.toLowerCase()} (${ch.c.toLowerCase()})`, x.precio]); tot+=x.precio; });
   st.objs.forEach((o,i)=>{ const x = objInfo(o.t), p = objPrice(i); lines.push([`Clicker de objeto: ${x.nombre.toLowerCase()}${o.v?` (${objVarName(o).toLowerCase()})`:''}${!n&&i===0?' (con cadena)':''}`, p]); tot+=p; });
   const otro = st.otro!==null ? (st.otro.trim() || "(te cuento cuál)") : null;
-  $("breakdown").innerHTML = lines.map(([a,b])=>`<dt>${a}</dt><dd>${money(b)}</dd>`).join("") + (otro!==null ? `<dt>Charm personalizado: ${otro.replace(/[<&>]/g,"")}</dt><dd>a confirmar</dd>` : "") + `<dt class="tot">Total</dt><dd class="tot">${money(tot)}</dd>`;
-  $("total").textContent = money(tot);
-  const ks = keys();
-  const EMO = {"Rojo":"🔴","Naranja":"🟠","Amarillo":"🟡","Marrón":"🟤","Verde":"🟢","Azul":"🔵","Morado metalizado":"🟣"};
-  const col = n => EMO[n] ? `${EMO[n]} *${n.toLowerCase()}*` : `*${n.toLowerCase()}*`;
   const charmEmo = {carita:"😊", flor:"🌼"};
-  const teclas = ks.map((ch,i)=>`${i+1}. *${SYMS[ch]?SYMS[ch]:ch}* → tecla ${col(st.tiles[i])} · letra ${col(st.legs[i])}`).join("\n");
-  let txt;
+  let body = "";
   if(ks.length){
-    txt = `✨ ¡Hola Crea3d! Quiero este clicker ✨\n\n`
-    + `🔤 Palabra: *${ks.map(c=>SYMS[c]?`[${SYMS[c]}]`:c).join("")}*\n`
-    + `🧱 Base: ${col(st.base)} · ${st.style}\n`
-    + `✍️ Tipografía: ${FONTS[st.font][2]}\n\n`
-    + `⌨️ Teclas:\n${teclas}`;
-  } else txt = `✨ ¡Hola Crea3d! Quiero este clicker de objeto ✨`;
+    const teclas = ks.map((ch,i)=>`${i+1}. *${SYMS[ch]?SYMS[ch]:ch}* → tecla ${colTxt(st.tiles[i])} · letra ${colTxt(st.legs[i])}`).join("\n");
+    body = `🔤 Palabra: *${ks.map(c=>SYMS[c]?`[${SYMS[c]}]`:c).join("")}*\n🧱 Base: ${colTxt(st.base)} · ${st.style}\n✍️ Tipografía: ${FONTS[st.font][2]}\n\n⌨️ Teclas:\n${teclas}`;
+  }
   const extras = [];
-  if(ar) extras.push(`*${ar.tipo.nombre}* color *${ar.nombre.toLowerCase()}* — ${money(ar.tipo.precio)}`);
-  st.charms.forEach(ch=>{ const x = charmInfo(ch.t); extras.push(`${charmEmo[ch.t] ? charmEmo[ch.t]+" " : ""}Charm ${x.nombre.toLowerCase()} ${col(ch.c)} — ${money(x.precio)}`); });
+  aroList().forEach(ar=>extras.push(`*${ar.tipo.nombre}* color *${ar.nombre.toLowerCase()}* — ${money(ar.tipo.precio)}`));
+  st.charms.forEach(ch=>{ const x = charmInfo(ch.t); extras.push(`${charmEmo[ch.t] ? charmEmo[ch.t]+" " : ""}Charm ${x.nombre.toLowerCase()} ${colTxt(ch.c)} — ${money(x.precio)}`); });
   st.objs.forEach((o,i)=>{ const x = objInfo(o.t); extras.push(`${x.emo} Clicker *${x.nombre.toLowerCase()}*${o.v?` *${objVarName(o).toLowerCase()}*`:""}${!ks.length&&i===0?" (con cadena)":""} — ${money(objPrice(i))}`); });
   if(otro!==null) extras.push(`Charm personalizado: ${otro} (precio a confirmar)`);
-  if(extras.length) txt += ks.length ? `\n\nExtras:\n${extras.join("\n")}` : `\n\n${extras.join("\n")}`;
-  txt += `\n\n💰 *Total: ${money(tot)}*${otro!==null?" + charm personalizado":""} (tasa BCV)\n\n📸 A continuación te envío la foto de mi diseño 💚`;
+  if(extras.length) body += (body ? `\n\nExtras:\n` : "") + extras.join("\n");
+  return {lines, tot, otro, body, word: ks.length};
+}
+function pricing(){
+  const cur = designCalc();
+  const items = st.cart.filter(hasContent).map(d=>withDesign(d, designCalc));
+  const all = hasContent(snap()) ? items.concat([cur]) : items;
+  const tot = all.reduce((a,c)=>a+c.tot,0), anyOtro = all.some(c=>c.otro!==null);
+  $("breakdown").innerHTML = cur.lines.map(([a,b])=>`<dt>${a}</dt><dd>${money(b)}</dd>`).join("") + (cur.otro!==null ? `<dt>Charm personalizado: ${cur.otro.replace(/[<&>]/g,"")}</dt><dd>a confirmar</dd>` : "")
+    + (items.length ? `<dt>Clickers anteriores (${items.length})</dt><dd>${money(items.reduce((a,c)=>a+c.tot,0))}</dd>` : "")
+    + `<dt class="tot">Total${all.length>1?` (${all.length} clickers)`:""}</dt><dd class="tot">${money(tot)}</dd>`;
+  $("total").textContent = money(tot);
+  let txt;
+  if(all.length<=1){
+    const c = all[0] || cur;
+    txt = (c.word ? `✨ ¡Hola Crea3d! Quiero este clicker ✨` : `✨ ¡Hola Crea3d! Quiero este clicker de objeto ✨`) + (c.body ? `\n\n${c.body}` : "")
+      + `\n\n💰 *Total: ${money(tot)}*${anyOtro?" + charm personalizado":""} (tasa BCV)\n\n📸 A continuación te envío la foto de mi diseño 💚`;
+  } else {
+    txt = `✨ ¡Hola Crea3d! Quiero estos ${all.length} clickers ✨` + all.map((c,i)=>`\n\n*━━━ Clicker ${i+1} ━━━*\n${c.body}\nSubtotal: ${money(c.tot)}`).join("")
+      + `\n\n💰 *Total: ${money(tot)}*${anyOtro?" + charm personalizado":""} (tasa BCV)\n\n📸 A continuación te envío la foto de mis diseños 💚`;
+  }
   $("summary").textContent = txt;
   waURL = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(txt)}`;
   const ok = canOrder();
@@ -660,7 +697,7 @@ function randomize(){
   } while(sig===lastRand && tries<8);
   lastRand = sig; st.mixTiles=null; st.mixLegs=null;
   // aro y charms: solo cambia el color, no lo que la persona escogió
-  const a = AROS.find(x=>x.id===st.aro.t); if(a) st.aro.c = pick(a.colores)[0];
+  st.aros.forEach(x=>{ const a = AROS.find(y=>y.id===x.t); if(a) x.c = pick(a.colores)[0]; });
   const CH = ["Amarillo","Celeste","Fucsia","Verde claro","Morado metalizado","Blanco","Naranja","Rojo","Azul"];
   st.charms.forEach(c=>{ c.c = pick(CH.filter(x=>!st.tiles.includes(x)).concat(CH).slice(0,CH.length)); });
   render();
@@ -686,6 +723,12 @@ $("mode-mix").onclick=()=>{
     st.tiles = Array.from({length:n},(_,i)=> st.mixTiles[i] || MIX[i%MIX.length]);
     st.legs  = Array.from({length:n},(_,i)=> st.mixLegs[i]  || LEGMIX[i%LEGMIX.length]); }
   render();
+};
+$("addclk").onclick = ()=>{
+  if(!hasContent(snap())){ $("word").focus(); return; }
+  st.cart.push(snap());
+  loadDesign({word:"", base:st.base, style:"lisa", mode:"mix", font:st.font, tiles:[], legs:[], charms:[], objs:[], otro:null, aros:[]});
+  render(); window.scrollTo({top:0, behavior:"smooth"}); setTimeout(()=>$("word").focus(), 400);
 };
 $("wa").addEventListener("click", e=>{
   e.preventDefault();
@@ -714,7 +757,25 @@ async function openOrder(){
   $("ord-wa").href = waURL; $("ord-step2").hidden = true; $("ord-skip").hidden = true;
   $("ord-copy").hidden = false; $("ord-copy").disabled = true; $("ord-tip").hidden = false; $("ord-photo").hidden = false;
   $("ord-img").removeAttribute("src"); setStatus("Preparando la foto…");
-  const url = window.__3d && window.__3d.photo ? await window.__3d.photo() : null;
+  let url = null;
+  if(window.__3d && window.__3d.photo){
+    const saved = st.cart.filter(hasContent);
+    if(!saved.length) url = await window.__3d.photo();
+    else {
+      // varios clickers: una foto de cada uno, juntas en una sola imagen
+      const cur = snap(), list = hasContent(cur) ? saved.concat([cur]) : saved, imgs = [];
+      for(const d of list){ loadDesign(d); const tot = money(designCalc().tot); const u = await window.__3d.photo({total: tot});
+        const im = new Image(); await new Promise(r=>{ im.onload = r; im.src = u.png; }); imgs.push(im); }
+      loadDesign(cur); render();
+      const cols = imgs.length>1 ? 2 : 1, cell = 1080/cols, rows = Math.ceil(imgs.length/cols);
+      const c = document.createElement("canvas"); c.width = 1080; c.height = cell*rows; const x = c.getContext("2d");
+      x.fillStyle = "#F2F4EE"; x.fillRect(0,0,c.width,c.height);
+      imgs.forEach((im,i)=>{ const cx = (i%cols)*cell, cy = Math.floor(i/cols)*cell; x.drawImage(im, cx, cy, cell, cell);
+        x.fillStyle = "rgba(20,23,18,.85)"; x.beginPath(); x.roundRect ? x.roundRect(cx+14, cy+cell*0.13, 150, 44, 22) : x.rect(cx+14, cy+cell*0.13, 150, 44); x.fill();
+        x.fillStyle = "#fff"; x.font = "800 24px Figtree, system-ui, sans-serif"; x.textAlign = "left"; x.fillText(`Clicker ${i+1}`, cx+32, cy+cell*0.13+30); });
+      url = {png: c.toDataURL("image/png")};
+    }
+  }
   if(!url){ $("ord-photo").hidden = true; $("ord-step2").hidden = false; return; }
   $("ord-img").src = url.png; photoPng = dataURLtoBlob(url.png); photoBlob = photoPng;
   setStatus("Paso 1: copia la foto de tu clicker"); $("ord-copy").disabled = false;
@@ -733,7 +794,7 @@ const CN = COLORES.map(c=>c[0]), CN2 = CN;
 function encodeDesign(){
   const o = {v:2, w:st.word, b:CN.indexOf(st.base), s:st.style==="acanalada"?1:0, f:st.font,
     t:st.tiles.map(c=>CN.indexOf(c)), l:st.legs.map(c=>CN.indexOf(c)),
-    c:st.charms.map(x=>[x.t, CN.indexOf(x.c)]), j:st.objs.map(o=>o.v?[o.t,o.v]:o.t), o:st.otro, a:[st.aro.t, st.aro.c]};
+    c:st.charms.map(x=>[x.t, CN.indexOf(x.c)]), j:st.objs.map(o=>o.v?[o.t,o.v]:o.t), o:st.otro, a:st.aros.map(x=>[x.t, x.c])};
   const bytes = new TextEncoder().encode(JSON.stringify(o)); let bin = ""; bytes.forEach(b=>bin+=String.fromCharCode(b));
   return "c_" + btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 }
@@ -745,7 +806,7 @@ function decodeDesign(h){
     const CN = o.v===2 ? CN2 : COLORES_V1.map(ren); if(o.v!==2) o.f = o.f===1 ? 1 : 0;
     st.word = clean(o.w||"").out; st.base = CN[o.b]||st.base; st.style = o.s?"acanalada":"lisa"; st.font = o.f||0; st.mode = "mix";
     st.tiles = (o.t||[]).map(k=>CN[k]||"Morado metalizado"); st.legs = (o.l||[]).map(k=>CN[k]||"Blanco");
-    if(o.a) st.aro = {t:o.a[0], c:o.a[1]};
+    if(o.a) st.aros = Array.isArray(o.a[0]) ? o.a.map(x=>({t:x[0], c:x[1]})) : (o.a[0] ? [{t:o.a[0], c:o.a[1]}] : []);
     if(Array.isArray(o.c)) st.charms = o.c.filter(x=>charmInfo(x[0])).map(x=>({t:x[0], c:CN[x[1]]||"Blanco"}));
     else if(o.e){ const oe = o.e.length===3 ? o.e.slice(1) : o.e; st.charms = [];
       ["carita","flor"].forEach((t,i)=>{ const e = oe[i]; if(e) for(let k=0;k<Math.min(e[0],3);k++) st.charms.push({t, c:CN[e[1]]||"Blanco"}); }); }
@@ -770,6 +831,7 @@ function openSheet(i){
   if(window.innerWidth < 880 && sb){ const top = sb.getBoundingClientRect().top + window.scrollY - 8; window.scrollTo({top, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"}); }
 }
 function closeSheet(){ sheetOpen = false; window.__sheetOpen = false; $("sheet").hidden = true; document.body.classList.remove("sheet-open"); render(); }
+window.closeSheetIfOpen = ()=>{ if(sheetOpen){ sheetOpen = false; window.__sheetOpen = false; $("sheet").hidden = true; document.body.classList.remove("sheet-open"); } };
 function renderSheet(){
   if(!sheetOpen) return;
   const ks = keys(), n = ks.length; if(!n){ closeSheet(); return; }
@@ -1050,8 +1112,7 @@ window.__render = render;
     threadSide(S1a, S1b, side1, 1, [S1a, S1a.clone().lerp(S1b,.5)]);
     // 3) la punta: pasa por el mosquetón
     add(far+10, Y, 12); add(far+3, Y, 7);
-    const ar = window.aroSel ? window.aroSel() : null;
-    if(ar){
+    function makeAro(ar){
       // aro de resorte acostado sobre la mesa; la cadena pasa por dentro de su borde derecho
       const id = ar.tipo.id, TR = id==="gra" ? 2.1 : id==="peq" ? 1.6 : 1.75;
       const paint = new THREE.MeshStandardMaterial({color:toLin(ar.color), roughness: id==="gra" ? .62 : .2, metalness: id==="gra" ? .1 : .3});
@@ -1084,11 +1145,26 @@ window.__render = render;
       // giratorio de la flor
       if(id==="flor"){ const sw = new THREE.Mesh(new THREE.TorusGeometry(3.4, 1.15, 12, 28), paint); sw.position.set(-17.5, 0, 0); cb.add(sw);
         const neck = new THREE.Mesh(new THREE.CylinderGeometry(1.6,1.6,4.5,16), paint); neck.rotation.z = Math.PI/2; neck.position.set(-13.3,0,0); cb.add(neck); }
-      let rx = -1e9; path.forEach(q=>{ if(q.x>rx) rx=q.x; });
+      cb.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
+      return {cb, path, TR};
+    }
+    const arL = window.aroList ? window.aroList() : (window.aroSel && window.aroSel() ? [window.aroSel()] : []);
+    const ar = arL[0] || null;
+    if(ar){
+      const {cb, path, TR} = makeAro(ar);
+      let rx = -1e9, lx = 1e9; path.forEach(q=>{ if(q.x>rx) rx=q.x; if(q.x<lx) lx=q.x; });
       const cx = far + TR + 3.5 - rx;
       add(far+6, TR*2+1.2, 3.6); add(far+1.2, Y+.15, 2.2); add(far+1.2, Y+.15, -2.2); add(far+6, TR*2+1.2, -3.6);
-      cb.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
       cb.rotation.x = -Math.PI/2; cb.position.set(cx, TR, 0); group.add(cb);
+      // aros adicionales enganchados uno del otro
+      let prevLeft = cx + lx, k = 0;
+      arL.slice(1).forEach(a2=>{ k++;
+        const r = makeAro(a2); let rx2 = -1e9, lx2 = 1e9; r.path.forEach(q=>{ if(q.x>rx2) rx2=q.x; if(q.x<lx2) lx2=q.x; });
+        const cx2 = prevLeft + 5 - rx2;
+        r.cb.rotation.x = -Math.PI/2; r.cb.rotation.z = (k%2 ? .35 : -.3);
+        r.cb.position.set(cx2, r.TR + (k%2 ? 2*TR : 0), (k%2 ? 3 : -3)); group.add(r.cb);
+        prevLeft = cx2 + lx2;
+      });
     } else { add(far, Y, 0); }
     add(far+3, Y, -7); add(far+10, Y, -12);
     // 4) segundo lado con la flor
@@ -1175,7 +1251,7 @@ window.__render = render;
   })(0);
 
   /* foto del diseño completo para enviar por WhatsApp */
-  async function photo(){
+  async function photo(opts){
     if(document.fonts) await document.fonts.ready;
     const keepPos = camera.position.clone(), keepT = controls.target.clone(), keepAR = controls.autoRotate;
     controls.autoRotate = false;
@@ -1202,7 +1278,7 @@ window.__render = render;
     const word = [...st.word].map(ch=>({"♥":"♥","★":"★","✿":"✿","☺":"☺"})[ch]||ch).join("");
     x.fillText(word, 40, S-80);
     x.fillStyle = "#5E6659"; x.font = "600 28px Figtree, system-ui, sans-serif";
-    x.fillText(`Base ${st.base.toLowerCase()} ${st.style} · ${document.getElementById("total").textContent}`, 40, S-36);
+    x.fillText(`Base ${st.base.toLowerCase()} ${st.style} · ${(opts&&opts.total)||document.getElementById("total").textContent}`, 40, S-36);
     const url = {jpg: c.toDataURL("image/jpeg", .93), png: c.toDataURL("image/png")};
     renderer.setPixelRatio(keepPR); resize(); camera.position.copy(keepPos); controls.target.copy(keepT); controls.autoRotate = keepAR; window.__sheetOpen = sel; window.__photo = false; build();
     return url;
