@@ -1053,6 +1053,7 @@ window.__render = render;
     // cadena de bolitas plateada (incluida): pasa por el aro del clicker y por el huequito de cada charm
     const ex = st.extras, metal = new THREE.MeshStandardMaterial({color:toLin("#E4E6E1"), roughness:.3, metalness:.55});
     const charms = (window.charmList ? window.charmList() : []).filter(c=>c.t!=="otro");
+    (window.aroList ? window.aroList().slice(1) : []).forEach(a=>charms.push({t:"aro", aro:a}));
     const side1 = charms.filter((_,i)=>i%2===0), side2 = charms.filter((_,i)=>i%2===1), maxK = Math.max(1, side1.length, side2.length);
     const tabBot = H-5, tabTop = H-1, far = holeX - 44 - 24*(maxK-1), Y = .9, CH = 1.85;   // CH: altura a la que descansan los charms
     const pts = [], V = (x,y,z)=>new THREE.Vector3(x,y,z), add = (x,y,z)=>pts.push(V(x,y,z));
@@ -1072,6 +1073,11 @@ window.__render = render;
     // 2) primer lado con la carita
     const S1a = V(holeX-11, Y, 10), S1b = V(far+10, Y, 12);
     function makerFor(t, c, ch){
+      if(t==="aro"){   // aros extra: ensartados en la cadena como un charm
+        const r = makeAro(ch.aro); let R = 0; r.path.forEach(q=>{ R = Math.max(R, Math.hypot(q.x, q.y)); });
+        const mk = (side)=>{ const outer = new THREE.Group(); r.cb.rotation.x = -Math.PI/2; r.cb.rotation.z = side<0 ? Math.PI : 0; r.cb.position.y = r.TR - CH; outer.add(r.cb); return outer; };
+        mk.mat = mat("#D9D6CE"); return {mk, offset: Math.max(4, R - r.TR - 2.2), tab:false, top:1.2};
+      }
       if(t==="obj"){
         const g = objGeom(ch.img), m = new THREE.MeshStandardMaterial({vertexColors:true, roughness:.62, metalness:0, side:THREE.DoubleSide});
         let rad = 12;
@@ -1156,15 +1162,6 @@ window.__render = render;
       const cx = far + TR + 3.5 - rx;
       add(far+6, TR*2+1.2, 3.6); add(far+1.2, Y+.15, 2.2); add(far+1.2, Y+.15, -2.2); add(far+6, TR*2+1.2, -3.6);
       cb.rotation.x = -Math.PI/2; cb.position.set(cx, TR, 0); group.add(cb);
-      // aros adicionales enganchados uno del otro
-      let prevLeft = cx + lx, k = 0;
-      arL.slice(1).forEach(a2=>{ k++;
-        const r = makeAro(a2); let rx2 = -1e9, lx2 = 1e9; r.path.forEach(q=>{ if(q.x>rx2) rx2=q.x; if(q.x<lx2) lx2=q.x; });
-        const cx2 = prevLeft + 5 - rx2;
-        r.cb.rotation.x = -Math.PI/2; r.cb.rotation.z = (k%2 ? .35 : -.3);
-        r.cb.position.set(cx2, r.TR + (k%2 ? 2*TR : 0), (k%2 ? 3 : -3)); group.add(r.cb);
-        prevLeft = cx2 + lx2;
-      });
     } else { add(far, Y, 0); }
     add(far+3, Y, -7); add(far+10, Y, -12);
     // 4) segundo lado con la flor
