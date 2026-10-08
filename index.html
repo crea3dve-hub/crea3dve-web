@@ -341,8 +341,8 @@ const OBJETOS = [   // "img" = archivo en /obj (foto 3D real); "var" = versiones
      var:[["carita","Con carita"],["clasica","Clásica"]]},
   {id:"queso",    nombre:"Queso",                   emo:"🧀", solo:4.00, extra:3.00, img:"queso"},
   {id:"libros",   nombre:"Mini libros",             emo:"📚", solo:4.00, extra:3.00, img:"libros"},
-  {id:"mascota",  nombre:"Mascota virtual",         emo:"👾", solo:4.00, extra:3.00, img:"mascota-gato",
-     var:[["gato","Gato"],["caragato","Cara de gato"],["perro1","Perro 1"],["perro2","Perro 2"],["perro3","Perro 3"],["corazon","Corazón"],["huevo","Huevo"],["popo","Popó"]]},
+  {id:"mascota",  nombre:"Mascota virtual", emo:"👾", solo:4.00, extra:3.00, img:"mascota-caragato",
+     var:[["caragato","Cara de gato"],["perro3","Perro"],["corazon","Corazón"]]},
 ];
 const objImg = o => { const x = OBJETOS.find(y=>y.id===o.t); return x.var ? `${x.id}-${o.v||x.var[0][0]}` : x.img; };
 const objVarName = o => { const x = OBJETOS.find(y=>y.id===o.t); if(!x.var) return ""; const v = x.var.find(k=>k[0]===o.v)||x.var[0]; return v[1]; };
