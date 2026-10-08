@@ -335,10 +335,10 @@ const COLORES = [   // filamentos disponibles en el taller  [nombre, color, (fon
   ["Rojo","#D52A2F"],["Fucsia","#E0457F"],["Naranja","#F27B30"],["Amarillo","#F8D62A"],
   ["Marrón","#7B4A2D"],["Verde claro","#A3E3A0"],["Verde","#3DA857"],
   ["Celeste","#8FCBF0"],["Azul","#2A5BC9"],["Morado metalizado","#7E4FC0","linear-gradient(135deg, #C7A6F2 0%, #7E4FC0 38%, #4B2A80 62%, #C7A6F2 100%)"],
-  ["Dorado","#D4AF37","linear-gradient(135deg, #FFF0A8 0%, #D4AF37 38%, #8F6E14 62%, #FFF0A8 100%)"],
+  ["Dorado","#E2C233","linear-gradient(135deg, #FFF6A6 0%, #E2C233 38%, #9E8212 62%, #FFF6A6 100%)"],
   ["Mármol","#E7E6E2","radial-gradient(circle at 30% 35%, #9a9a9a 0 1.5px, transparent 2px), radial-gradient(circle at 65% 60%, #8c8c8c 0 1.5px, transparent 2px), radial-gradient(circle at 45% 75%, #a5a5a5 0 1px, transparent 1.5px), #E7E6E2"]
 ];
-window.METAL = {"#C9CCD1":1, "#7E4FC0":1, "#D4AF37":1};   // se ven metalizados en el 3D
+window.METAL = {"#C9CCD1":1, "#7E4FC0":1, "#E2C233":1};   // se ven metalizados en el 3D
 // nombres viejos → nuevos (diseños guardados o links de antes)
 const RENOMBRE = {"Plata":"Plateado","Cobre":"Marrón","Menta":"Verde claro","Aqua":"Celeste","Lila":"Morado metalizado"};
 const COLORES_V1 = ["Blanco","Negro","Beige","Plata","Rojo","Fucsia","Naranja","Amarillo","Cobre","Menta","Verde","Celeste","Aqua","Azul","Lila","Dorado","Mármol"];
@@ -543,9 +543,8 @@ function pricing(){
   $("breakdown").innerHTML = lines.map(([a,b])=>`<dt>${a}</dt><dd>${money(b)}</dd>`).join("") + (otro!==null ? `<dt>Charm personalizado: ${otro.replace(/[<&>]/g,"")}</dt><dd>a confirmar</dd>` : "") + `<dt class="tot">Total</dt><dd class="tot">${money(tot)}</dd>`;
   $("total").textContent = money(tot);
   const ks = keys();
-  const EMO = {"Blanco":"⚪","Negro":"⚫","Gris":"🔘","Beige":"🤎","Plateado":"🥈","Rojo":"🔴","Fucsia":"💗","Naranja":"🟠","Amarillo":"🟡",
-    "Marrón":"🟤","Verde claro":"💚","Verde":"🟢","Celeste":"💧","Azul":"🔵","Morado metalizado":"🟣","Dorado":"🥇","Mármol":"🤍"};
-  const col = n => `${EMO[n]||"🎨"} ${n.toLowerCase()}`;
+  const EMO = {"Blanco":"⚪","Negro":"⚫","Rojo":"🔴","Naranja":"🟠","Amarillo":"🟡","Marrón":"🟤","Verde":"🟢","Azul":"🔵","Morado metalizado":"🟣"};
+  const col = n => EMO[n] ? `${EMO[n]} ${n.toLowerCase()}` : n.toLowerCase();
   const charmEmo = {carita:"😊", flor:"🌼"};
   const teclas = ks.map((ch,i)=>`${i+1}. *${SYMS[ch]?SYMS[ch]:ch}* → tecla ${col(st.tiles[i])} · letra ${col(st.legs[i])}`).join("\n");
   let txt = `✨ ¡Hola Crea3d! Quiero este clicker ✨\n\n`
@@ -557,7 +556,7 @@ function pricing(){
   if(ar) extras.push(`🔗 ${ar.tipo.nombre} (${ar.nombre.toLowerCase()}) — ${money(ar.tipo.precio)}`);
   st.charms.forEach(ch=>{ const x = charmInfo(ch.t); extras.push(`${charmEmo[ch.t]||"🎀"} Charm ${x.nombre.toLowerCase()} ${col(ch.c)} — ${money(x.precio)}`); });
   if(otro!==null) extras.push(`🎀 Charm personalizado: ${otro} (precio a confirmar)`);
-  if(extras.length) txt += `\n\n🎀 Extras:\n${extras.join("\n")}`;
+  if(extras.length) txt += `\n\nExtras:\n${extras.join("\n")}`;
   txt += `\n\n💰 *Total: ${money(tot)}*${otro!==null?" + charm personalizado":""} (tasa BCV)\n\n📸 A continuación te envío la foto de mi diseño 💚`;
   $("summary").textContent = txt;
   waURL = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(txt)}`;
