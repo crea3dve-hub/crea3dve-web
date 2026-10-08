@@ -554,7 +554,7 @@ function pricing(){
     + `⌨️ Teclas:\n${teclas}`;
   const extras = [];
   if(ar) extras.push(`*${ar.tipo.nombre}* color *${ar.nombre.toLowerCase()}* — ${money(ar.tipo.precio)}`);
-  st.charms.forEach(ch=>{ const x = charmInfo(ch.t); extras.push(`Charm ${x.nombre.toLowerCase()} ${col(ch.c)} — ${money(x.precio)}`); });
+  st.charms.forEach(ch=>{ const x = charmInfo(ch.t); extras.push(`${charmEmo[ch.t] ? charmEmo[ch.t]+" " : ""}Charm ${x.nombre.toLowerCase()} ${col(ch.c)} — ${money(x.precio)}`); });
   if(otro!==null) extras.push(`Charm personalizado: ${otro} (precio a confirmar)`);
   if(extras.length) txt += `\n\nExtras:\n${extras.join("\n")}`;
   txt += `\n\n💰 *Total: ${money(tot)}*${otro!==null?" + charm personalizado":""} (tasa BCV)\n\n📸 A continuación te envío la foto de mi diseño 💚`;
