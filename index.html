@@ -543,7 +543,7 @@ function pricing(){
   $("breakdown").innerHTML = lines.map(([a,b])=>`<dt>${a}</dt><dd>${money(b)}</dd>`).join("") + (otro!==null ? `<dt>Charm personalizado: ${otro.replace(/[<&>]/g,"")}</dt><dd>a confirmar</dd>` : "") + `<dt class="tot">Total</dt><dd class="tot">${money(tot)}</dd>`;
   $("total").textContent = money(tot);
   const ks = keys();
-  const EMO = {"Blanco":"⚪","Negro":"⚫","Rojo":"🔴","Naranja":"🟠","Amarillo":"🟡","Marrón":"🟤","Verde":"🟢","Azul":"🔵","Morado metalizado":"🟣"};
+  const EMO = {"Rojo":"🔴","Naranja":"🟠","Amarillo":"🟡","Marrón":"🟤","Verde":"🟢","Azul":"🔵","Morado metalizado":"🟣"};
   const col = n => EMO[n] ? `${EMO[n]} ${n.toLowerCase()}` : n.toLowerCase();
   const charmEmo = {carita:"😊", flor:"🌼"};
   const teclas = ks.map((ch,i)=>`${i+1}. *${SYMS[ch]?SYMS[ch]:ch}* → tecla ${col(st.tiles[i])} · letra ${col(st.legs[i])}`).join("\n");
