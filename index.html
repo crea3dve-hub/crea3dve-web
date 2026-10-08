@@ -319,8 +319,14 @@ const CHARMS = [   // charms impresos en 3D (cada uno del color que el cliente e
 const MAX_CHARMS = 6;
 // Clickers de objeto (con switch). "solo" = precio si se piden sin clicker de letras (incluye cadena)
 const OBJETOS = [
-  {id:"smore",   nombre:"S'more de chocolate",     solo:4.00, extra:3.00},
-  {id:"tostada", nombre:"Tostada con mantequilla", solo:4.00, extra:3.00},
+  {id:"smore",    nombre:"S'more de chocolate",     emo:"🍫", solo:4.00, extra:3.00},
+  {id:"tostada",  nombre:"Tostada con mantequilla", emo:"🍞", solo:4.00, extra:3.00},
+  {id:"basket",   nombre:"Pelota de básquet",       emo:"🏀", solo:4.00, extra:3.00},
+  {id:"margarita",nombre:"Margarita",               emo:"🌼", solo:4.00, extra:3.00},
+  {id:"sonrisa",  nombre:"Carita sonriente",        emo:"🙂", solo:4.00, extra:3.00},
+  {id:"libros",   nombre:"Mini libros",             emo:"📚", solo:4.00, extra:3.00},
+  {id:"queso",    nombre:"Queso",                   emo:"🧀", solo:4.00, extra:3.00},
+  {id:"mascota",  nombre:"Mascota virtual",         emo:"👾", solo:4.00, extra:3.00},
 ];
 // Aros / mosquetones de resorte disponibles (cambia precios o agrega/quita colores aquí)
 // cada color: [nombre, color, color de los puntitos]
@@ -480,8 +486,17 @@ function charmIcon(t, c){
   return `<circle cx="22" cy="22" r="15" fill="none" stroke="#9AA394" stroke-width="2.5" stroke-dasharray="4 4"/><text x="22" y="22" dy=".36em" text-anchor="middle" font-family="Figtree, sans-serif" font-weight="800" font-size="18" fill="#7A8474">?</text>`;
 }
 function objIcon(t){
-  if(t==="smore") return `<rect x="6" y="29" width="32" height="8" rx="2.5" fill="#C98B4E"/><rect x="9" y="25" width="26" height="5" rx="2" fill="#5A3220"/><rect x="8" y="15" width="28" height="11" rx="5" fill="#F7F2E8" stroke="#E2D8C6"/><rect x="6" y="7" width="32" height="9" rx="2.5" fill="#D39A5C"/><circle cx="14" cy="11.5" r="1.1" fill="#8A5A2E"/><circle cx="22" cy="11.5" r="1.1" fill="#8A5A2E"/><circle cx="30" cy="11.5" r="1.1" fill="#8A5A2E"/>`;
-  return `<path d="M10 37 V20 a7 7 0 0 1 3-13 h18 a7 7 0 0 1 3 13 V37z" fill="#E9B861" stroke="#B9782F" stroke-width="2.2" stroke-linejoin="round"/><path d="M14 33 V21 a4.5 4.5 0 0 1 2-8.5 h12 a4.5 4.5 0 0 1 2 8.5 V33z" fill="#F6D58A"/><rect x="17" y="17" width="10" height="8" rx="1.8" fill="#FBE68F" stroke="#E9C94F" transform="rotate(-8 22 21)"/>`;
+  const I = {
+    smore:`<rect x="6" y="29" width="32" height="8" rx="2.5" fill="#C98B4E"/><rect x="9" y="25" width="26" height="5" rx="2" fill="#5A3220"/><rect x="8" y="15" width="28" height="11" rx="5" fill="#F7F2E8" stroke="#E2D8C6"/><rect x="6" y="7" width="32" height="9" rx="2.5" fill="#D39A5C"/><circle cx="14" cy="11.5" r="1.1" fill="#8A5A2E"/><circle cx="22" cy="11.5" r="1.1" fill="#8A5A2E"/><circle cx="30" cy="11.5" r="1.1" fill="#8A5A2E"/>`,
+    tostada:`<path d="M10 37 V20 a7 7 0 0 1 3-13 h18 a7 7 0 0 1 3 13 V37z" fill="#E9B861" stroke="#B9782F" stroke-width="2.2" stroke-linejoin="round"/><path d="M14 33 V21 a4.5 4.5 0 0 1 2-8.5 h12 a4.5 4.5 0 0 1 2 8.5 V33z" fill="#F6D58A"/><rect x="17" y="17" width="10" height="8" rx="1.8" fill="#FBE68F" stroke="#E9C94F" transform="rotate(-8 22 21)"/>`,
+    basket:`<circle cx="22" cy="22" r="15" fill="#EE7A2A" stroke="#B9531A" stroke-width="1.5"/><path d="M7 22h30M22 7v30M11 11c6 6 6 16 0 22M33 11c-6 6-6 16 0 22" fill="none" stroke="#3A2416" stroke-width="1.8"/>`,
+    margarita:(()=>{ let g=""; for(let k=0;k<10;k++){ const a=k*36; g+=`<ellipse cx="22" cy="10.5" rx="4" ry="8" fill="#FFFFFF" stroke="#DDDDD5" transform="rotate(${a} 22 22)"/>`; } return g+`<circle cx="22" cy="22" r="7" fill="#F7CC2A" stroke="#D9A915"/>`; })(),
+    sonrisa:`<circle cx="22" cy="22" r="15" fill="#F8D62A" stroke="#D9AE12" stroke-width="1.5"/><ellipse cx="16.5" cy="19" rx="2" ry="3.4" fill="#3A2E10"/><ellipse cx="27.5" cy="19" rx="2" ry="3.4" fill="#3A2E10"/><path d="M14 26 Q22 34 30 26" fill="none" stroke="#3A2E10" stroke-width="2.6" stroke-linecap="round"/>`,
+    libros:`<rect x="7" y="27" width="30" height="8" rx="1.5" fill="#E0457F"/><rect x="9" y="29" width="26" height="4" fill="#FFF6EE"/><rect x="9" y="18" width="27" height="8" rx="1.5" fill="#2A5BC9"/><rect x="11" y="20" width="23" height="4" fill="#FFF6EE"/><rect x="8" y="9" width="28" height="8" rx="1.5" fill="#3DA857"/><rect x="10" y="11" width="24" height="4" fill="#FFF6EE"/>`,
+    queso:`<path d="M6 33 L38 33 L38 22 L10 12 Z" fill="#F8CF3A" stroke="#D9A915" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 12 L38 22 L38 18 L14 9 Z" fill="#FBE27A" stroke="#D9A915" stroke-width="1.2" stroke-linejoin="round"/><circle cx="17" cy="26" r="2.6" fill="#D9A915"/><circle cx="28" cy="28" r="1.8" fill="#D9A915"/><circle cx="31" cy="25" r="1.4" fill="#D9A915"/>`,
+    mascota:`<rect x="9" y="5" width="26" height="34" rx="10" fill="#F59AB8" stroke="#D8708F" stroke-width="1.5"/><rect x="13" y="11" width="18" height="14" rx="2.5" fill="#BFE6B5" stroke="#7FB073"/><rect x="18" y="15" width="3" height="3" fill="#3B5B34"/><rect x="23" y="15" width="3" height="3" fill="#3B5B34"/><rect x="19" y="20" width="6" height="2" fill="#3B5B34"/><circle cx="15.5" cy="31" r="2.4" fill="#FFFFFF"/><circle cx="22" cy="32.5" r="2.4" fill="#FFFFFF"/><circle cx="28.5" cy="31" r="2.4" fill="#FFFFFF"/>`
+  };
+  return I[t]||"";
 }
 function swatches(el, current, onPick){
   el.innerHTML = COLORES.map(([n,h,css])=>`<button class="sw" style="background:${css||h}" title="${n}" aria-label="${n}" aria-pressed="${n===current}" data-n="${n}"></button>`).join("");
@@ -581,7 +596,7 @@ function pricing(){
   const extras = [];
   if(ar) extras.push(`*${ar.tipo.nombre}* color *${ar.nombre.toLowerCase()}* — ${money(ar.tipo.precio)}`);
   st.charms.forEach(ch=>{ const x = charmInfo(ch.t); extras.push(`${charmEmo[ch.t] ? charmEmo[ch.t]+" " : ""}Charm ${x.nombre.toLowerCase()} ${col(ch.c)} — ${money(x.precio)}`); });
-  st.objs.forEach((o,i)=>{ const x = objInfo(o.t); extras.push(`${o.t==="smore"?"🍫":"🍞"} Clicker *${x.nombre.toLowerCase()}*${!ks.length&&i===0?" (con cadena)":""} — ${money(objPrice(i))}`); });
+  st.objs.forEach((o,i)=>{ const x = objInfo(o.t); extras.push(`${x.emo} Clicker *${x.nombre.toLowerCase()}*${!ks.length&&i===0?" (con cadena)":""} — ${money(objPrice(i))}`); });
   if(otro!==null) extras.push(`Charm personalizado: ${otro} (precio a confirmar)`);
   if(extras.length) txt += ks.length ? `\n\nExtras:\n${extras.join("\n")}` : `\n\n${extras.join("\n")}`;
   txt += `\n\n💰 *Total: ${money(tot)}*${otro!==null?" + charm personalizado":""} (tasa BCV)\n\n📸 A continuación te envío la foto de mi diseño 💚`;
@@ -935,7 +950,7 @@ window.__render = render;
     // lazo en la punta, para la cadena
     const tab = rr(10, 9, 3.5); const hole = new THREE.Path(); hole.absarc(-1.2, 0, 2.3, 0, Math.PI*2, true); tab.holes.push(hole);
     const tabm = new THREE.Mesh(slab(tab, 3, .5), bm); tabm.position.set(x0 - W/2 - 2.2, H-5, 0); tabm.castShadow = true; group.add(tabm);
-    if(!ks.length && window.__onlyObj) group.children.forEach(o=>o.visible=false);   // solo el clicker de objeto
+    if(!ks.length && window.__onlyObj) group.children.slice().forEach(o=>{ group.remove(o); disposeAll(o); });   // solo el clicker de objeto
     const holeX = x0 - W/2 - 3.4;
     // teclas: switch oscuro + tecla de un color con la letra incrustada
     const ff = FONTS[st.font][1];
@@ -957,7 +972,7 @@ window.__render = render;
     });
     // cadena de bolitas plateada (incluida): pasa por el aro del clicker y por el huequito de cada charm
     const ex = st.extras, metal = new THREE.MeshStandardMaterial({color:toLin("#E4E6E1"), roughness:.3, metalness:.55});
-    const charms = (window.charmList ? window.charmList() : []).filter(c=>c.t==="carita"||c.t==="flor"||c.t==="smore"||c.t==="tostada");
+    const charms = (window.charmList ? window.charmList() : []).filter(c=>c.t!=="otro");
     const side1 = charms.filter((_,i)=>i%2===0), side2 = charms.filter((_,i)=>i%2===1), maxK = Math.max(1, side1.length, side2.length);
     const tabBot = H-5, tabTop = H-1, far = holeX - 44 - 24*(maxK-1), Y = .9, CH = 1.85;   // CH: altura a la que descansan los charms
     const pts = [], V = (x,y,z)=>new THREE.Vector3(x,y,z), add = (x,y,z)=>pts.push(V(x,y,z));
@@ -977,7 +992,7 @@ window.__render = render;
     // 2) primer lado con la carita
     const S1a = V(holeX-11, Y, 10), S1b = V(far+10, Y, 12);
     function makerFor(t, c){
-      if(t==="smore" || t==="tostada"){
+      if(t!=="carita" && t!=="flor"){
         const lay = (shape, y, d, bv, col, rough=.75)=>{ const m = new THREE.Mesh(slab(shape, d, bv), mat(col, rough)); m.position.y = y; m.castShadow = m.receiveShadow = true; return m; };
         const mk = ()=>{ const outer = new THREE.Group(), g = new THREE.Group(); g.position.y = -CH; outer.add(g);
           if(t==="smore"){
@@ -987,7 +1002,7 @@ window.__render = render;
             g.add(lay(rr(22,22,3), 13.4, 3.2, .5, "#D39A5C"));
             const dm = mat("#8A5A2E");
             [[-6,-6],[0,-6],[6,-6],[-6,0],[0,0],[6,0],[-6,6],[0,6],[6,6]].forEach(([x,z])=>{ const d = new THREE.Mesh(new THREE.CylinderGeometry(.55,.55,.4,10), dm); d.position.set(x,17.65,z); g.add(d); });
-          } else {
+          } else if(t==="tostada"){
             const bread = (k)=>{ const s = new THREE.Shape(); s.moveTo(-11*k,-12*k); s.lineTo(11*k,-12*k); s.lineTo(11*k,5*k);
               s.absarc(5.5*k,5*k,5.5*k,0,Math.PI,false); s.absarc(-5.5*k,5*k,5.5*k,0,Math.PI,false); s.lineTo(-11*k,-12*k); return s; };
             g.add(lay(bread(1), 0, 4.4, .8, "#C9853A"));
@@ -995,9 +1010,36 @@ window.__render = render;
             top.add(lay(bread(1), 0, 4.4, .8, "#C9853A"));
             top.add(lay(bread(.82), 5.7, .3, .2, "#F3CF7A", .85));
             const b = lay(rr(8,8,1.6), 6.3, 2.2, .45, "#FBE38A", .35); b.rotation.y = -.35; top.add(b);
+          } else if(t==="basket"){
+            const ball = new THREE.Mesh(new THREE.SphereGeometry(11,40,28), mat("#EE7A2A",.8)); ball.position.y = 11; ball.castShadow = true; g.add(ball);
+            const lm = mat("#2B1B10",.6), seam = (rx,ry,rz,R=11.05)=>{ const tm = new THREE.Mesh(new THREE.TorusGeometry(R,.32,8,80), lm); tm.rotation.set(rx,ry,rz); tm.position.y = 11; g.add(tm); };
+            seam(Math.PI/2,0,0); seam(0,0,0); seam(0,Math.PI/2,0);
+            [-1,1].forEach(sg=>{ const tm = new THREE.Mesh(new THREE.TorusGeometry(7.6,.32,8,60), lm); tm.rotation.y = Math.PI/2; tm.position.set(sg*7.95,11,0); g.add(tm); });
+          } else if(t==="margarita"){
+            const pm = mat("#FFFFFF",.6);
+            for(let i=0;i<12;i++){ const a=i*Math.PI/6, p=new THREE.Mesh(new THREE.SphereGeometry(3.4,18,12), pm); p.scale.set(1.9,.5,.8); p.position.set(Math.cos(a)*7.8,1.7,Math.sin(a)*7.8); p.rotation.y=-a; p.castShadow=true; g.add(p); }
+            const ctr = new THREE.Mesh(new THREE.CylinderGeometry(4.6,4.9,4.2,32), mat("#F7CC2A",.5)); ctr.position.y = 2.1; ctr.castShadow = true; g.add(ctr);
+          } else if(t==="sonrisa"){
+            const dm = mat("#F8D62A",.5), fm = mat("#3A2E10",.5);
+            const disc = new THREE.Mesh(new THREE.CylinderGeometry(12,12,7,48), dm); disc.position.y = 3.5; disc.castShadow = true; g.add(disc);
+            [-4.2,4.2].forEach(x=>{ const e = new THREE.Mesh(new THREE.CylinderGeometry(1.4,1.4,.6,16), fm); e.scale.z = 1.8; e.position.set(x,7.2,-2.6); g.add(e); });
+            const sm = new THREE.Mesh(new THREE.TorusGeometry(5.4,.9,8,40,Math.PI*.8), fm); sm.rotation.set(-Math.PI/2,0,Math.PI*1.1); sm.position.set(0,7.2,.6); g.add(sm);
+          } else if(t==="libros"){
+            [["#E0457F",0,0],["#2A5BC9",5.2,.18],["#3DA857",10.4,-.12]].forEach(([c,y,r])=>{ const bk = new THREE.Group(); bk.position.y = y; bk.rotation.y = r; g.add(bk);
+              bk.add(lay(rr(24,16,1.2), 0, 4.2, .3, c, .6)); const pg = lay(rr(21,13,.6), .9, 2.6, 0, "#FFF6EE", .9); pg.position.x = .9; bk.add(pg); });
+          } else if(t==="queso"){
+            const sh = new THREE.Shape(); sh.moveTo(-12,9); sh.lineTo(12,9); sh.lineTo(12,-3); sh.lineTo(-9,-11); sh.lineTo(-12,9);
+            const hole = (x,y,r)=>{ const p = new THREE.Path(); p.absarc(x,y,r,0,Math.PI*2,true); sh.holes.push(p); };
+            hole(-4,2,2.4); hole(5,4,1.7); hole(7,-1,1.2);
+            g.add(lay(sh, 0, 9, .8, "#F8CF3A", .55));
+          } else if(t==="mascota"){
+            const body = lay(rr(22,30,9), 0, 7, 1.2, "#F59AB8", .5); g.add(body);
+            const scr = lay(rr(14,11,1.5), 8.7, .5, .2, "#BFE6B5", .4); scr.position.z = -3.5; g.add(scr);
+            const px = mat("#3B5B34",.6); [[-2.2,-5.5],[2.2,-5.5],[-1.5,-2.2],[0,-2.2],[1.5,-2.2]].forEach(([x,z])=>{ const q = new THREE.Mesh(new THREE.BoxGeometry(1.3,.4,1.3), px); q.position.set(x,9.6,z); g.add(q); });
+            const bm2 = mat("#FFFFFF",.4); [-5,0,5].forEach((x,i)=>{ const bt = new THREE.Mesh(new THREE.CylinderGeometry(1.7,1.7,1.4,20), bm2); bt.position.set(x,9.1,i===1?8.6:7.2); g.add(bt); });
           }
           return outer; };
-        mk.mat = mat(t==="smore" ? "#C98B4E" : "#C9853A"); return {mk, offset:16, tab:true, top:1.7};
+        mk.mat = mat({smore:"#C98B4E",tostada:"#C9853A",basket:"#EE7A2A",margarita:"#F2F1EC",sonrisa:"#F8D62A",libros:"#E0457F",queso:"#F8CF3A",mascota:"#F59AB8"}[t]||"#F2F1EC"); return {mk, offset:16, tab:true, top:1.7};
       }
       if(t==="carita"){
         const m = mat(c, .55);
