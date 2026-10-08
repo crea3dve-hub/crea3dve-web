@@ -230,6 +230,9 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
           <input type="text" id="otro" maxlength="80" autocomplete="off" placeholder="Ej.: balón de fútbol, una inicial, la silueta de tu mascota…">
           <p class="hint">Te lo diseñamos y te confirmamos el precio por WhatsApp.</p>
         </div>
+        <span class="label" style="margin-top:16px">Clicker de objeto <span class="notice">(también hace clic; toca para agregarlo)</span></span>
+        <div class="aros" id="objcards"></div>
+        <p class="hint">Junto a tu clicker de letras: <b>$3</b> c/u · Solo, con su cadena: <b>$4</b>. ¿Solo quieres el objeto? Deja la palabra vacía.</p>
       </section>
 
       <section class="sec">
@@ -314,6 +317,11 @@ const CHARMS = [   // charms impresos en 3D (cada uno del color que el cliente e
   {id:"flor",   nombre:"Flor",         precio:1.00, color:"Celeste"},
 ];
 const MAX_CHARMS = 6;
+// Clickers de objeto (con switch). "solo" = precio si se piden sin clicker de letras (incluye cadena)
+const OBJETOS = [
+  {id:"smore",   nombre:"S'more de chocolate",     solo:4.00, extra:3.00},
+  {id:"tostada", nombre:"Tostada con mantequilla", solo:4.00, extra:3.00},
+];
 // Aros / mosquetones de resorte disponibles (cambia precios o agrega/quita colores aquí)
 // cada color: [nombre, color, color de los puntitos]
 const AROS = [
@@ -356,7 +364,7 @@ window.SPECIAL = {"#D9342C":"rainbow", "#E7E6E2":"marble"};
 
 const st = {
   word:"LUNA★", base:"Fucsia", style:"lisa", mode:"mix", sel:0, font:0,
-  tiles:[], legs:[], charms:[{t:"carita",c:"Amarillo"}], otro:null, aro:{t:"cor", c:"Fucsia"}
+  tiles:[], legs:[], charms:[{t:"carita",c:"Amarillo"}], objs:[], otro:null, aro:{t:"cor", c:"Fucsia"}
 };
 try{ const s=JSON.parse(localStorage.getItem("clicker-crea3d-v3")||"null"); if(s&&s.word!==undefined){ Object.assign(st,s); } }catch(e){}
 if(!Array.isArray(st.charms)){   // diseños guardados con el formato anterior
@@ -364,13 +372,18 @@ if(!Array.isArray(st.charms)){   // diseños guardados con el formato anterior
   ["carita","flor"].forEach(t=>{ const e = ex[t]; if(e) for(let i=0;i<Math.min(e.q||0,3);i++) st.charms.push({t, c:e.c||"Blanco"}); });
 }
 delete st.extras;
+if(!Array.isArray(st.objs)) st.objs = [];
+st.objs = st.objs.filter(o=>o && OBJETOS.some(x=>x.id===o.t));
 if(!st.fv2){ st.font = st.font===1 ? 1 : 0; st.fv2 = 1; }          // antes: 0 Inter, 1 Comic, 2 Redonda
 st.font = Math.min(Math.max(0, st.font|0), FONTS.length-1);
 st.base = ren(st.base); st.tiles = (st.tiles||[]).map(ren); st.legs = (st.legs||[]).map(ren);
 if(st.mixTiles) st.mixTiles = st.mixTiles.map(ren); if(st.mixLegs) st.mixLegs = st.mixLegs.map(ren);
 st.charms.forEach(c=>{ c.c = ren(c.c); });
 const charmInfo = t => CHARMS.find(x=>x.id===t);
-window.charmList = ()=> st.charms.map(x=>({t:x.t, c:hex(x.c)}));
+window.charmList = ()=> st.charms.map(x=>({t:x.t, c:hex(x.c)})).concat(st.objs.map(o=>({t:o.t, c:null})));
+const objInfo = t => OBJETOS.find(x=>x.id===t);
+const objPrice = i => keys().length ? objInfo(st.objs[i].t).extra : (i===0 ? objInfo(st.objs[i].t).solo : objInfo(st.objs[i].t).extra);
+const canOrder = () => keys().length>0 || st.objs.length>0;
 if(!st.aro) st.aro = {t:"cor", c:"Fucsia"};
 function aroSel(){ const a = AROS.find(x=>x.id===st.aro.t); if(!a) return null;
   const c = a.colores.find(k=>k[0]===st.aro.c) || a.colores[0]; return {tipo:a, nombre:c[0], color:c[1], dot:c[2]||null}; }
@@ -466,6 +479,10 @@ function charmIcon(t, c){
     return g + `<circle cx="22" cy="22" r="5.5" fill="${shade(c,-.35)}"/>`; }
   return `<circle cx="22" cy="22" r="15" fill="none" stroke="#9AA394" stroke-width="2.5" stroke-dasharray="4 4"/><text x="22" y="22" dy=".36em" text-anchor="middle" font-family="Figtree, sans-serif" font-weight="800" font-size="18" fill="#7A8474">?</text>`;
 }
+function objIcon(t){
+  if(t==="smore") return `<rect x="6" y="29" width="32" height="8" rx="2.5" fill="#C98B4E"/><rect x="9" y="25" width="26" height="5" rx="2" fill="#5A3220"/><rect x="8" y="15" width="28" height="11" rx="5" fill="#F7F2E8" stroke="#E2D8C6"/><rect x="6" y="7" width="32" height="9" rx="2.5" fill="#D39A5C"/><circle cx="14" cy="11.5" r="1.1" fill="#8A5A2E"/><circle cx="22" cy="11.5" r="1.1" fill="#8A5A2E"/><circle cx="30" cy="11.5" r="1.1" fill="#8A5A2E"/>`;
+  return `<path d="M10 37 V20 a7 7 0 0 1 3-13 h18 a7 7 0 0 1 3 13 V37z" fill="#E9B861" stroke="#B9782F" stroke-width="2.2" stroke-linejoin="round"/><path d="M14 33 V21 a4.5 4.5 0 0 1 2-8.5 h12 a4.5 4.5 0 0 1 2 8.5 V33z" fill="#F6D58A"/><rect x="17" y="17" width="10" height="8" rx="1.8" fill="#FBE68F" stroke="#E9C94F" transform="rotate(-8 22 21)"/>`;
+}
 function swatches(el, current, onPick){
   el.innerHTML = COLORES.map(([n,h,css])=>`<button class="sw" style="background:${css||h}" title="${n}" aria-label="${n}" aria-pressed="${n===current}" data-n="${n}"></button>`).join("");
   el.querySelectorAll(".sw").forEach(b=>b.onclick=()=>onPick(b.dataset.n));
@@ -525,6 +542,11 @@ function render(){
     + (full ? `<p class="hint">Máximo ${MAX_CHARMS} charms por llavero.</p>` : "");
   $("charmlist").querySelectorAll("[data-ci]").forEach(el=>{ const i = +el.dataset.ci; swatches(el, st.charms[i].c, n=>{ st.charms[i].c = n; render(); }); });
   $("charmlist").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{ st.charms.splice(+b.dataset.del,1); render(); });
+  $("objcards").innerHTML = OBJETOS.map(x=>{ const on = st.objs.some(o=>o.t===x.id);
+    return `<button class="aro" type="button" data-o="${x.id}" aria-pressed="${on}"><svg viewBox="0 0 44 44">${objIcon(x.id)}</svg>${x.nombre}<small>${on?"✓ Agregado":`${money(keys().length?x.extra:x.solo)}`}</small></button>`; }).join("");
+  $("objcards").querySelectorAll(".aro").forEach(b=>b.onclick=()=>{ const t=b.dataset.o, i=st.objs.findIndex(o=>o.t===t);
+    if(i>=0) st.objs.splice(i,1); else st.objs.push({t}); render(); });
+  window.__onlyObj = !keys().length && st.objs.length>0;
   $("otrobox").hidden = st.otro===null;
   if(st.otro!==null && document.activeElement!==$("otro")) $("otro").value = st.otro;
   if(window.__3d) window.__3d.update(); else drawPreview(); pricing(); save(); renderSheet();
@@ -539,6 +561,7 @@ function pricing(){
     lines.push([`${n} ${n===1?"letra":"letras"} × ${money(PRECIO_LETRA)} (base y cadena incluidas)`, l]); tot += l; }
   const ar = aroSel(); if(ar){ lines.push([`${ar.tipo.nombre} (${ar.nombre.toLowerCase()})`, ar.tipo.precio]); tot+=ar.tipo.precio; }
   st.charms.forEach(ch=>{ const x = charmInfo(ch.t); lines.push([`Charm ${x.nombre.toLowerCase()} (${ch.c.toLowerCase()})`, x.precio]); tot+=x.precio; });
+  st.objs.forEach((o,i)=>{ const x = objInfo(o.t), p = objPrice(i); lines.push([`Clicker de objeto: ${x.nombre.toLowerCase()}${!n&&i===0?' (con cadena)':''}`, p]); tot+=p; });
   const otro = st.otro!==null ? (st.otro.trim() || "(te cuento cuál)") : null;
   $("breakdown").innerHTML = lines.map(([a,b])=>`<dt>${a}</dt><dd>${money(b)}</dd>`).join("") + (otro!==null ? `<dt>Charm personalizado: ${otro.replace(/[<&>]/g,"")}</dt><dd>a confirmar</dd>` : "") + `<dt class="tot">Total</dt><dd class="tot">${money(tot)}</dd>`;
   $("total").textContent = money(tot);
@@ -547,20 +570,24 @@ function pricing(){
   const col = n => EMO[n] ? `${EMO[n]} *${n.toLowerCase()}*` : `*${n.toLowerCase()}*`;
   const charmEmo = {carita:"😊", flor:"🌼"};
   const teclas = ks.map((ch,i)=>`${i+1}. *${SYMS[ch]?SYMS[ch]:ch}* → tecla ${col(st.tiles[i])} · letra ${col(st.legs[i])}`).join("\n");
-  let txt = `✨ ¡Hola Crea3d! Quiero este clicker ✨\n\n`
-    + `🔤 Palabra: *${ks.map(c=>SYMS[c]?`[${SYMS[c]}]`:c).join("")||"(sin palabra)"}*\n`
+  let txt;
+  if(ks.length){
+    txt = `✨ ¡Hola Crea3d! Quiero este clicker ✨\n\n`
+    + `🔤 Palabra: *${ks.map(c=>SYMS[c]?`[${SYMS[c]}]`:c).join("")}*\n`
     + `🧱 Base: ${col(st.base)} · ${st.style}\n`
     + `✍️ Tipografía: ${FONTS[st.font][2]}\n\n`
     + `⌨️ Teclas:\n${teclas}`;
+  } else txt = `✨ ¡Hola Crea3d! Quiero este clicker de objeto ✨`;
   const extras = [];
   if(ar) extras.push(`*${ar.tipo.nombre}* color *${ar.nombre.toLowerCase()}* — ${money(ar.tipo.precio)}`);
   st.charms.forEach(ch=>{ const x = charmInfo(ch.t); extras.push(`${charmEmo[ch.t] ? charmEmo[ch.t]+" " : ""}Charm ${x.nombre.toLowerCase()} ${col(ch.c)} — ${money(x.precio)}`); });
+  st.objs.forEach((o,i)=>{ const x = objInfo(o.t); extras.push(`${o.t==="smore"?"🍫":"🍞"} Clicker *${x.nombre.toLowerCase()}*${!ks.length&&i===0?" (con cadena)":""} — ${money(objPrice(i))}`); });
   if(otro!==null) extras.push(`Charm personalizado: ${otro} (precio a confirmar)`);
-  if(extras.length) txt += `\n\nExtras:\n${extras.join("\n")}`;
+  if(extras.length) txt += ks.length ? `\n\nExtras:\n${extras.join("\n")}` : `\n\n${extras.join("\n")}`;
   txt += `\n\n💰 *Total: ${money(tot)}*${otro!==null?" + charm personalizado":""} (tasa BCV)\n\n📸 A continuación te envío la foto de mi diseño 💚`;
   $("summary").textContent = txt;
   waURL = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(txt)}`;
-  const ok = n>0;
+  const ok = canOrder();
   $("wa").style.opacity = ok?1:.5; $("wa").setAttribute("aria-disabled", !ok);
 }
 
@@ -644,7 +671,7 @@ $("mode-mix").onclick=()=>{
 };
 $("wa").addEventListener("click", e=>{
   e.preventDefault();
-  if(!keys().length){ $("word").focus(); return; }
+  if(!canOrder()){ $("word").focus(); return; }
   openOrder();
 });
 let photoBlob = null, photoPng = null;
@@ -688,7 +715,7 @@ const CN = COLORES.map(c=>c[0]), CN2 = CN;
 function encodeDesign(){
   const o = {v:2, w:st.word, b:CN.indexOf(st.base), s:st.style==="acanalada"?1:0, f:st.font,
     t:st.tiles.map(c=>CN.indexOf(c)), l:st.legs.map(c=>CN.indexOf(c)),
-    c:st.charms.map(x=>[x.t, CN.indexOf(x.c)]), o:st.otro, a:[st.aro.t, st.aro.c]};
+    c:st.charms.map(x=>[x.t, CN.indexOf(x.c)]), j:st.objs.map(o=>o.t), o:st.otro, a:[st.aro.t, st.aro.c]};
   const bytes = new TextEncoder().encode(JSON.stringify(o)); let bin = ""; bytes.forEach(b=>bin+=String.fromCharCode(b));
   return "c_" + btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 }
@@ -705,6 +732,7 @@ function decodeDesign(h){
     else if(o.e){ const oe = o.e.length===3 ? o.e.slice(1) : o.e; st.charms = [];
       ["carita","flor"].forEach((t,i)=>{ const e = oe[i]; if(e) for(let k=0;k<Math.min(e[0],3);k++) st.charms.push({t, c:CN[e[1]]||"Blanco"}); }); }
     st.otro = typeof o.o==="string" ? o.o : null;
+    st.objs = Array.isArray(o.j) ? o.j.filter(t=>objInfo(t)).map(t=>({t})) : [];
     return true;
   }catch(err){ return false; }
 }
@@ -907,6 +935,7 @@ window.__render = render;
     // lazo en la punta, para la cadena
     const tab = rr(10, 9, 3.5); const hole = new THREE.Path(); hole.absarc(-1.2, 0, 2.3, 0, Math.PI*2, true); tab.holes.push(hole);
     const tabm = new THREE.Mesh(slab(tab, 3, .5), bm); tabm.position.set(x0 - W/2 - 2.2, H-5, 0); tabm.castShadow = true; group.add(tabm);
+    if(!ks.length && window.__onlyObj) group.children.forEach(o=>o.visible=false);   // solo el clicker de objeto
     const holeX = x0 - W/2 - 3.4;
     // teclas: switch oscuro + tecla de un color con la letra incrustada
     const ff = FONTS[st.font][1];
@@ -928,7 +957,7 @@ window.__render = render;
     });
     // cadena de bolitas plateada (incluida): pasa por el aro del clicker y por el huequito de cada charm
     const ex = st.extras, metal = new THREE.MeshStandardMaterial({color:toLin("#E4E6E1"), roughness:.3, metalness:.55});
-    const charms = (window.charmList ? window.charmList() : []).filter(c=>c.t==="carita"||c.t==="flor");
+    const charms = (window.charmList ? window.charmList() : []).filter(c=>c.t==="carita"||c.t==="flor"||c.t==="smore"||c.t==="tostada");
     const side1 = charms.filter((_,i)=>i%2===0), side2 = charms.filter((_,i)=>i%2===1), maxK = Math.max(1, side1.length, side2.length);
     const tabBot = H-5, tabTop = H-1, far = holeX - 44 - 24*(maxK-1), Y = .9, CH = 1.85;   // CH: altura a la que descansan los charms
     const pts = [], V = (x,y,z)=>new THREE.Vector3(x,y,z), add = (x,y,z)=>pts.push(V(x,y,z));
@@ -948,6 +977,28 @@ window.__render = render;
     // 2) primer lado con la carita
     const S1a = V(holeX-11, Y, 10), S1b = V(far+10, Y, 12);
     function makerFor(t, c){
+      if(t==="smore" || t==="tostada"){
+        const lay = (shape, y, d, bv, col, rough=.75)=>{ const m = new THREE.Mesh(slab(shape, d, bv), mat(col, rough)); m.position.y = y; m.castShadow = m.receiveShadow = true; return m; };
+        const mk = ()=>{ const outer = new THREE.Group(), g = new THREE.Group(); g.position.y = -CH; outer.add(g);
+          if(t==="smore"){
+            g.add(lay(rr(22,22,3), 0, 3.2, .5, "#C98B4E"));
+            g.add(lay(rr(19,19,2.2), 4.2, 1.8, .35, "#5A3220", .45));
+            g.add(lay(rr(17,17,5), 6.3, 4.4, 1.5, "#F4EFE6", .9));
+            g.add(lay(rr(22,22,3), 13.4, 3.2, .5, "#D39A5C"));
+            const dm = mat("#8A5A2E");
+            [[-6,-6],[0,-6],[6,-6],[-6,0],[0,0],[6,0],[-6,6],[0,6],[6,6]].forEach(([x,z])=>{ const d = new THREE.Mesh(new THREE.CylinderGeometry(.55,.55,.4,10), dm); d.position.set(x,17.65,z); g.add(d); });
+          } else {
+            const bread = (k)=>{ const s = new THREE.Shape(); s.moveTo(-11*k,-12*k); s.lineTo(11*k,-12*k); s.lineTo(11*k,5*k);
+              s.absarc(5.5*k,5*k,5.5*k,0,Math.PI,false); s.absarc(-5.5*k,5*k,5.5*k,0,Math.PI,false); s.lineTo(-11*k,-12*k); return s; };
+            g.add(lay(bread(1), 0, 4.4, .8, "#C9853A"));
+            const top = new THREE.Group(); top.rotation.y = .14; top.position.y = 6.2; g.add(top);
+            top.add(lay(bread(1), 0, 4.4, .8, "#C9853A"));
+            top.add(lay(bread(.82), 5.7, .3, .2, "#F3CF7A", .85));
+            const b = lay(rr(8,8,1.6), 6.3, 2.2, .45, "#FBE38A", .35); b.rotation.y = -.35; top.add(b);
+          }
+          return outer; };
+        mk.mat = mat(t==="smore" ? "#C98B4E" : "#C9853A"); return {mk, offset:16, tab:true, top:1.7};
+      }
       if(t==="carita"){
         const m = mat(c, .55);
         const mk = (side)=>{
