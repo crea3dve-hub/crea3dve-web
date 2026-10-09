@@ -278,7 +278,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
 <script>
 (() => {
   // Dirección del puente de Google Apps Script. Si está vacía, la página la pide la primera vez.
-  const API_FIJA = '';
+  const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
