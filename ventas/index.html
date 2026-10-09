@@ -146,8 +146,8 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
   <!-- VENDER -->
   <section id="tab-vender" data-tab>
     <div class="segmento" role="group" aria-label="Tipo de venta">
-      <button id="modoBazar" aria-pressed="true">Cobro ya (bazar)</button>
-      <button id="modoPedido" aria-pressed="false">Pedido / encargo</button>
+      <button id="modoBazar" aria-pressed="true">Venta</button>
+      <button id="modoPedido" aria-pressed="false">Encargo</button>
     </div>
     <h3>Toca para agregar</h3>
     <div class="grid-prod" id="gridProductos"></div>
@@ -411,7 +411,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     $('#vEstado').value = m === 'bazar' ? 'Pagado' : 'Pedido';
     $('#vMetodo').value = m === 'bazar' ? 'Pago móvil' : '';
     $('#clienteOpcional').textContent = m === 'bazar' ? '(opcional)' : '';
-    $('#btnGuardarVenta').textContent = m === 'bazar' ? 'Cobrar y guardar' : 'Guardar pedido';
+    $('#btnGuardarVenta').textContent = m === 'bazar' ? 'Guardar venta' : 'Guardar encargo';
   }
   $('#modoBazar').addEventListener('click', () => ponerModo('bazar'));
   $('#modoPedido').addEventListener('click', () => ponerModo('pedido'));
