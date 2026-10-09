@@ -332,6 +332,7 @@ const PRECIO_OTRO = 1.00;   // charm personalizado ("Otro charm"), precio fijo
 const CHARMS = [   // charms impresos en 3D (cada uno del color que el cliente escoja)
   {id:"carita", nombre:"Carita feliz", precio:0.50, color:"Amarillo"},
   {id:"flor",   nombre:"Flor",         precio:1.00, color:"Celeste"},
+  {id:"pelota", nombre:"Pelota de fútbol", precio:1.00, color:"Negro"},   // blanca con el dibujo del color escogido
 ];
 const MAX_CHARMS = 6;
 // Clickers de objeto (con switch). "solo" = precio si se piden sin clicker de letras (incluye cadena)
@@ -488,6 +489,7 @@ function drawPreview(){
   const charmY = ly-18;
   st.charms.forEach(ch=>{ const c = hex(ch.c);
     if(ch.t==="carita"){ s+=`<circle cx="${cxs}" cy="${charmY}" r="22" fill="${c}" filter="url(#sh)"/>`+symPath("☺",cxs,charmY,44,shade(c,-.45)); cxs+=54; }
+    else if(ch.t==="pelota"){ s+=`<circle cx="${cxs}" cy="${charmY}" r="22" fill="#F2F1EC" filter="url(#sh)"/>`+symPath("⚽",cxs,charmY,48,c); cxs+=54; }
     else { s+=symPath("✿",cxs,charmY,62,c); cxs+=58; } });
   // lazo
   s += `<rect x="${lx-14}" y="${by-26}" width="28" height="34" rx="10" fill="${bc}" filter="url(#sh)"/><circle cx="${lx}" cy="${by-14}" r="6.5" style="fill:var(--stage)"/>`;
@@ -520,6 +522,7 @@ function charmIcon(t, c){
     return `<circle cx="22" cy="23" r="16" fill="${c}" stroke="${shade(c,-.18)}" stroke-width="1.5"/><circle cx="22" cy="11.5" r="2" fill="var(--surface)"/><ellipse cx="16.5" cy="21" rx="2" ry="3.6" fill="${d}"/><ellipse cx="27.5" cy="21" rx="2" ry="3.6" fill="${d}"/><path d="M14 27 Q22 35 30 27" fill="none" stroke="${d}" stroke-width="3" stroke-linecap="round"/>`; }
   if(t==="flor"){ let g = ""; for(let k=0;k<8;k++){ const a = k*Math.PI/4; g += `<ellipse cx="${(22+Math.cos(a)*10).toFixed(1)}" cy="${(22+Math.sin(a)*10).toFixed(1)}" rx="7" ry="4.6" transform="rotate(${k*45} ${(22+Math.cos(a)*10).toFixed(1)} ${(22+Math.sin(a)*10).toFixed(1)})" fill="${c}" stroke="${shade(c,-.18)}" stroke-width="1"/>`; }
     return g + `<circle cx="22" cy="22" r="5.5" fill="${shade(c,-.35)}"/>`; }
+  if(t==="pelota") return `<circle cx="22" cy="22" r="16" fill="#F2F1EC" stroke="#C9CCC4" stroke-width="1"/>` + symPath("⚽",22,22,36,c);
   return `<circle cx="22" cy="22" r="15" fill="none" stroke="#9AA394" stroke-width="2.5" stroke-dasharray="4 4"/><text x="22" y="22" dy=".36em" text-anchor="middle" font-family="Figtree, sans-serif" font-weight="800" font-size="18" fill="#7A8474">?</text>`;
 }
 function swatches(el, current, onPick){
@@ -581,7 +584,7 @@ function render(){
     const t = b.dataset.c;
     if(t==="otro"){ st.otro = st.otro===null ? "" : null; render(); if(st.otro!==null) $("otro").focus(); return; }
     if(st.charms.length < MAX_CHARMS){ const used = st.charms.filter(c=>c.t===t).map(c=>c.c);
-      const pal = ["Amarillo","Celeste","Fucsia","Verde claro","Morado metalizado","Blanco","Naranja","Rojo"]; const c = pal.find(p=>!used.includes(p)) || charmInfo(t).color;
+      const pal = ["Amarillo","Celeste","Fucsia","Verde claro","Morado metalizado","Blanco","Naranja","Rojo"]; const c = t==="pelota" ? charmInfo(t).color : (pal.find(p=>!used.includes(p)) || charmInfo(t).color);
       st.charms.push({t, c}); render(); } });
   $("charmlist").innerHTML = st.charms.map((ch,i)=>{ const x = charmInfo(ch.t);
     return `<div class="crow"><svg viewBox="0 0 44 44">${charmIcon(ch.t, hex(ch.c))}</svg>
@@ -615,7 +618,7 @@ function designCalc(){   // usa el diseño cargado en st
   st.objs.forEach((o,i)=>{ const x = objInfo(o.t), p = objPrice(i); lines.push([`Clicker de objeto: ${x.nombre.toLowerCase()}${o.v?` (${objVarName(o).toLowerCase()})`:''}${!n&&i===0?' (con cadena)':''}`, p]); tot+=p; });
   const otro = st.otro!==null ? (st.otro.trim() || "(te cuento cuál)") : null;
   if(otro!==null){ lines.push([`Charm personalizado: ${otro}`, PRECIO_OTRO]); tot += PRECIO_OTRO; }
-  const charmEmo = {carita:"😊", flor:"🌼"};
+  const charmEmo = {carita:"😊", flor:"🌼", pelota:"⚽"};
   let body = "";
   if(ks.length){
     const teclas = ks.map((ch,i)=>`${i+1}. *${SYMS[ch]?SYMS[ch]:ch}* → tecla ${colTxt(st.tiles[i])} · letra ${colTxt(st.legs[i])}`).join("\n");
@@ -1111,6 +1114,22 @@ window.__render = render;
                     p.absarc(0,0,ri,a1,a0,true);  p.absarc(Math.cos(a0)*rm, Math.sin(a0)*rm, rc, a0+Math.PI, a0+2*Math.PI, false); });
           const d = new THREE.Mesh(slab(s, 1.9, .35), m); d.castShadow = d.receiveShadow = true;
           const gg = new THREE.Group(); gg.add(d); if(side<0) gg.rotation.y = Math.PI; return gg; };
+        mk.mat = m; return {mk, offset:7.2, tab:false, top:2.6};
+      }
+      if(t==="pelota"){   // disco blanco con borde y pentágonos del color escogido
+        const m = mat("#F2F1EC", .55), dk = mat(c, .55);
+        const mk = (side)=>{
+          const R = 9.4, s = new THREE.Shape(); s.absarc(0,0,R,0,Math.PI*2,false);
+          const h = new THREE.Path(); h.absarc(0, 7.2, 1.45, 0, Math.PI*2, true); s.holes.push(h);
+          const d = new THREE.Mesh(slab(s, 1.9, .35), m); d.castShadow = d.receiveShadow = true;
+          const gg = new THREE.Group(); gg.add(d);
+          const ring = new THREE.Shape(); ring.absarc(0,0,R,0,Math.PI*2,false);
+          const rin = new THREE.Path(); rin.absarc(0,0,R-.8,0,Math.PI*2,true); ring.holes.push(rin);
+          const pent = (px,py,r,rot)=>{ const p = new THREE.Shape(); for(let i=0;i<5;i++){ const a = rot+i*Math.PI*2/5, x = px+r*Math.cos(a), y = py+r*Math.sin(a); i ? p.lineTo(x,y) : p.moveTo(x,y); } p.closePath(); return p; };
+          const shapes = [ring, pent(0,0,3.3,Math.PI/2)];
+          for(let i=0;i<5;i++){ const a = Math.PI/2 + Math.PI/5 + i*Math.PI*2/5; shapes.push(pent(Math.cos(a)*7, Math.sin(a)*7, 2.1, a)); }
+          shapes.forEach(sh=>{ const t = new THREE.Mesh(slab(sh, .25, 0), dk); t.position.y = 2.5; gg.add(t); });
+          if(side<0) gg.rotation.y = Math.PI; return gg; };
         mk.mat = m; return {mk, offset:7.2, tab:false, top:2.6};
       }
       const m = mat(c);
