@@ -173,10 +173,26 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
       <input id="vCliente" placeholder="Nombre o @instagram" autocomplete="off">
       <div class="dos">
         <div><label for="vCanal">Canal</label><select id="vCanal"></select></div>
-        <div><label for="vMetodo">Cómo pagó</label><select id="vMetodo"></select></div>
+        <div id="cajaMetodo"><label for="vMetodo">Cómo pagó</label><select id="vMetodo"></select></div>
       </div>
-      <label for="vEstado">Estado</label>
-      <select id="vEstado"></select>
+      <select id="vEstado" hidden></select>
+      <div id="bloqueEncargo" hidden>
+        <label>¿Ya pagó?</label>
+        <div class="segmento" role="group" aria-label="¿Ya pagó?">
+          <button id="pagoSi" aria-pressed="false">Ya pagó</button>
+          <button id="pagoNo" aria-pressed="true">Todavía no</button>
+        </div>
+        <label for="vDelivery">Delivery $ <span class="chico">(déjalo vacío si lo retira)</span></label>
+        <input id="vDelivery" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0">
+        <div id="bloqueQuienDel" hidden>
+          <label>¿Quién paga el delivery?</label>
+          <div class="segmento" role="group" aria-label="Quién paga el delivery">
+            <button id="delCliente" aria-pressed="true">El cliente</button>
+            <button id="delYo" aria-pressed="false">Yo (gratis)</button>
+          </div>
+          <p class="chico" id="txtDel" style="margin:6px 0 0"></p>
+        </div>
+      </div>
       <button class="btn primario ancho" id="btnGuardarVenta" style="margin-top:14px">Guardar venta</button>
     </div>
   </section>
@@ -403,13 +419,39 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
   function opciones(sel, lista, valor) {
     sel.innerHTML = lista.map(v => `<option${v === valor ? ' selected' : ''}>${esc(v)}</option>`).join('');
   }
+  let pagado = false, delQuien = 'cliente';
+  const esObjeto = n => n.startsWith('Clicker de objeto');
+  const esLetra = n => n.startsWith('Clicker – cada letra');
+  function montoDelivery() { const v = parseFloat($('#vDelivery').value); return modo === 'pedido' && v > 0 ? v : 0; }
+  function ponerPago(si) {
+    pagado = si;
+    $('#pagoSi').setAttribute('aria-pressed', si); $('#pagoNo').setAttribute('aria-pressed', !si);
+    $('#vEstado').value = modo === 'bazar' ? 'Entregado' : (si ? 'Pagado' : 'Pedido');
+    $('#cajaMetodo').hidden = modo === 'pedido' && !si;
+    if (modo === 'pedido') $('#vMetodo').value = si ? 'Pago móvil' : '';
+  }
+  function ponerDel(q) {
+    delQuien = q;
+    $('#delCliente').setAttribute('aria-pressed', q === 'cliente'); $('#delYo').setAttribute('aria-pressed', q === 'yo');
+    $('#txtDel').textContent = q === 'cliente'
+      ? 'Se suma al total del cliente. Como tú le pagas al motorizado, también queda como gasto: tu ganancia no cambia.'
+      : 'No se le cobra al cliente. Queda anotado como gasto del negocio.';
+    pintarCarrito();
+  }
+  $('#pagoSi').addEventListener('click', () => ponerPago(true));
+  $('#pagoNo').addEventListener('click', () => ponerPago(false));
+  $('#delCliente').addEventListener('click', () => ponerDel('cliente'));
+  $('#delYo').addEventListener('click', () => ponerDel('yo'));
+  $('#vDelivery').addEventListener('input', () => { $('#bloqueQuienDel').hidden = !(parseFloat($('#vDelivery').value) > 0); pintarCarrito(); });
   function ponerModo(m) {
     modo = m;
     $('#modoBazar').setAttribute('aria-pressed', m === 'bazar');
     $('#modoPedido').setAttribute('aria-pressed', m === 'pedido');
     $('#vCanal').value = m === 'bazar' ? 'Bazar' : 'WhatsApp';
-    $('#vEstado').value = m === 'bazar' ? 'Pagado' : 'Pedido';
-    $('#vMetodo').value = m === 'bazar' ? 'Pago móvil' : '';
+    $('#bloqueEncargo').hidden = m === 'bazar';
+    if (m === 'bazar') { $('#vMetodo').value = 'Pago móvil'; }
+    ponerPago(false);
+    pintarCarrito();
     $('#clienteOpcional').textContent = m === 'bazar' ? '(opcional)' : '';
     $('#btnGuardarVenta').textContent = m === 'bazar' ? 'Guardar venta' : 'Guardar encargo';
   }
@@ -420,7 +462,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     $('#gridProductos').innerHTML = datos.productos.map((p, i) => `
       <button class="prod${p.disponibles <= 0 ? ' agotado' : ''}" data-i="${i}">
         <b>${esc(p.nombre)}</b>
-        <span class="meta"><span class="precio">${fmt(p.precio)}</span><span>${p.disponibles} disp.</span></span>
+        <span class="meta"><span class="precio">${fmt(p.precio)}${esObjeto(p.nombre) ? ' · $3 con letras' : ''}</span><span>${p.disponibles} disp.</span></span>
       </button>`).join('') || '<p class="vacio">No hay productos en Inventario.</p>';
   }
   $('#gridProductos').addEventListener('click', e => {
@@ -440,6 +482,8 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
   });
   function pintarCarrito() {
     const box = $('#carrito');
+    const conLetras = carrito.some(c => esLetra(c.producto));
+    carrito.forEach(c => { if (esObjeto(c.producto) && !c.manual) c.precio = conLetras ? 3 : 4; });
     if (!carrito.length) { box.innerHTML = '<p class="vacio">Toca un producto arriba para agregarlo.</p>'; }
     else box.innerHTML = carrito.map((c, i) => `
       <div class="carrito-item">
@@ -447,9 +491,11 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
         <span class="cant"><button data-a="-" data-i="${i}" aria-label="Menos">−</button><span>${c.cantidad}</span><button data-a="+" data-i="${i}" aria-label="Más">+</button></span>
         <input class="precio-input" data-p="${i}" type="number" inputmode="decimal" step="0.01" value="${c.precio}" aria-label="Precio c/u">
       </div>`).join('');
-    const total = carrito.reduce((s, c) => s + c.cantidad * c.precio, 0);
+    const del = montoDelivery();
+    const total = carrito.reduce((s, c) => s + c.cantidad * c.precio, 0) + (delQuien === 'cliente' ? del : 0);
+    $('#txtTotal').title = del && delQuien === 'cliente' ? 'Incluye delivery' : '';
     $('#txtTotal').textContent = fmt(total);
-    $('#txtTotalBs').textContent = datos && datos.tasa ? fmtBs(total * datos.tasa.valor) : '';
+    $('#txtTotalBs').textContent = (datos && datos.tasa ? fmtBs(total * datos.tasa.valor) : '') + (del && delQuien === 'cliente' ? ' · incluye delivery ' + fmt(del) : '');
   }
   $('#carrito').addEventListener('click', e => {
     const b = e.target.closest('button[data-a]'); if (!b) return;
@@ -460,7 +506,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
   });
   $('#carrito').addEventListener('change', e => {
     const i = e.target.dataset.p; if (i == null) return;
-    const v = parseFloat(e.target.value); carrito[+i].precio = v >= 0 ? v : 0; pintarCarrito();
+    const v = parseFloat(e.target.value); carrito[+i].precio = v >= 0 ? v : 0; carrito[+i].manual = true; pintarCarrito();
   });
   $('#btnVaciar').addEventListener('click', () => { carrito = []; pintarCarrito(); });
 
@@ -472,8 +518,14 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
       metodo: $('#vMetodo').value, estado: $('#vEstado').value,
       items: carrito.map(c => ({ producto: c.producto, cantidad: c.cantidad, precio: c.precio, precioManual: c.otro || c.precio !== c.base })),
     };
+    const del = montoDelivery();
+    if (del && delQuien === 'cliente') cuerpo.items.push({ producto: 'Delivery', cantidad: 1, precio: del, precioManual: true });
     const ok = await accion(cuerpo, 'Venta guardada');
-    if (ok) { carrito = []; $('#vCliente').value = ''; pintarCarrito(); }
+    if (ok && del) {
+      await accion({ accion: 'gasto', que: 'Delivery – ' + (cuerpo.cliente || 'encargo'), monto: del, pct: 1, tipo: 'Otro',
+        para: 'Negocio', metodo: '', nota: delQuien === 'cliente' ? 'Lo pagó el cliente (incluido en su venta)' : 'Envío gratis para el cliente' }, 'Delivery anotado');
+    }
+    if (ok) { carrito = []; $('#vCliente').value = ''; $('#vDelivery').value = ''; $('#bloqueQuienDel').hidden = true; pintarCarrito(); }
   });
 
   /* ---------- Pedidos ---------- */
@@ -602,6 +654,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
       opciones($('#vEstado'), L.estados, 'Pagado');
       opciones($('#gTipo'), L.tiposCompra, 'Insumos (switches, aros, bolsas)');
       opciones($('#gMetodo'), L.metodosCompra, 'Pago móvil');
+      ponerDel('cliente');
       ponerModo('bazar');
       iniciado = true;
       setInterval(() => { if (cola.length) vaciarCola(); else if (!document.hidden) recargar(true); }, 60000);
