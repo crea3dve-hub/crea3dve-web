@@ -328,6 +328,7 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
 const WHATSAPP = "584242674222";
 const LINK_PAGINA = "https://crea3dve.com/";   // link público de esta página
 const PRECIO_LETRA = 1.50;           // cada letra: tecla + switch + su parte de la base (base y cadena incluidas)
+const PRECIO_OTRO = 1.00;   // charm personalizado ("Otro charm"), precio fijo
 const CHARMS = [   // charms impresos en 3D (cada uno del color que el cliente escoja)
   {id:"carita", nombre:"Carita feliz", precio:0.50, color:"Amarillo"},
   {id:"flor",   nombre:"Flor",         precio:1.00, color:"Celeste"},
@@ -570,7 +571,7 @@ function render(){
   // charms
   const full = st.charms.length >= MAX_CHARMS;
   $("charmcards").innerHTML = CHARMS.map(x=>`<button class="aro" type="button" data-c="${x.id}" ${full?"disabled":""}><svg viewBox="0 0 44 44">${charmIcon(x.id, hex(x.color))}</svg>${x.nombre}<small>${money(x.precio)} c/u</small></button>`).join("")
-    + `<button class="aro" type="button" data-c="otro" aria-pressed="${st.otro!==null}"><svg viewBox="0 0 44 44">${charmIcon("otro")}</svg>Otro charm<small>Dinos cuál</small></button>`;
+    + `<button class="aro" type="button" data-c="otro" aria-pressed="${st.otro!==null}"><svg viewBox="0 0 44 44">${charmIcon("otro")}</svg>Otro charm<small>$1,00 · dinos cuál</small></button>`;
   $("charmcards").querySelectorAll(".aro").forEach(b=>b.onclick=()=>{
     const t = b.dataset.c;
     if(t==="otro"){ st.otro = st.otro===null ? "" : null; render(); if(st.otro!==null) $("otro").focus(); return; }
@@ -608,6 +609,7 @@ function designCalc(){   // usa el diseño cargado en st
   st.charms.forEach(ch=>{ const x = charmInfo(ch.t); lines.push([`Charm ${x.nombre.toLowerCase()} (${ch.c.toLowerCase()})`, x.precio]); tot+=x.precio; });
   st.objs.forEach((o,i)=>{ const x = objInfo(o.t), p = objPrice(i); lines.push([`Clicker de objeto: ${x.nombre.toLowerCase()}${o.v?` (${objVarName(o).toLowerCase()})`:''}${!n&&i===0?' (con cadena)':''}`, p]); tot+=p; });
   const otro = st.otro!==null ? (st.otro.trim() || "(te cuento cuál)") : null;
+  if(otro!==null){ lines.push([`Charm personalizado: ${otro}`, PRECIO_OTRO]); tot += PRECIO_OTRO; }
   const charmEmo = {carita:"😊", flor:"🌼"};
   let body = "";
   if(ks.length){
@@ -618,7 +620,7 @@ function designCalc(){   // usa el diseño cargado en st
   aroList().forEach(ar=>extras.push(`*${ar.tipo.nombre}* color *${ar.nombre.toLowerCase()}* — ${money(ar.tipo.precio)}`));
   st.charms.forEach(ch=>{ const x = charmInfo(ch.t); extras.push(`${charmEmo[ch.t] ? charmEmo[ch.t]+" " : ""}Charm ${x.nombre.toLowerCase()} ${colTxt(ch.c)} — ${money(x.precio)}`); });
   st.objs.forEach((o,i)=>{ const x = objInfo(o.t); extras.push(`${x.emo} Clicker *${x.nombre.toLowerCase()}*${o.v?` *${objVarName(o).toLowerCase()}*`:""}${!ks.length&&i===0?" (con cadena)":""} — ${money(objPrice(i))}`); });
-  if(otro!==null) extras.push(`Charm personalizado: ${otro} (precio a confirmar)`);
+  if(otro!==null) extras.push(`Charm personalizado: *${otro}* — ${money(PRECIO_OTRO)}`);
   if(extras.length) body += (body ? `\n\nExtras:\n` : "") + extras.join("\n");
   return {lines, tot, otro, body, word: ks.length};
 }
@@ -627,7 +629,7 @@ function pricing(){
   const items = st.cart.filter(hasContent).map(d=>withDesign(d, designCalc));
   const all = hasContent(snap()) ? items.concat([cur]) : items;
   const tot = all.reduce((a,c)=>a+c.tot,0), anyOtro = all.some(c=>c.otro!==null);
-  $("breakdown").innerHTML = cur.lines.map(([a,b])=>`<dt>${a}</dt><dd>${money(b)}</dd>`).join("") + (cur.otro!==null ? `<dt>Charm personalizado: ${cur.otro.replace(/[<&>]/g,"")}</dt><dd>a confirmar</dd>` : "")
+  $("breakdown").innerHTML = cur.lines.map(([a,b])=>`<dt>${a.replace(/[<&>]/g,"")}</dt><dd>${money(b)}</dd>`).join("")
     + (items.length ? `<dt>Clickers anteriores (${items.length})</dt><dd>${money(items.reduce((a,c)=>a+c.tot,0))}</dd>` : "")
     + `<dt class="tot">Total${all.length>1?` (${all.length} clickers)`:""}</dt><dd class="tot">${money(tot)}</dd>`;
   $("total").textContent = money(tot);
@@ -635,10 +637,10 @@ function pricing(){
   if(all.length<=1){
     const c = all[0] || cur;
     txt = (c.word ? `✨ ¡Hola Crea3d! Quiero este clicker ✨` : `✨ ¡Hola Crea3d! Quiero este clicker de objeto ✨`) + (c.body ? `\n\n${c.body}` : "")
-      + `\n\n💰 *Total: ${money(tot)}*${anyOtro?" + charm personalizado":""} (tasa BCV)\n\n📸 A continuación te envío la foto de mi diseño 💚`;
+      + `\n\n💰 *Total: ${money(tot)}* (tasa BCV)\n\n📸 A continuación te envío la foto de mi diseño 💚`;
   } else {
     txt = `✨ ¡Hola Crea3d! Quiero estos ${all.length} clickers ✨` + all.map((c,i)=>`\n\n*━━━ Clicker ${i+1} ━━━*\n${c.body}\nSubtotal: ${money(c.tot)}`).join("")
-      + `\n\n💰 *Total: ${money(tot)}*${anyOtro?" + charm personalizado":""} (tasa BCV)\n\n📸 A continuación te envío la foto de mis diseños 💚`;
+      + `\n\n💰 *Total: ${money(tot)}* (tasa BCV)\n\n📸 A continuación te envío la foto de mis diseños 💚`;
   }
   $("summary").textContent = txt;
   waURL = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(txt)}`;
