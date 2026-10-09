@@ -196,7 +196,7 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
         <h2><span class="step">1</span>Tu palabra</h2>
         <input type="text" id="word" maxlength="10" autocomplete="off" spellcheck="false" aria-label="Tu palabra, hasta 10 teclas">
         <div class="row" style="margin-top:8px" id="symrow" aria-label="Agregar símbolo"></div>
-        <p class="hint">Hasta 10 teclas. Letras A–Z, números y los símbolos de arriba.<br><b>Cada letra $1,50</b> · base y cadena de bolitas incluidas.</p>
+        <p class="hint">Hasta 10 teclas. Letras A–Z, números, &amp; y los símbolos de arriba.<br><b>Cada letra $1,50</b> · base y cadena de bolitas incluidas.</p>
         <p class="warn" id="warn" hidden></p>
       </section>
 
@@ -379,8 +379,8 @@ const COLORES_V1 = ["Blanco","Negro","Beige","Plata","Rojo","Fucsia","Naranja","
 const ren = n => RENOMBRE[n] || n;
 /* ==================================================================== */
 
-const SYMS = {"♥":"corazón","★":"estrella","✿":"flor","☺":"carita"};
-const EXTRA_SYMS = ["!","?","&","#"];
+const SYMS = {"♥":"corazón","★":"estrella","✿":"flor","☺":"carita","♣":"trébol","🐾":"huella","⚽":"balón","✝":"cruz"};
+const EXTRA_SYMS = ["&"];
 const FONTS = [["Redonda","'Nunito', system-ui, sans-serif","Redonda"],["Comic","'Comic Neue', 'Comic Sans MS', cursive","Comic"]];
 const MIX = ["Amarillo","Azul","Verde claro","Rojo","Fucsia","Celeste","Naranja","Morado metalizado","Verde"];
 const LEGMIX = ["Morado metalizado","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Fucsia"];
@@ -456,8 +456,12 @@ function ensureColors(){
 function symPath(ch, cx, cy, s, fill){
   if(ch==="♥") return `<path fill="${fill}" d="M${cx} ${cy+s*.42} C${cx-s*.62} ${cy+s*.02} ${cx-s*.5} ${cy-s*.5} ${cx-s*.18} ${cy-s*.42} C${cx-s*.05} ${cy-s*.39} ${cx} ${cy-s*.28} ${cx} ${cy-s*.2} C${cx} ${cy-s*.28} ${cx+s*.05} ${cy-s*.39} ${cx+s*.18} ${cy-s*.42} C${cx+s*.5} ${cy-s*.5} ${cx+s*.62} ${cy+s*.02} ${cx} ${cy+s*.42}Z"/>`;
   if(ch==="★"){ let p=""; for(let i=0;i<10;i++){ const r=i%2? s*.2:s*.46, a=-Math.PI/2+i*Math.PI/5; p+=(i?"L":"M")+(cx+r*Math.cos(a)).toFixed(1)+" "+(cy+r*Math.sin(a)).toFixed(1);} return `<path fill="${fill}" stroke="${fill}" stroke-width="${s*.06}" stroke-linejoin="round" d="${p}Z"/>`; }
-  if(ch==="✿"){ let g=""; for(let i=0;i<6;i++){ const a=i*Math.PI/3; g+=`<circle cx="${(cx+s*.24*Math.cos(a)).toFixed(1)}" cy="${(cy+s*.24*Math.sin(a)).toFixed(1)}" r="${s*.17}" fill="${fill}"/>`;} return g+`<circle cx="${cx}" cy="${cy}" r="${s*.12}" fill="rgba(255,255,255,.55)"/>`; }
+  if(ch==="✿"){ let g=""; for(let i=0;i<5;i++){ const a=-Math.PI/2+i*Math.PI*2/5; g+=`<circle cx="${(cx+s*.25*Math.cos(a)).toFixed(1)}" cy="${(cy+s*.25*Math.sin(a)).toFixed(1)}" r="${s*.19}" fill="${fill}"/>`;} return g+`<circle cx="${cx}" cy="${cy}" r="${s*.12}" fill="rgba(255,255,255,.55)"/>`; }
   if(ch==="☺") return `<circle cx="${cx}" cy="${cy}" r="${s*.42}" fill="none" stroke="${fill}" stroke-width="${s*.09}"/><circle cx="${cx-s*.14}" cy="${cy-s*.1}" r="${s*.06}" fill="${fill}"/><circle cx="${cx+s*.14}" cy="${cy-s*.1}" r="${s*.06}" fill="${fill}"/><path d="M${cx-s*.2} ${cy+s*.1} Q${cx} ${cy+s*.32} ${cx+s*.2} ${cy+s*.1}" fill="none" stroke="${fill}" stroke-width="${s*.08}" stroke-linecap="round"/>`;
+  if(ch==="♣"){ /* trébol de 4 hojas: cada hoja es un corazón apuntando al centro */ let g=""; for(let i=0;i<4;i++){ const a=i*90; g+=`<g transform="rotate(${a} ${cx} ${cy})"><path fill="${fill}" d="M${cx} ${cy-s*.03} C${cx-s*.3} ${cy-s*.22} ${cx-s*.27} ${cy-s*.5} ${cx-s*.1} ${cy-s*.46} C${cx-s*.03} ${cy-s*.44} ${cx} ${cy-s*.38} ${cx} ${cy-s*.33} C${cx} ${cy-s*.38} ${cx+s*.03} ${cy-s*.44} ${cx+s*.1} ${cy-s*.46} C${cx+s*.27} ${cy-s*.5} ${cx+s*.3} ${cy-s*.22} ${cx} ${cy-s*.03}Z"/></g>`; } return g+`<path d="M${cx} ${cy} Q${cx+s*.02} ${cy+s*.25} ${cx+s*.12} ${cy+s*.44}" fill="none" stroke="${fill}" stroke-width="${s*.07}" stroke-linecap="round"/>`; }
+  if(ch==="🐾"){ const e=(x,y,rx,ry,r)=>`<ellipse cx="${(cx+x*s).toFixed(1)}" cy="${(cy+y*s).toFixed(1)}" rx="${rx*s}" ry="${ry*s}" transform="rotate(${r} ${(cx+x*s).toFixed(1)} ${(cy+y*s).toFixed(1)})" fill="${fill}"/>`; return e(0,.14,.24,.2,0)+e(-.3,-.1,.09,.13,-20)+e(-.11,-.3,.09,.13,-8)+e(.11,-.3,.09,.13,8)+e(.3,-.1,.09,.13,20); }
+  if(ch==="⚽"){ const R=s*.44; let g=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${fill}" stroke-width="${s*.07}"/>`; const pent=(px,py,r,rot)=>{ let p=""; for(let i=0;i<5;i++){ const a=rot+i*Math.PI*2/5; p+=(i?"L":"M")+(px+r*Math.cos(a)).toFixed(1)+" "+(py+r*Math.sin(a)).toFixed(1);} return p+"Z"; }; g+=`<path fill="${fill}" d="${pent(cx,cy,R*.3,-Math.PI/2)}"/>`; for(let i=0;i<5;i++){ const a=-Math.PI/2+i*Math.PI*2/5, px=cx+R*.78*Math.cos(a), py=cy+R*.78*Math.sin(a); g+=`<path fill="${fill}" d="${pent(px,py,R*.26,a)}"/><line x1="${(cx+R*.3*Math.cos(a)).toFixed(1)}" y1="${(cy+R*.3*Math.sin(a)).toFixed(1)}" x2="${px.toFixed(1)}" y2="${py.toFixed(1)}" stroke="${fill}" stroke-width="${s*.05}"/>`; } return g; }
+  if(ch==="✝"){ const w=s*.13; return `<rect x="${cx-w/2}" y="${cy-s*.45}" width="${w}" height="${s*.9}" rx="${w*.15}" fill="${fill}"/><rect x="${cx-s*.3}" y="${cy-s*.22}" width="${s*.6}" height="${w}" rx="${w*.15}" fill="${fill}"/>`; }
   return "";
 }
 function shade(h, f){ const n=parseInt(h.slice(1),16); let r=n>>16,g=n>>8&255,b=n&255; const m=v=>Math.max(0,Math.min(255,Math.round(f<0? v*(1+f) : v+(255-v)*f))); return "#"+[m(r),m(g),m(b)].map(v=>v.toString(16).padStart(2,"0")).join(""); }
@@ -962,12 +966,14 @@ window.__render = render;
     x.fillStyle = color; x.strokeStyle = color; x.lineCap = x.lineJoin = "round";
     
     const cx=128, cy=128;
+    const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding; tex.anisotropy = 4;
     if(ch==="♥"){ x.beginPath(); x.moveTo(cx,cy+70); x.bezierCurveTo(cx-110,cy+5,cx-85,cy-90,cx-30,cy-75); x.bezierCurveTo(cx-10,cy-70,cx,cy-50,cx,cy-38); x.bezierCurveTo(cx,cy-50,cx+10,cy-70,cx+30,cy-75); x.bezierCurveTo(cx+85,cy-90,cx+110,cy+5,cx,cy+70); x.fill(); }
     else if(ch==="★"){ x.beginPath(); for(let i=0;i<10;i++){ const r=i%2?38:88, a=-Math.PI/2+i*Math.PI/5; x[i?"lineTo":"moveTo"](cx+r*Math.cos(a), cy+6+r*Math.sin(a)); } x.closePath(); x.lineWidth=14; x.stroke(); x.fill(); }
-    else if(ch==="✿"){ for(let i=0;i<6;i++){ const a=i*Math.PI/3; x.beginPath(); x.arc(cx+44*Math.cos(a), cy+44*Math.sin(a), 32, 0, Math.PI*2); x.fill(); } x.shadowColor="transparent"; x.fillStyle="rgba(255,255,255,.6)"; x.beginPath(); x.arc(cx,cy,22,0,Math.PI*2); x.fill(); }
+    else if(ch==="✿"){ for(let i=0;i<5;i++){ const a=-Math.PI/2+i*Math.PI*2/5; x.beginPath(); x.arc(cx+46*Math.cos(a), cy+46*Math.sin(a), 36, 0, Math.PI*2); x.fill(); } x.shadowColor="transparent"; x.fillStyle="rgba(255,255,255,.6)"; x.beginPath(); x.arc(cx,cy,22,0,Math.PI*2); x.fill(); }
     else if(ch==="☺"){ x.lineWidth=16; x.beginPath(); x.arc(cx,cy,78,0,Math.PI*2); x.stroke(); x.beginPath(); x.arc(cx-28,cy-20,11,0,Math.PI*2); x.arc(cx+28,cy-20,11,0,Math.PI*2); x.fill(); x.beginPath(); x.arc(cx,cy+6,42,0.25*Math.PI,0.75*Math.PI); x.stroke(); }
+    else if(ch==="♣"||ch==="🐾"||ch==="⚽"||ch==="✝"){ const img=new Image(); const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">${symPath(ch,128,128,210,color)}</svg>`; img.onload=()=>{ x.drawImage(img,0,0,256,256); tex.needsUpdate=true; }; img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg); }
     else { x.font = `900 205px ${font}`; x.textAlign="center"; x.textBaseline="middle"; x.fillText(ch, cx, cy+12); }
-    const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 4; return t;
+    tex.needsUpdate = true; return tex;
   }
 
 
@@ -1275,7 +1281,7 @@ window.__render = render;
     const scale = Math.min((S-40)/w, (S-300)/h), dw = w*scale, dh = h*scale;
     x.drawImage(renderer.domElement, (S-dw)/2, 140, dw, dh);
     x.textAlign = "left"; x.fillStyle = "#141712"; x.font = "900 54px Orbitron, 'Arial Black', sans-serif";
-    const word = [...st.word].map(ch=>({"♥":"♥","★":"★","✿":"✿","☺":"☺"})[ch]||ch).join("");
+    const word = [...st.word].map(ch=>(SYMS[ch]?ch:ch)).join("");
     x.fillText(word, 40, S-80);
     x.fillStyle = "#5E6659"; x.font = "600 28px Figtree, system-ui, sans-serif";
     x.fillText(`Base ${st.base.toLowerCase()} ${st.style} · ${(opts&&opts.total)||document.getElementById("total").textContent}`, 40, S-36);
