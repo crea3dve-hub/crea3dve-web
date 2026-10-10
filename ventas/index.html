@@ -118,7 +118,9 @@ nav.tabs button[aria-selected="true"]{color:var(--brand-ink);background:var(--br
 .login{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:16px}
 .login .card{width:100%;max-width:380px}
 .pin{letter-spacing:8px;text-align:center;font-size:24px;font-weight:800}
-details summary{cursor:pointer;font-weight:700;padding:4px 0}
+details summary{cursor:pointer;font-weight:700;padding:4px 0;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details[open] > summary{margin-bottom:4px}
 .tres{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .ayuda{background:var(--brand-soft);border-radius:12px;padding:10px 12px;font-size:14px;margin-bottom:10px}
 .inv-edit,.g-edit{padding:10px 0;border-bottom:1px solid var(--line)}
@@ -172,7 +174,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     <h3>Toca para agregar</h3>
     <div class="grid-prod" id="gridProductos"></div>
     <details class="card" style="margin-top:10px">
-      <summary>Otro producto (a la medida, presupuesto…)</summary>
+      <summary>➕ Otro producto (a la medida, presupuesto…)</summary>
       <label for="otroNombre">Qué es</label>
       <input id="otroNombre" placeholder="Ej: Organizador de joyas">
       <div class="calc">
@@ -183,13 +185,13 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
         </div>
         <div class="tres">
           <div><label for="kG">Gramos</label><input id="kG" type="number" inputmode="decimal" min="0" placeholder="0"></div>
-          <div><label for="kH">Horas</label><input id="kH" type="number" inputmode="numeric" min="0" placeholder="0"></div>
-          <div><label for="kM">Minutos</label><input id="kM" type="number" inputmode="numeric" min="0" max="59" placeholder="0"></div>
+          <div style="grid-column:span 2"><label for="kH">Tiempo de impresión</label><input id="kH" inputmode="decimal" autocomplete="off" placeholder="Ej: 1.4 o 1:20"></div>
         </div>
         <div class="dos">
-          <div><label for="kT">Tu trabajo (min)</label><input id="kT" type="number" inputmode="numeric" min="0" value="10"></div>
-          <div><label for="kPers">Tipo</label><select id="kPers"><option value="0">General</option><option value="1">Personalizado (falla más)</option></select></div>
+          <div><label for="kT">Tus minutos a mano</label><input id="kT" type="number" inputmode="numeric" min="0" value="10"></div>
+          <div><label for="kPers">Tipo</label><select id="kPers"><option value="0">General (falla poco)</option><option value="1">Personalizado (falla 1 de cada 2)</option></select></div>
         </div>
+        <p class="chico" style="margin:6px 0 0"><b>Tiempo de impresión:</b> lo que dice Bambu (1.4 = 1,4 horas; o escríbelo 1:20 = 1 hora y 20 min).<br><b>Tus minutos a mano:</b> lo que tú trabajas en la pieza: preparar el archivo, despegarla, quitar soportes, armar y empacar.</p>
         <div id="kRes" class="kres" hidden></div>
       </div>
       <div class="dos">
@@ -224,7 +226,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
       </div>
       <select id="vEstado" hidden></select>
       <label for="vFecha">Fecha</label>
-      <input id="vFecha" type="date">
+      <input id="vFecha" type="date" max="">
       <div id="bloqueEncargo" hidden>
         <label>¿Ya pagó?</label>
         <div class="segmento" role="group" aria-label="¿Ya pagó?">
@@ -366,6 +368,8 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const hoyISO = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
   const aISO = f => { const m = String(f || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); return m ? m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0') : hoyISO(); };
+  const esFutura = f => !!f && f > hoyISO();
+  const avisoFecha = 'Esa fecha todavía no ha pasado. Pon la fecha de hoy o una anterior.';
   const idNuevo = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
   let avisoT;
@@ -568,7 +572,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     $('#kFil').innerHTML = Object.keys(c.filamentos).map(k => `<option${k === (fil || 'PLA') ? ' selected' : ''}>${esc(k)}</option>`).join('');
   }
   function calcular() {
-    const c = conf(), g = parseFloat($('#kG').value) || 0, h = (parseFloat($('#kH').value) || 0) + (parseFloat($('#kM').value) || 0) / 60;
+    const c = conf(), g = parseFloat($('#kG').value) || 0, h = leerHoras($('#kH').value);
     if (!g && !h) { $('#kRes').hidden = true; kSug = null; actualizarGanancia(); return; }
     const mat = g * (c.filamentos[$('#kFil').value] || 0.0254);
     const maq = h * ((c.impresoras[$('#kImp').value] || 0) + (c.electricidad || 0));
@@ -597,7 +601,16 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     t.textContent = (gan < 0 ? 'Pierdes ' + fmt(-gan) : 'Ganancia ' + fmt(gan) + ' (' + Math.round(gan / (p || 1) * 100) + '% del precio)')
       + (datos && datos.tasa ? ' · ' + fmtBs(p * datos.tasa.valor) : '');
   }
-  ['#kImp', '#kFil', '#kG', '#kH', '#kM', '#kT', '#kPers'].forEach(sel => $(sel).addEventListener('input', calcular));
+  // acepta 1.4 · 1,4 · 1:20 · 1h20 · 1h 20m · 80m
+  function leerHoras(t) {
+    t = String(t || '').trim().toLowerCase().replace(',', '.');
+    if (!t) return 0;
+    let m = t.match(/^(\d+)\s*[:h]\s*(\d{1,2})\s*m?$/); if (m) return +m[1] + +m[2] / 60;
+    m = t.match(/^(\d+)\s*m(in)?$/); if (m) return +m[1] / 60;
+    m = t.match(/^(\d+(\.\d+)?)\s*h?$/); if (m) return +m[1];
+    return 0;
+  }
+  ['#kImp', '#kFil', '#kG', '#kH', '#kT', '#kPers'].forEach(sel => $(sel).addEventListener('input', calcular));
   $('#otroPrecio').addEventListener('input', () => { precioTocado = $('#otroPrecio').value !== '' ; actualizarGanancia(); });
   $('#btnCopiarPrecio').addEventListener('click', async () => {
     const n = $('#otroNombre').value.trim() || 'la pieza', p = parseFloat($('#otroPrecio').value), c = Math.max(1, parseInt($('#otroCant').value || '1', 10));
@@ -608,7 +621,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     try { await navigator.clipboard.writeText(msg); avisar('Mensaje copiado, pégalo en WhatsApp'); }
     catch (e) { prompt('Copia este mensaje:', msg); }
   });
-  function limpiarCalc() { ['#kG', '#kH', '#kM'].forEach(s => { $(s).value = ''; }); $('#kT').value = '10'; $('#kPers').value = '0'; precioTocado = false; kCosto = null; $('#kRes').hidden = true; $('#kGan').hidden = true; }
+  function limpiarCalc() { ['#kG', '#kH'].forEach(s => { $(s).value = ''; }); $('#kT').value = '10'; $('#kPers').value = '0'; precioTocado = false; kCosto = null; $('#kRes').hidden = true; $('#kGan').hidden = true; }
   $('#btnAgregarOtro').addEventListener('click', () => {
     const n = $('#otroNombre').value.trim(); const pr = parseFloat($('#otroPrecio').value);
     const c = Math.max(1, parseInt($('#otroCant').value || '1', 10));
@@ -650,6 +663,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
   $('#btnGuardarVenta').addEventListener('click', async () => {
     if (!carrito.length) return avisar('No hay productos en la venta', true);
     if (modo === 'pedido' && !$('#vCliente').value.trim()) return avisar('Para un pedido pon el nombre del cliente', true);
+    if (esFutura($('#vFecha').value)) { $('#vFecha').value = hoyISO(); return avisar(avisoFecha, true); }
     const cuerpo = {
       accion: 'venta', cliente: $('#vCliente').value.trim(), canal: $('#vCanal').value,
       metodo: $('#vMetodo').value, estado: $('#vEstado').value,
@@ -682,7 +696,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
       <div class="pedido-cab"><div><span class="num">${esc(p.numero)}</span> · editando</div><button class="btn chico" data-cerrar>Cerrar</button></div>
       <div class="dos">
         <div><label>Cliente</label><input data-f="cliente" value="${esc(p.cliente)}"></div>
-        <div><label>Fecha</label><input data-f="fecha" type="date" value="${aISO(p.fecha)}"></div>
+        <div><label>Fecha</label><input data-f="fecha" type="date" max="${hoyISO()}" value="${aISO(p.fecha)}"></div>
       </div>
       <div class="dos">
         <div><label>Estado</label><select data-f="estado">${ops(L.estados, p.estado)}</select></div>
@@ -709,6 +723,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
       const cambioQ = q !== i.cantidad, cambioP = pr >= 0 && Math.abs(pr - prViejo) > 0.001;
       if (cambioQ || cambioP) items.push({ fila: i.fila, producto: i.producto, cantidad: isNaN(q) ? i.cantidad : q, precio: pr, precioCambiado: cambioP });
     });
+    if (esFutura(f('fecha'))) return avisar(avisoFecha, true);
     const cuerpo = { accion: 'editar', numero: num, estado: f('estado'), metodo: f('metodo'), cliente: f('cliente').trim(), items, id: idNuevo() };
     if (f('fecha') && f('fecha') !== aISO(p.fecha)) cuerpo.fecha = f('fecha');
     document.body.classList.add('cargando');
@@ -919,7 +934,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     return `<div class="fg" data-modo="${modo}">
       ${modo === 'comprado' ? `<b>${esc(g.que)}</b>` : `<label>Qué compraste</label><input data-k="que" value="${esc(g.que || '')}" placeholder="Ej: 2 rollos PLA negro">`}
       <div class="dos">
-        <div><label>Fecha</label><input data-k="fecha" type="date" value="${g.fecha ? aISO(g.fecha) : hoyISO()}"></div>
+        <div><label>Fecha</label><input data-k="fecha" type="date" max="${hoyISO()}" value="${g.fecha ? aISO(g.fecha) : hoyISO()}"></div>
         <div><label>Pagué en</label><select data-k="moneda"><option value="usd">Dólares</option><option value="bs">Bolívares</option></select></div>
       </div>
       <div data-usd><label>Monto total $</label><input data-k="monto" type="number" inputmode="decimal" step="0.01" value="${g.monto != null ? g.monto : ''}"></div>
@@ -958,6 +973,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
       nota = nota ? nota + ' · ' + extra : extra;
     }
     if (!(monto >= 0)) { avisar('Pon el monto', true); return null; }
+    if (esFutura(v('fecha'))) { avisar(avisoFecha, true); return null; }
     return { que: v('que').trim(), fecha: v('fecha'), monto, pct: v('pct'), para: v('para'), tipo: v('tipo'), metodo: v('metodo'), nota };
   }
   function actualizarConv(box) {
@@ -1098,7 +1114,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
       $('#vMetodo').insertAdjacentHTML('afterbegin', '<option value="">Todavía no paga</option>');
       opciones($('#vEstado'), L.estados, 'Pagado');
       ponerDel('cliente');
-      $('#vFecha').value = hoyISO();
+      $('#vFecha').value = hoyISO(); $('#vFecha').max = hoyISO();
       llenarCalc();
       ponerModo('bazar');
       iniciado = true;
