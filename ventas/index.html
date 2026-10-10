@@ -61,6 +61,13 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-o
 .segmento{display:grid;grid-template-columns:1fr 1fr;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px}
 .segmento button{border:0;background:transparent;border-radius:9px;padding:10px;font-weight:700;color:var(--muted)}
 .segmento button[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink)}
+.rapido .nums{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.rapido .nums button{border:1px solid var(--line);background:var(--surface);border-radius:14px;font-size:24px;font-weight:800;padding:12px 0;cursor:pointer}
+.rapido .nums button:active,.grid-extra button:active{transform:scale(.96);background:var(--brand);color:var(--brand-ink)}
+.grid-extra{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:6px}
+.grid-extra button{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:9px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:14px;font-weight:600;min-height:52px}
+.grid-extra button span{font-weight:800;white-space:nowrap}
+.grid-extra button.agotado{opacity:.5}
 .grid-prod{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .prod{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px;cursor:pointer;min-height:84px;display:flex;flex-direction:column;justify-content:space-between}
 .prod b{font-size:14px;line-height:1.25}
@@ -111,6 +118,10 @@ nav.tabs button svg{width:22px;height:22px}
 nav.tabs button{position:relative}
 nav.tabs button[data-badge]:not([data-badge=""])::after{content:attr(data-badge);position:absolute;top:2px;right:calc(50% - 22px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--warn);color:#fff;font-size:11px;line-height:18px;text-align:center}
 nav.tabs button:hover{color:var(--ink)}
+.barra-total{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:9;width:calc(100% - 40px);max-width:540px;
+  display:flex;justify-content:space-between;align-items:center;gap:10px;border:0;border-radius:16px;padding:12px 16px;background:var(--ink);color:var(--bg);font-size:15px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.2);cursor:pointer}
+.barra-total b{font-size:20px}
+.barra-total[hidden]{display:none}
 .velo{position:fixed;inset:0;z-index:30;background:rgba(15,18,12,.45);display:flex;align-items:center;justify-content:center;padding:16px}
 .velo[hidden]{display:none}
 .caja-rec{background:var(--surface);color:var(--ink);border-radius:20px;padding:20px;width:100%;max-width:380px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.25)}
@@ -118,7 +129,7 @@ nav.tabs button:hover{color:var(--ink)}
 .pp-card{border-left:4px solid var(--warn)}
 nav.tabs button[aria-selected="true"]{color:var(--brand-ink);background:var(--brand)}
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) nav.tabs button[aria-selected="true"]{color:#0E1A08} }
-.aviso{position:fixed;left:16px;right:16px;bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:20;max-width:600px;margin:0 auto;
+.aviso{position:fixed;left:16px;right:16px;bottom:calc(150px + env(safe-area-inset-bottom,0px));z-index:20;max-width:600px;margin:0 auto;
   background:var(--ink);color:var(--bg);padding:12px 14px;border-radius:12px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.2)}
 .aviso.error{background:var(--warn);color:#fff}
 .cola{background:var(--amber-soft);color:var(--amber);border-radius:12px;padding:10px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600;font-size:14px}
@@ -180,8 +191,21 @@ details[open] > summary{margin-bottom:4px}
       <button id="modoBazar" aria-pressed="true">Venta</button>
       <button id="modoPedido" aria-pressed="false">Encargo</button>
     </div>
-    <h3>Toca para agregar</h3>
-    <div class="grid-prod" id="gridProductos"></div>
+    <div class="card rapido">
+      <b>⚡ Clicker de letras</b>
+      <p class="chico" style="margin:2px 0 8px">¿Cuántas letras tiene? Se agregan las letras y su base.</p>
+      <div class="nums" id="numsLetras">
+        <button data-n="1">1</button><button data-n="2">2</button><button data-n="3">3</button><button data-n="4">4</button>
+        <button data-n="5">5</button><button data-n="6">6</button><button data-n="7">7</button><button data-n="8">8</button>
+      </div>
+      <b style="display:block;margin-top:12px">Extras y clickers de objeto</b>
+      <div class="grid-extra" id="gridExtras"></div>
+    </div>
+    <details class="card" id="cardTodos">
+      <summary>➕ Otros productos (soportes, floreros, joyero…)</summary>
+      <input id="buscaProd" placeholder="Buscar producto" autocomplete="off" style="margin:8px 0">
+      <div class="grid-prod" id="gridProductos"></div>
+    </details>
     <details class="card" style="margin-top:10px">
       <summary>➕ Otro producto (a la medida, presupuesto…)</summary>
       <label for="otroNombre">Qué es</label>
@@ -377,6 +401,7 @@ details[open] > summary{margin-bottom:4px}
 </div>
 
 <div id="aviso" class="aviso" role="status" hidden></div>
+<button id="barraTotal" class="barra-total" hidden><span id="btCant"></span><b id="btTotal"></b><span>Cobrar ↓</span></button>
 
 <div id="recordatorio" class="velo" hidden>
   <div class="caja-rec" role="dialog" aria-labelledby="recTit">
@@ -593,12 +618,41 @@ details[open] > summary{margin-bottom:4px}
   $('#modoBazar').addEventListener('click', () => ponerModo('bazar'));
   $('#modoPedido').addEventListener('click', () => ponerModo('pedido'));
 
+  // Extras de un toque: aros, charms y piezas de metal
+  const esExtra = n => /^(Aro|Charm|Corazón con|Flor con|Clicker de objeto)/.test(n) && !/personalizado/i.test(n);
+  function agregarProducto(nombre, cant) {
+    const p = datos.productos.find(x => x.nombre === nombre); if (!p) return false;
+    const ya = carrito.find(c => c.producto === p.nombre && !c.otro);
+    if (ya) ya.cantidad += cant; else carrito.push({ producto: p.nombre, precio: p.precio, base: p.precio, cantidad: cant });
+    return true;
+  }
+  $('#numsLetras').addEventListener('click', e => {
+    const b = e.target.closest('button[data-n]'); if (!b) return;
+    const n = +b.dataset.n;
+    const letra = datos.productos.find(x => esLetra(x.nombre));
+    if (!letra) return avisar('No encuentro las letras en el inventario', true);
+    agregarProducto(letra.nombre, n);
+    const base = datos.productos.find(x => x.nombre.startsWith('Base de clicker – ' + n + ' tecla'));
+    if (base) agregarProducto(base.nombre, 1);
+    pintarCarrito();
+    avisar(`${n} ${n === 1 ? 'letra' : 'letras'}${base ? ' + base' : ''} = ${fmt(n * letra.precio)}`);
+  });
+  $('#gridExtras').addEventListener('click', e => {
+    const b = e.target.closest('button[data-x]'); if (!b) return;
+    if (agregarProducto(b.dataset.x, 1)) { pintarCarrito(); avisar('+ ' + nombreCorto(b.dataset.x)); }
+  });
+  $('#buscaProd').addEventListener('input', pintarProductos);
   function pintarProductos() {
-    $('#gridProductos').innerHTML = datos.productos.map((p, i) => `
+    $('#gridExtras').innerHTML = datos.productos.filter(p => esExtra(p.nombre)).map(p =>
+      `<button data-x="${esc(p.nombre)}" class="${p.disponibles <= 0 ? 'agotado' : ''}">${esc(nombreCorto(p.nombre))}<span>${fmt(p.precio)}</span></button>`).join('');
+    const q = ($('#buscaProd').value || '').trim().toLowerCase();
+    $('#gridProductos').innerHTML = datos.productos.map((p, i) => ({ p, i }))
+      .filter(({ p }) => !esLetra(p.nombre) && !esExtra(p.nombre) && !/incluid[oa] en el precio/i.test(p.nombre) && (!q || p.nombre.toLowerCase().includes(q)))
+      .map(({ p, i }) => `
       <button class="prod${p.disponibles <= 0 ? ' agotado' : ''}" data-i="${i}">
         <b>${esc(p.nombre)}</b>
         <span class="meta"><span class="precio">${fmt(p.precio)}${esObjeto(p.nombre) ? ' · $3 con letras' : ''}</span><span>${p.disponibles} disp.</span></span>
-      </button>`).join('') || '<p class="vacio">No hay productos en Inventario.</p>';
+      </button>`).join('') || '<p class="vacio">No hay productos con ese nombre.</p>';
   }
   $('#gridProductos').addEventListener('click', e => {
     const b = e.target.closest('.prod'); if (!b) return;
@@ -679,6 +733,16 @@ details[open] > summary{margin-bottom:4px}
   });
   // Punto de venta Ubii P14: débito 1,5% + 0,25% de transferencia; además $1,50 por día de uso
   const COMISION_PUNTO = 0.0175, USO_PUNTO_DIA = 1.5;
+  // Barra flotante con el total mientras agregas cosas (solo en Vender)
+  function actualizarBarra() {
+    const enVender = !$('#tab-vender').hidden;
+    const r = $('#cardCarrito').getBoundingClientRect();
+    const carritoVisible = r.top < innerHeight - 120 && r.bottom > 0;
+    $('#barraTotal').hidden = !carrito.length || !enVender || carritoVisible;
+  }
+  addEventListener('scroll', actualizarBarra, { passive: true });
+  document.addEventListener('click', e => { if (e.target.closest('nav.tabs')) setTimeout(actualizarBarra, 30); });
+  $('#barraTotal').addEventListener('click', () => $('#cardCarrito').scrollIntoView({ behavior: 'smooth', block: 'start' }));
   let descuento = 0;
   const conDescuento = pr => Math.round(pr * (1 - descuento) * 100) / 100;
   $('#chipsDesc').addEventListener('click', e => {
@@ -710,6 +774,10 @@ details[open] > summary{margin-bottom:4px}
       : `Antes ${fmt(sub)} · descuento ${Math.round(descuento * 100)}%: <b>−${fmt(sub - conDesc)}</b>`;
     $('#txtTotal').title = del && delQuien === 'cliente' ? 'Incluye delivery' : '';
     $('#txtTotal').textContent = fmt(total);
+    const nArt = carrito.reduce((n, c) => n + (/incluid[oa] en el precio/i.test(c.producto) ? 0 : c.cantidad), 0);
+    $('#btCant').textContent = nArt + (nArt === 1 ? ' artículo' : ' artículos');
+    $('#btTotal').textContent = fmt(total);
+    actualizarBarra();
     $('#txtTotalBs').textContent = (datos && datos.tasa ? fmtBs(total * datos.tasa.valor) : '') + (del && delQuien === 'cliente' ? ' · incluye delivery ' + fmt(del) : '') +
       ($('#vMetodo').value === 'Punto de venta' && total > 0 && !$('#cajaMetodo').hidden ? ` · el punto te descuenta ≈ ${fmt(total * COMISION_PUNTO)}` : '');
   }
