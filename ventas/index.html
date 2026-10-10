@@ -1159,10 +1159,11 @@ details[open] > summary{margin-bottom:4px}
     const pct = Math.round((r.recuperado || 0) * 100);
     $('#rPct').textContent = pct + '%'; $('#rBarra').style.width = Math.min(100, pct) + '%';
     const fila = (a, b) => `<div class="stat"><span>${a}</span><b>${b}</b></div>`;
-    $('#rStats').innerHTML = fila('Invertido (tu parte)', fmt(r.invertido)) + fila('Cobrado', fmt(r.cobrado)) +
+    $('#rStats').innerHTML = fila('Invertido para recuperar <span class="chico">(sin impresoras)</span>', fmt(r.invertido)) + fila('Cobrado', fmt(r.cobrado)) +
       fila('Ganancia de lo vendido', fmt(r.ganancia)) + fila('Cobrado este mes', fmt(r.cobradoMes)) +
       fila('Gastado este mes', fmt(r.gastadoMes)) + fila('Pedidos que te deben', fmt(r.porCobrar)) +
       fila('Falta por comprar (estimado)', fmt(r.porComprar)) +
+      fila('Inversión total en Crea3D <span class="chico">(con impresoras)</span>', fmt(datos.gastos.reduce((s, g) => s + (g.miParte || 0), 0))) +
       (porPagar().length ? fila('💸 Me falta pagar', fmt(porPagar().reduce((s, g) => s + g.miParte, 0))) : '');
     $('#rBazar').innerHTML = fila('Vendido en el bazar', fmt(r.bazarVendido)) + fila('Gastos solo del bazar', fmt(r.bazarGastos)) +
       fila('<b>Ganancia del bazar</b>', fmt(r.bazarGanancia));
