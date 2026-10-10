@@ -114,6 +114,10 @@ nav.tabs button[aria-selected="true"]{color:var(--brand)}
 .pin{letter-spacing:8px;text-align:center;font-size:24px;font-weight:800}
 details summary{cursor:pointer;font-weight:700;padding:4px 0}
 .tres{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.ayuda{background:var(--brand-soft);border-radius:12px;padding:10px 12px;font-size:14px;margin-bottom:10px}
+.inv-edit,.g-edit{padding:10px 0;border-bottom:1px solid var(--line)}
+.inv-edit:last-child,.g-edit:last-child{border-bottom:0}
+.g-row b{white-space:nowrap}
 .ed-item{display:grid;grid-template-columns:1fr 56px 72px auto;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
 .ed-item .nom{font-size:13px;font-weight:600;line-height:1.25}
 .ed-item input{padding:7px 6px;text-align:right}
@@ -251,26 +255,39 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
   <!-- INVENTARIO -->
   <section id="tab-inventario" data-tab hidden>
     <h2>Inventario</h2>
-    <p class="chico">Disponibles = hechos − apartados − vendidos. Cuando imprimas más, súmalos aquí.</p>
+    <div class="ayuda">💡 <b>Disponibles = hechos − apartados − vendidos.</b> Lo vendido se resta solo. Toca <b>✏️</b> en un producto para cambiar cuántos tienes hechos o su precio.</div>
     <div class="card">
+      <b>Sumar lo que imprimiste</b>
       <label for="stProd">Producto</label>
       <select id="stProd"></select>
       <div class="fila" style="margin-top:10px">
         <input id="stCant" class="crece" type="number" inputmode="numeric" placeholder="Cuántas hiciste">
         <button class="btn primario" id="btnSumarStock">Sumar</button>
       </div>
-      <p class="chico" style="margin:6px 0 0">Para corregir hacia abajo, escribe un número negativo (ej. −2 si se dañaron).</p>
+      <p class="chico" style="margin:6px 0 0">¿Se dañaron algunas? Escribe un número negativo (ej. −2) y toca Sumar.</p>
     </div>
     <div class="card" id="listaInventario"></div>
+    <details class="card">
+      <summary>➕ Agregar un producto nuevo</summary>
+      <label for="npNombre">Nombre</label><input id="npNombre" placeholder="Ej: Llavero corazón">
+      <div class="tres">
+        <div><label for="npPrecio">Precio $</label><input id="npPrecio" type="number" inputmode="decimal" step="0.01" min="0"></div>
+        <div><label for="npCant">Cuántos tienes</label><input id="npCant" type="number" inputmode="numeric" min="0" value="0"></div>
+        <div><label for="npImp">Impresora</label><select id="npImp"><option>A1</option><option>A1 mini</option><option>X1C</option></select></div>
+      </div>
+      <p class="chico" style="margin:6px 0 0">¿No sabes el precio? Usa la calculadora de "Otro producto" en Vender y copia el sugerido.</p>
+      <button class="btn primario ancho" id="btnNuevoProd" style="margin-top:12px">Agregar producto</button>
+    </details>
   </section>
 
   <!-- GASTOS -->
   <section id="tab-gastos" data-tab hidden>
     <h2>Compras y gastos</h2>
+    <div class="ayuda">💡 <b>Por comprar</b> es tu lista de pendientes. Cuando lo compres, toca <b>Ya lo compré</b> y pasa solo a tus gastos. Todo se puede <b>✏️ editar</b> o <b>🗑️ borrar</b>.</div>
     <h3>Por comprar</h3>
     <div id="listaPorComprar"></div>
-    <details class="card">
-      <summary>Anotar algo que falta comprar</summary>
+    <details class="card" id="cardNuevoPC">
+      <summary>➕ Anotar algo que falta comprar</summary>
       <label for="pcQue">Qué</label><input id="pcQue">
       <div class="dos">
         <div><label for="pcPrecio">Precio estimado $</label><input id="pcPrecio" type="number" inputmode="decimal" step="0.01"></div>
@@ -284,22 +301,10 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     </details>
 
     <h3>Registrar algo que ya pagaste</h3>
-    <div class="card">
-      <label for="gQue">Qué compraste</label><input id="gQue" placeholder="Ej: 2 rollos PLA negro">
-      <div class="dos">
-        <div><label for="gMonto">Monto total $</label><input id="gMonto" type="number" inputmode="decimal" step="0.01"></div>
-        <div><label for="gPct">Me toca</label><select id="gPct"><option value="1">100%</option><option value="0.5">50% (con tu amiga)</option></select></div>
-      </div>
-      <label for="gTipo">Tipo</label><select id="gTipo"></select>
-      <div class="dos">
-        <div><label for="gPara">Para</label><select id="gPara"><option>Negocio</option><option>Bazar</option></select></div>
-        <div><label for="gMetodo">Cómo pagaste</label><select id="gMetodo"></select></div>
-      </div>
-      <label for="gNota">Nota (opcional)</label><input id="gNota" placeholder="Ej: pagado en Bs a tasa BCV">
-      <button class="btn primario ancho" id="btnGuardarGasto" style="margin-top:14px">Guardar gasto</button>
-    </div>
+    <div class="card" id="formGasto"></div>
 
-    <h3>Últimos gastos</h3>
+    <h3>Mis gastos</h3>
+    <input id="buscaGasto" placeholder="Buscar gasto" autocomplete="off" style="margin-bottom:8px">
     <div class="card" id="listaGastos"></div>
   </section>
 
@@ -818,59 +823,207 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
   });
 
   /* ---------- Inventario ---------- */
+  let editProd = null;
   function pintarInventario() {
     $('#stProd').innerHTML = datos.productos.map(p => `<option>${esc(p.nombre)}</option>`).join('');
-    $('#listaInventario').innerHTML = datos.productos.map(p => `
+    $('#listaInventario').innerHTML = datos.productos.map((p, i) => editProd === p.nombre ? `
+      <div class="inv-edit" data-i="${i}">
+        <b>${esc(p.nombre)}</b>
+        <div class="dos">
+          <div><label>Hechos en total</label><input data-h type="number" inputmode="numeric" min="0" value="${p.hechos}"></div>
+          <div><label>Precio de venta $</label><input data-p type="number" inputmode="decimal" step="0.01" min="0" value="${p.precio}"></div>
+        </div>
+        <p class="chico" style="margin:6px 0 0">"Hechos" es todo lo que has fabricado. Lo vendido (${p.vendidos}) y lo apartado (${p.apartados}) se restan solos.</p>
+        <div class="acciones" style="margin-top:10px"><button class="btn chico primario" data-ok>Guardar</button><button class="btn chico" data-x>Cancelar</button></div>
+      </div>` : `
       <div class="inv-fila">
-        <div><b>${esc(p.nombre)}</b><div class="inv-det">${p.hechos} hechos · ${p.apartados} apartados · ${p.vendidos} vendidos</div></div>
-        <div class="inv-num${p.disponibles <= 2 ? ' bajo' : ''}">${p.disponibles}<div class="inv-det" style="font-weight:600">disp.</div></div>
+        <div><b>${esc(p.nombre)}</b><div class="inv-det">${fmt(p.precio)} · ${p.hechos} hechos · ${p.apartados} apartados · ${p.vendidos} vendidos</div></div>
+        <div class="fila" style="gap:10px"><div class="inv-num${p.disponibles <= 2 ? ' bajo' : ''}">${p.disponibles}<div class="inv-det" style="font-weight:600">disp.</div></div>
+        <button class="icono-btn" data-ed="${i}" aria-label="Editar ${esc(p.nombre)}">✏️</button></div>
       </div>`).join('') || '<p class="vacio">Sin productos.</p>';
   }
+  $('#listaInventario').addEventListener('click', async e => {
+    const ed = e.target.closest('[data-ed]');
+    if (ed) { editProd = datos.productos[+ed.dataset.ed].nombre; pintarInventario(); return; }
+    const box = e.target.closest('.inv-edit'); if (!box) return;
+    if (e.target.closest('[data-x]')) { editProd = null; pintarInventario(); return; }
+    if (e.target.closest('[data-ok]')) {
+      const p = datos.productos[+box.dataset.i];
+      const h = box.querySelector('[data-h]').value, pr = box.querySelector('[data-p]').value;
+      const ok = await accion({ accion: 'editarProducto', producto: p.nombre,
+        hechos: h !== '' && +h !== p.hechos ? h : null, precio: pr !== '' && Math.abs(+pr - p.precio) > 0.001 ? pr : null });
+      if (ok) { editProd = null; pintarInventario(); }
+    }
+  });
   $('#btnSumarStock').addEventListener('click', async () => {
     const n = parseInt($('#stCant').value, 10);
     if (!n) return avisar('Escribe cuántas', true);
     const ok = await accion({ accion: 'stock', producto: $('#stProd').value, sumar: n });
     if (ok) $('#stCant').value = '';
   });
+  $('#btnNuevoProd').addEventListener('click', async () => {
+    const n = $('#npNombre').value.trim(), pr = $('#npPrecio').value;
+    if (!n || pr === '') return avisar('Pon el nombre y el precio', true);
+    const ok = await accion({ accion: 'nuevoProducto', producto: n, precio: pr, hechos: $('#npCant').value || 0, impresora: $('#npImp').value });
+    if (ok) { $('#npNombre').value = ''; $('#npPrecio').value = ''; $('#npCant').value = '0'; }
+  });
 
   /* ---------- Gastos ---------- */
+  // Formulario de gasto reutilizable: registrar, editar o "ya lo compré"
+  function formGasto(g, modo) {
+    const L = datos.listas, tasaB = (datos.config && datos.config.binance) || '', tasaBCV = datos.tasa ? datos.tasa.valor : '';
+    const ops = (lista, v) => lista.map(x => `<option${x === v ? ' selected' : ''}>${esc(x)}</option>`).join('');
+    const boton = modo === 'nuevo' ? 'Guardar gasto' : modo === 'comprado' ? 'Pasar a mis gastos' : 'Guardar cambios';
+    return `<div class="fg" data-modo="${modo}">
+      ${modo === 'comprado' ? `<b>${esc(g.que)}</b>` : `<label>Qué compraste</label><input data-k="que" value="${esc(g.que || '')}" placeholder="Ej: 2 rollos PLA negro">`}
+      <div class="dos">
+        <div><label>Fecha</label><input data-k="fecha" type="date" value="${g.fecha ? aISO(g.fecha) : hoyISO()}"></div>
+        <div><label>Pagué en</label><select data-k="moneda"><option value="usd">Dólares</option><option value="bs">Bolívares</option></select></div>
+      </div>
+      <div data-usd><label>Monto total $</label><input data-k="monto" type="number" inputmode="decimal" step="0.01" value="${g.monto != null ? g.monto : ''}"></div>
+      <div data-bs hidden>
+        <div class="dos">
+          <div><label>Monto en Bs</label><input data-k="bs" type="number" inputmode="decimal" step="0.01"></div>
+          <div><label>Tasa a la que cambiaste</label><input data-k="tasa" type="number" inputmode="decimal" step="0.01" value="${tasaB}"></div>
+        </div>
+        <div class="chips" style="margin:6px 0 0">
+          ${tasaB ? `<button type="button" data-tasa="${tasaB}">Binance ${tasaB}</button>` : ''}${tasaBCV ? `<button type="button" data-tasa="${tasaBCV}">BCV ${tasaBCV}</button>` : ''}
+        </div>
+        <p class="chico conv" style="margin:4px 0 0"></p>
+      </div>
+      <div class="dos">
+        <div><label>Me toca</label><select data-k="pct"><option value="1"${(g.pct ?? 1) >= 1 ? ' selected' : ''}>100%</option><option value="0.5"${g.pct === 0.5 ? ' selected' : ''}>50% (con tu amiga)</option></select></div>
+        <div><label>Para</label><select data-k="para">${ops(['Negocio', 'Bazar'], g.para || 'Negocio')}</select></div>
+      </div>
+      <div class="dos">
+        <div><label>Tipo</label><select data-k="tipo">${ops(L.tiposCompra, g.tipo || 'Insumos (switches, aros, bolsas)')}</select></div>
+        <div><label>Cómo pagaste</label><select data-k="metodo"><option value="">—</option>${ops(L.metodosCompra, g.metodo || 'Pago móvil')}</select></div>
+      </div>
+      <label>Nota (opcional)</label><input data-k="nota" value="${esc(g.nota || '')}">
+      <div class="acciones" style="margin-top:12px">
+        <button class="btn primario" data-guardar-g>${boton}</button>
+        ${modo !== 'nuevo' ? '<button class="btn" data-cancelar-g>Cancelar</button>' : ''}
+        ${modo === 'editar' ? '<button class="btn peligro" data-borrar-g>🗑️ Borrar</button>' : ''}
+      </div>
+    </div>`;
+  }
+  function leerFormGasto(box) {
+    const v = k => { const el = box.querySelector(`[data-k="${k}"]`); return el ? el.value : ''; };
+    let monto = parseFloat(v('monto')), nota = v('nota').trim();
+    if (v('moneda') === 'bs') {
+      const bs = parseFloat(v('bs')), t = parseFloat(v('tasa'));
+      if (!(bs > 0) || !(t > 0)) { avisar('Pon el monto en Bs y la tasa', true); return null; }
+      monto = Math.round(bs / t * 100) / 100;
+      const extra = 'Bs ' + bs.toLocaleString('es-VE', { minimumFractionDigits: 2 }) + ' a tasa ' + t;
+      nota = nota ? nota + ' · ' + extra : extra;
+    }
+    if (!(monto >= 0)) { avisar('Pon el monto', true); return null; }
+    return { que: v('que').trim(), fecha: v('fecha'), monto, pct: v('pct'), para: v('para'), tipo: v('tipo'), metodo: v('metodo'), nota };
+  }
+  function actualizarConv(box) {
+    const bs = box.querySelector('[data-k="moneda"]').value === 'bs';
+    box.querySelector('[data-usd]').hidden = bs; box.querySelector('[data-bs]').hidden = !bs;
+    const m = parseFloat(box.querySelector('[data-k="bs"]').value), t = parseFloat(box.querySelector('[data-k="tasa"]').value);
+    box.querySelector('.conv').textContent = m > 0 && t > 0 ? '= ' + fmt(m / t) + ' en dólares reales' : '';
+  }
+  document.addEventListener('input', e => { const box = e.target.closest('.fg'); if (box) actualizarConv(box); });
+  document.addEventListener('change', e => { const box = e.target.closest('.fg'); if (box) actualizarConv(box); });
+  document.addEventListener('click', e => {
+    const b = e.target.closest('.fg [data-tasa]'); if (!b) return;
+    const box = b.closest('.fg'); box.querySelector('[data-k="tasa"]').value = b.dataset.tasa; actualizarConv(box);
+  });
+
+  let editPC = null, compraPC = null, editG = null;
   function pintarGastos() {
-    $('#listaPorComprar').innerHTML = datos.porComprar.map(p => `
-      <div class="card">
+    if (!$('#formGasto .fg')) $('#formGasto').innerHTML = formGasto({}, 'nuevo');
+    $('#listaPorComprar').innerHTML = datos.porComprar.map(p => {
+      if (compraPC === p.fila) return `<div class="card" data-pc="${p.fila}">${formGasto({ que: p.que, monto: p.precio, pct: p.pct, para: p.para, nota: p.nota }, 'comprado')}</div>`;
+      if (editPC === p.fila) return `<div class="card pc-edit" data-pc="${p.fila}">
+        <label>Qué</label><input data-k="que" value="${esc(p.que)}">
+        <div class="dos">
+          <div><label>Precio estimado $</label><input data-k="precio" type="number" inputmode="decimal" step="0.01" value="${p.precio != null ? p.precio : ''}"></div>
+          <div><label>Prioridad</label><select data-k="prioridad">${['Urgente', 'Pronto', 'Cuando se pueda'].map(x => `<option${x === p.prioridad ? ' selected' : ''}>${x}</option>`).join('')}</select></div>
+        </div>
+        <div class="dos">
+          <div><label>Para</label><select data-k="para">${['Negocio', 'Bazar'].map(x => `<option${x === p.para ? ' selected' : ''}>${x}</option>`).join('')}</select></div>
+          <div><label>Me toca</label><select data-k="pct"><option value="1"${p.pct >= 1 ? ' selected' : ''}>100%</option><option value="0.5"${p.pct < 1 ? ' selected' : ''}>50% (con tu amiga)</option></select></div>
+        </div>
+        <label>Nota</label><input data-k="nota" value="${esc(p.nota || '')}">
+        <div class="acciones" style="margin-top:12px"><button class="btn primario" data-pc-ok>Guardar</button><button class="btn" data-pc-x>Cancelar</button><button class="btn peligro" data-pc-del>🗑️ Borrar</button></div>
+      </div>`;
+      return `<div class="card" data-pc="${p.fila}">
         <div class="pedido-cab"><div><b>${esc(p.que)}</b><div class="chico">${esc(p.para)}${p.pct < 1 ? ' · te toca ' + Math.round(p.pct * 100) + '%' : ''}${p.nota ? ' · ' + esc(p.nota) : ''}</div></div>
         <div style="text-align:right"><span class="pill ${p.prioridad === 'Urgente' ? 'Cancelado' : p.prioridad === 'Pronto' ? 'Pedido' : ''}">${esc(p.prioridad || '')}</span><div class="chico" style="margin-top:4px">${p.precio != null ? '≈ ' + fmt(p.precio) : 'sin precio'}</div></div></div>
-        <div class="acciones" style="margin-top:10px"><button class="btn chico primario" data-fila="${p.fila}" data-que="${esc(p.que)}">Ya lo compré</button></div>
-      </div>`).join('') || '<p class="vacio">No falta nada por comprar. 🎉</p>';
-    $('#listaGastos').innerHTML = datos.gastos.slice(0, 15).map(g => `
-      <div class="stat"><span>${esc(g.que)}<div class="chico">${esc(g.fecha)} · ${esc(g.para)}</div></span><b>${fmt(g.miParte)}</b></div>`).join('') || '<p class="vacio">Sin gastos registrados.</p>';
+        <div class="acciones" style="margin-top:10px"><button class="btn chico primario" data-pc-comprar>Ya lo compré</button><button class="btn chico" data-pc-ed>✏️ Editar</button><button class="btn chico peligro" data-pc-del>🗑️</button></div>
+      </div>`;
+    }).join('') || '<p class="vacio">No falta nada por comprar. 🎉</p>';
+    pintarListaGastos();
+    document.querySelectorAll('.fg').forEach(actualizarConv);
   }
+  function pintarListaGastos() {
+    const q = ($('#buscaGasto').value || '').trim().toLowerCase();
+    const lista = datos.gastos.filter(g => !q || (g.que + ' ' + g.tipo + ' ' + g.nota).toLowerCase().includes(q));
+    const total = lista.reduce((s, g) => s + g.miParte, 0);
+    $('#listaGastos').innerHTML = (lista.length ? `<div class="stat"><span class="chico">${lista.length} ${lista.length === 1 ? 'gasto' : 'gastos'}</span><b>Tu parte: ${fmt(total)}</b></div>` : '') +
+      lista.map(g => editG === g.fila ? `<div class="g-edit" data-g="${g.fila}">${formGasto(g, 'editar')}</div>` : `
+      <div class="stat g-row"><span><b>${esc(g.que)}</b><div class="chico">${esc(g.fecha || 'sin fecha')} · ${esc(g.para)}${g.pct < 1 ? ' · 50%' : ''}${g.monto === null ? ' · ⚠️ sin monto' : ''}</div></span>
+      <span class="fila" style="gap:8px"><b>${fmt(g.miParte)}</b><button class="icono-btn" data-g-ed="${g.fila}" aria-label="Editar">✏️</button></span></div>`).join('')
+      || '<p class="vacio">Sin gastos registrados.</p>';
+    document.querySelectorAll('#listaGastos .fg').forEach(actualizarConv);
+  }
+  $('#buscaGasto').addEventListener('input', pintarListaGastos);
+
   $('#listaPorComprar').addEventListener('click', async e => {
-    const b = e.target.closest('button[data-fila]'); if (!b) return;
-    const m = prompt('¿Cuánto pagaste en total por "' + b.dataset.que + '"? (en $)');
-    if (m === null) return;
-    const monto = parseFloat(String(m).replace(',', '.'));
-    if (!(monto >= 0)) return avisar('Monto inválido', true);
-    const ms = datos.listas.metodosCompra;
-    const r = prompt('¿Cómo pagaste? Escribe el número:\n' + ms.map((x, i) => (i + 1) + '. ' + x).join('\n'), '1');
-    if (r === null) return;
-    const ts = datos.listas.tiposCompra;
-    const t = prompt('¿Qué tipo de compra es?\n' + ts.map((x, i) => (i + 1) + '. ' + x).join('\n'), '2');
-    if (t === null) return;
-    await accion({ accion: 'comprado', fila: +b.dataset.fila, que: b.dataset.que, monto,
-      metodo: ms[parseInt(r, 10) - 1] || '', tipo: ts[parseInt(t, 10) - 1] || 'Otro' });
+    if (e.target.closest('[data-tasa]')) return;
+    const card = e.target.closest('[data-pc]'); if (!card) return;
+    const fila = +card.dataset.pc, p = datos.porComprar.find(x => x.fila === fila); if (!p) return;
+    if (e.target.closest('[data-pc-comprar]')) { compraPC = fila; editPC = null; pintarGastos(); return; }
+    if (e.target.closest('[data-pc-ed]')) { editPC = fila; compraPC = null; pintarGastos(); return; }
+    if (e.target.closest('[data-pc-x]') || e.target.closest('[data-cancelar-g]')) { editPC = compraPC = null; pintarGastos(); return; }
+    if (e.target.closest('[data-pc-del]')) {
+      if (!confirm('¿Quitar "' + p.que + '" de la lista?')) return;
+      if (await accion({ accion: 'borrarPorComprar', fila, queOriginal: p.que })) { editPC = null; pintarGastos(); }
+      return;
+    }
+    if (e.target.closest('[data-pc-ok]')) {
+      const v = k => card.querySelector(`[data-k="${k}"]`).value;
+      if (await accion({ accion: 'editarPorComprar', fila, queOriginal: p.que, que: v('que'), precio: v('precio'), prioridad: v('prioridad'), para: v('para'), pct: v('pct'), nota: v('nota') })) { editPC = null; pintarGastos(); }
+      return;
+    }
+    if (e.target.closest('[data-guardar-g]')) {
+      const g = leerFormGasto(card.querySelector('.fg')); if (!g) return;
+      if (await accion(Object.assign({}, g, { accion: 'comprado', fila, que: p.que }))) { compraPC = null; pintarGastos(); }
+    }
+  });
+  $('#formGasto').addEventListener('click', async e => {
+    if (!e.target.closest('[data-guardar-g]')) return;
+    const box = $('#formGasto .fg'), g = leerFormGasto(box); if (!g) return;
+    if (!g.que) return avisar('¿Qué compraste?', true);
+    if (await accion(Object.assign({ accion: 'gasto' }, g))) $('#formGasto').innerHTML = formGasto({}, 'nuevo');
+  });
+  $('#listaGastos').addEventListener('click', async e => {
+    if (e.target.closest('[data-tasa]')) return;
+    const ed = e.target.closest('[data-g-ed]');
+    if (ed) { editG = +ed.dataset.gEd; pintarListaGastos(); return; }
+    const box = e.target.closest('[data-g]'); if (!box) return;
+    const fila = +box.dataset.g, g0 = datos.gastos.find(x => x.fila === fila); if (!g0) return;
+    if (e.target.closest('[data-cancelar-g]')) { editG = null; pintarListaGastos(); return; }
+    if (e.target.closest('[data-borrar-g]')) {
+      if (!confirm('¿Borrar el gasto "' + g0.que + '"? Ya no contará en tu inversión.')) return;
+      if (await accion({ accion: 'borrarGasto', fila, queOriginal: g0.que })) { editG = null; pintarListaGastos(); }
+      return;
+    }
+    if (e.target.closest('[data-guardar-g]')) {
+      const g = leerFormGasto(box.querySelector('.fg')); if (!g) return;
+      if (!g.que) return avisar('¿Qué compraste?', true);
+      if (await accion(Object.assign({ accion: 'editarGasto', fila, queOriginal: g0.que }, g))) { editG = null; pintarListaGastos(); }
+    }
   });
   $('#btnAgregarPC').addEventListener('click', async () => {
     const que = $('#pcQue').value.trim(); if (!que) return avisar('¿Qué vas a comprar?', true);
     const ok = await accion({ accion: 'porComprar', que, precio: $('#pcPrecio').value, prioridad: $('#pcPrioridad').value,
       para: $('#pcPara').value, pct: $('#pcPct').value });
-    if (ok) { $('#pcQue').value = ''; $('#pcPrecio').value = ''; }
-  });
-  $('#btnGuardarGasto').addEventListener('click', async () => {
-    const que = $('#gQue').value.trim(); const monto = $('#gMonto').value;
-    if (!que || monto === '') return avisar('Pon qué compraste y el monto', true);
-    const ok = await accion({ accion: 'gasto', que, monto, pct: $('#gPct').value, tipo: $('#gTipo').value,
-      para: $('#gPara').value, metodo: $('#gMetodo').value, nota: $('#gNota').value.trim() });
-    if (ok) { $('#gQue').value = ''; $('#gMonto').value = ''; $('#gNota').value = ''; }
+    if (ok) { $('#pcQue').value = ''; $('#pcPrecio').value = ''; $('#cardNuevoPC').open = false; }
   });
 
   /* ---------- Resumen ---------- */
@@ -904,14 +1057,12 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
       opciones($('#vMetodo'), L.metodosVenta, 'Pago móvil');
       $('#vMetodo').insertAdjacentHTML('afterbegin', '<option value="">Todavía no paga</option>');
       opciones($('#vEstado'), L.estados, 'Pagado');
-      opciones($('#gTipo'), L.tiposCompra, 'Insumos (switches, aros, bolsas)');
-      opciones($('#gMetodo'), L.metodosCompra, 'Pago móvil');
       ponerDel('cliente');
       $('#vFecha').value = hoyISO();
       llenarCalc();
       ponerModo('bazar');
       iniciado = true;
-      setInterval(() => { if (cola.length) vaciarCola(); else if (!document.hidden && !editando) recargar(true); }, 60000);
+      setInterval(() => { if (cola.length) vaciarCola(); else if (!document.hidden && !editando && !editProd && !editPC && !compraPC && !editG && !(document.activeElement && /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))) recargar(true); }, 60000);
       window.addEventListener('online', vaciarCola);
     }
     pintarCola(); pintarTodo();
