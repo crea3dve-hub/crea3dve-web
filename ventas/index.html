@@ -672,6 +672,8 @@ details[open] > summary{margin-bottom:4px}
     $('#otroNombre').value = ''; $('#otroPrecio').value = ''; $('#otroCant').value = '1'; limpiarCalc();
     pintarCarrito();
   });
+  // Punto de venta Ubii P14: débito 1,5% + 0,25% de transferencia; además $1,50 por día de uso
+  const COMISION_PUNTO = 0.0175, USO_PUNTO_DIA = 1.5;
   let descuento = 0;
   const conDescuento = pr => Math.round(pr * (1 - descuento) * 100) / 100;
   $('#chipsDesc').addEventListener('click', e => {
@@ -702,7 +704,8 @@ details[open] > summary{margin-bottom:4px}
       : `Antes ${fmt(sub)} · descuento ${Math.round(descuento * 100)}%: <b>−${fmt(sub - conDesc)}</b>`;
     $('#txtTotal').title = del && delQuien === 'cliente' ? 'Incluye delivery' : '';
     $('#txtTotal').textContent = fmt(total);
-    $('#txtTotalBs').textContent = (datos && datos.tasa ? fmtBs(total * datos.tasa.valor) : '') + (del && delQuien === 'cliente' ? ' · incluye delivery ' + fmt(del) : '');
+    $('#txtTotalBs').textContent = (datos && datos.tasa ? fmtBs(total * datos.tasa.valor) : '') + (del && delQuien === 'cliente' ? ' · incluye delivery ' + fmt(del) : '') +
+      ($('#vMetodo').value === 'Punto de venta' && total > 0 && !$('#cajaMetodo').hidden ? ` · el punto te descuenta ≈ ${fmt(total * COMISION_PUNTO)}` : '');
   }
   $('#carrito').addEventListener('click', e => {
     const b = e.target.closest('button[data-a]'); if (!b) return;
@@ -715,6 +718,7 @@ details[open] > summary{margin-bottom:4px}
     const i = e.target.dataset.p; if (i == null) return;
     const v = parseFloat(e.target.value); carrito[+i].precio = v >= 0 ? v : 0; carrito[+i].manual = true; pintarCarrito();
   });
+  $('#vMetodo').addEventListener('change', () => pintarCarrito());
   $('#btnVaciar').addEventListener('click', () => { carrito = []; pintarCarrito(); });
 
   $('#btnGuardarVenta').addEventListener('click', async () => {
@@ -1256,7 +1260,10 @@ details[open] > summary{margin-bottom:4px}
     cobradas.forEach(p => { const m = p.metodo || 'Sin método'; porMetodo[m] = (porMetodo[m] || 0) + p.total; });
     const prods = {};
     v.forEach(p => p.items.forEach(i => { if (!esIncluido(i) && i.producto !== 'Delivery') prods[nombreCorto(i.producto)] = (prods[nombreCorto(i.producto)] || 0) + i.cantidad; }));
-    return { v, cobradas, porMetodo, prods, total: cobradas.reduce((s, p) => s + p.total, 0),
+    const punto = porMetodo['Punto de venta'] || 0;
+    const usoAnotado = datos.gastos.some(g => g.fecha === hoyDMY() && /uso del punto/i.test(g.que));
+    return { v, cobradas, porMetodo, prods, punto, comision: punto * COMISION_PUNTO, uso: punto ? USO_PUNTO_DIA : 0, usoAnotado,
+      bazar: v.some(p => p.canal === 'Bazar'), total: cobradas.reduce((s, p) => s + p.total, 0),
       pendiente: v.filter(p => p.estado === 'Pedido' && !esRegalo(p)).reduce((s, p) => s + p.total, 0) };
   }
   function pintarHoy() {
@@ -1267,6 +1274,9 @@ details[open] > summary{margin-bottom:4px}
       `<div class="grande" style="margin:6px 0 0">${fmt(c.total)}</div>` +
       `<div class="chico" style="margin-bottom:6px">cobrado en ${c.cobradas.length} ${c.cobradas.length === 1 ? 'venta' : 'ventas'}${datos.tasa ? ' · ' + fmtBs(c.total * datos.tasa.valor) : ''}</div>` +
       Object.entries(c.porMetodo).map(([m, t]) => fila(esc(m), fmt(t))).join('') +
+      (c.punto ? fila('Comisión del punto (1,75%)', '−' + fmt(c.comision)) + fila('Uso del punto hoy', '−' + fmt(c.uso)) +
+        fila('<b>Te queda limpio</b>', fmt(c.total - c.comision - c.uso)) +
+        (c.usoAnotado ? '' : `<button class="btn chico ancho" id="btnUsoPunto" style="margin-top:8px">Anotar en gastos los ${fmt(USO_PUNTO_DIA)} del punto de hoy</button>`) : '') +
       (c.pendiente ? fila('Encargos de hoy sin pagar', fmt(c.pendiente)) : '') +
       `<details style="margin-top:8px"><summary>➕ Qué se vendió hoy</summary>` +
       Object.entries(c.prods).sort((a, b) => b[1] - a[1]).map(([n, q]) => fila(esc(n), q)).join('') + `</details>`;
@@ -1276,10 +1286,17 @@ details[open] > summary{margin-bottom:4px}
     const t = `🧾 Cierre Crea3d · ${hoyDMY()}\n\nCobrado: ${fmt(c.total)} en ${c.cobradas.length} ventas` +
       (datos.tasa ? ` (${fmtBs(c.total * datos.tasa.valor)})` : '') + '\n' +
       Object.entries(c.porMetodo).map(([m, x]) => `• ${m}: ${fmt(x)}`).join('\n') +
+      (c.punto ? `\nComisión del punto: −${fmt(c.comision)} · uso del día: −${fmt(c.uso)}\nLimpio: ${fmt(c.total - c.comision - c.uso)}` : '') +
       (c.pendiente ? `\nEncargos sin pagar: ${fmt(c.pendiente)}` : '') +
       '\n\nVendido:\n' + Object.entries(c.prods).sort((a, b) => b[1] - a[1]).map(([n, q]) => `• ${q} × ${n}`).join('\n');
     if (navigator.share) { try { await navigator.share({ text: t }); return; } catch (e) { if (e.name === 'AbortError') return; } }
     try { await navigator.clipboard.writeText(t); avisar('Cierre copiado'); } catch (e) { prompt('Copia el cierre:', t); }
+  });
+  $('#hoyRes').addEventListener('click', async e => {
+    if (!e.target.closest('#btnUsoPunto')) return;
+    const c = cierreHoy();
+    await accion({ accion: 'gasto', que: 'Uso del punto de venta (cierre ' + hoyDMY() + ')', fecha: hoyISO(), monto: USO_PUNTO_DIA, pct: 1,
+      tipo: 'Impresoras y equipos', para: c.bazar ? 'Bazar' : 'Negocio', metodo: '', nota: 'Cobro diario de Ubii al hacer el cierre' }, 'Uso del punto anotado');
   });
   function pintarResumen() {
     pintarHoy();
