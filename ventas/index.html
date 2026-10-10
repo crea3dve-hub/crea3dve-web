@@ -334,6 +334,12 @@ details[open] > summary{margin-bottom:4px}
     <div class="card" id="rStats"></div>
     <h3>Bazar</h3>
     <div class="card" id="rBazar"></div>
+    <details class="card" id="cardPago">
+      <summary>💳 Mis datos de pago</summary>
+      <p class="chico" style="margin:4px 0 8px">Salen en el mensaje de pago y en la nota de pedido cuando el cliente todavía no ha pagado. Una línea por dato.</p>
+      <textarea id="txtPago" rows="6" placeholder="Pago móvil: Banco ..., 0424-..., C.I. ...&#10;Zelle: correo@...&#10;Binance: ..."></textarea>
+      <button class="btn primario ancho" id="btnPago" style="margin-top:10px">Guardar datos de pago</button>
+    </details>
     <h3>Clientes</h3>
     <input id="buscaCliente" placeholder="Buscar por nombre, cédula o teléfono" autocomplete="off" style="margin-bottom:8px">
     <div class="card" id="rClientes"></div>
@@ -805,7 +811,8 @@ details[open] > summary{margin-bottom:4px}
       if (p.estado === 'Pedido') botones.push(`<button class="btn chico primario" data-num="${esc(p.numero)}" data-e="Pagado">Ya pagó</button>`);
       if (p.estado === 'Pedido' || p.estado === 'Pagado') botones.push(`<button class="btn chico" data-num="${esc(p.numero)}" data-e="Entregado">Entregado</button>`);
       if (p.estado !== 'Cancelado' && p.estado !== 'Entregado') botones.push(`<button class="btn chico peligro" data-num="${esc(p.numero)}" data-e="Cancelado">Cancelar</button>`);
-      if (p.estado === 'Pagado' || p.estado === 'Entregado') botones.push(`<button class="btn chico" data-nota="${esc(p.numero)}">📄 Nota de entrega</button>`);
+      if (p.estado === 'Pedido') botones.push(`<button class="btn chico" data-cobro="${esc(p.numero)}">💬 Mensaje de pago</button>`);
+      if (p.estado !== 'Cancelado') botones.push(`<button class="btn chico" data-nota="${esc(p.numero)}">📄 ${p.estado === 'Pedido' ? 'Nota de pedido' : 'Nota de entrega'}</button>`);
       botones.push(`<button class="btn chico" data-editar="${esc(p.numero)}">✏️ Editar</button>`);
       if (editando === p.numero) return editorPedido(p);
       return `<div class="card">
@@ -816,13 +823,40 @@ details[open] > summary{margin-bottom:4px}
       </div>`;
     }).join('') || '<p class="vacio">Nada por aquí.</p>';
   }
+  /* ---------- Datos de pago (se guardan en este teléfono) ---------- */
+  const nombreCorto = t => String(t).replace(/\s*\([^)]*\)/g, '').replace('Clicker – cada letra', 'Letras de clicker').replace('Clicker de objeto – ', 'Clicker ');
+  const datosPago = () => (leer('c3_pago') || '').trim();
+  function faltanDatosPago() {
+    if (datosPago()) return false;
+    avisar('Primero escribe tus datos de pago en Resumen → Mis datos de pago', true);
+    const b = document.querySelector('nav.tabs button[data-ir="resumen"]'); if (b) b.click();
+    setTimeout(() => { $('#cardPago').open = true; $('#cardPago').scrollIntoView({ behavior: 'smooth' }); $('#txtPago').focus(); }, 80);
+    return true;
+  }
+  async function mensajeDePago(p) {
+    if (faltanDatosPago()) return;
+    const items = p.items.filter(i => i.total > 0);
+    const total = items.reduce((a, i) => a + i.total, 0);
+    const nombre = (p.cliente || '').replace(/^Cliente\s.*$/, '').split(' ')[0];
+    const t = `¡Hola${nombre ? ' ' + nombre : ''}! 😊 Este es tu pedido ${p.numero} de Crea3d:\n\n` +
+      items.map(i => `• ${i.cantidad} × ${nombreCorto(i.producto)} — ${fmt(i.total)}`).join('\n') +
+      `\n\n*Total: ${fmt(total)}*` + (datos.tasa ? ` (${fmtBs(total * datos.tasa.valor)} a tasa BCV de hoy)` : '') +
+      `\n\n*Datos de pago:*\n${datosPago()}\n\nCuando pagues, mándame el comprobante por aquí y te confirmo 🙌`;
+    if (navigator.share) { try { await navigator.share({ text: t }); return; } catch (e) { if (e.name === 'AbortError') return; } }
+    try { await navigator.clipboard.writeText(t); avisar('Mensaje copiado. Pégalo en WhatsApp.'); }
+    catch (e) { prompt('Copia este mensaje:', t); }
+  }
+
   /* ---------- Nota de entrega (imagen para mandar por WhatsApp) ---------- */
   async function notaDeEntrega(p) {
     try { await Promise.all([document.fonts.load('900 60px Orbitron'), document.fonts.load('700 30px Figtree'), document.fonts.load('400 30px Figtree')]); } catch (e) {}
     const items = p.items.filter(i => i.total > 0);
     const cli = buscarCliente(p.cliente) || {};
     const extras = [cli.cedula && 'C.I./RIF: ' + cli.cedula, cli.telefono && 'Tel: ' + cli.telefono].filter(Boolean);
-    const W = 1080, filaH = 74, H = 810 + items.length * filaH + (datos.tasa ? 60 : 0) + extras.length * 45;
+    const sinPagar = p.estado === 'Pedido';
+    if (sinPagar && faltanDatosPago()) return;
+    const lineasPago = sinPagar ? datosPago().split('\n').map(l => l.trim()).filter(Boolean) : [];
+    const W = 1080, filaH = 74, H = 810 + items.length * filaH + (datos.tasa ? 60 : 0) + extras.length * 45 + (sinPagar ? 170 + lineasPago.length * 44 : 0);
     const c = document.createElement('canvas'); c.width = W; c.height = H;
     const x = c.getContext('2d');
     const verde = '#5CBA2E', tinta = '#141712', gris = '#5E6659', linea = '#DDE3D6';
@@ -835,7 +869,7 @@ details[open] > summary{margin-bottom:4px}
     const wCrea = x.measureText('CREA').width;
     txt('3D', 64 + wCrea, 100, '900 62px Orbitron, Arial Black, sans-serif', '#FFFFFF');
     txt('@crea3d.ve', W - 64, 96, '700 30px ' + ff, tinta, 'right');
-    txt('NOTA DE ENTREGA', 64, 230, '800 40px ' + ff, tinta);
+    txt(sinPagar ? 'NOTA DE PEDIDO' : 'NOTA DE ENTREGA', 64, 230, '800 40px ' + ff, tinta);
     txt('N° ' + p.numero, W - 64, 230, '800 40px ' + ff, tinta, 'right');
     txt('Fecha: ' + p.fecha, 64, 285, '400 30px ' + ff, gris);
     txt('Cliente: ' + (p.cliente || '—'), 64, 330, '400 30px ' + ff, gris);
@@ -848,7 +882,7 @@ details[open] > summary{margin-bottom:4px}
     y += 20;
     items.forEach(i => {
       y += filaH - 20;
-      const nom = i.producto.replace(/\s*\([^)]*\)/g, '').replace('Clicker – cada letra', 'Letras de clicker').replace('Clicker de objeto – ', 'Clicker ');
+      const nom = nombreCorto(i.producto);
       txt(cortar(nom, 560, '600 30px ' + ff), 64, y, '600 30px ' + ff, tinta);
       txt(String(i.cantidad), 700, y, '400 30px ' + ff, tinta, 'right');
       txt(fmt(i.total), W - 64, y, '600 30px ' + ff, tinta, 'right');
@@ -858,10 +892,11 @@ details[open] > summary{margin-bottom:4px}
     y += 80;
     txt('TOTAL', 64, y, '800 44px ' + ff, tinta); txt(fmt(total), W - 64, y, '800 44px ' + ff, tinta, 'right');
     if (datos.tasa) { y += 52; txt(fmtBs(total * datos.tasa.valor) + ' · tasa BCV ' + datos.tasa.valor.toLocaleString('es-VE', { maximumFractionDigits: 2 }), W - 64, y, '400 26px ' + ff, gris, 'right'); }
-    // sello PAGADO
+    // sello PAGADO o PENDIENTE DE PAGO
+    const rojo = '#D33A2C';
     x.save(); x.translate(250, y + 85); x.rotate(-0.12);
-    x.strokeStyle = verde; x.lineWidth = 6; x.strokeRect(-150, -48, 300, 84);
-    txt('PAGADO', 0, 16, '900 46px ' + ff, verde, 'center'); x.restore();
+    x.strokeStyle = sinPagar ? rojo : verde; x.lineWidth = 6; x.strokeRect(sinPagar ? -175 : -150, -48, sinPagar ? 350 : 300, 84);
+    txt(sinPagar ? 'POR PAGAR' : 'PAGADO', 0, 16, '900 46px ' + ff, sinPagar ? rojo : verde, 'center'); x.restore();
     // sello POR ENTREGAR si todavía no se ha entregado
     if (p.estado !== 'Entregado') {
       const naranja = '#E07B00';
@@ -869,7 +904,16 @@ details[open] > summary{margin-bottom:4px}
       x.strokeStyle = naranja; x.lineWidth = 6; x.strokeRect(-200, -48, 400, 84);
       txt('POR ENTREGAR', 0, 16, '900 44px ' + ff, naranja, 'center'); x.restore();
     }
-    txt('¡Gracias por tu compra!', W / 2, H - 90, '700 32px ' + ff, tinta, 'center');
+    // datos de pago (solo si todavía no ha pagado)
+    if (sinPagar) {
+      y += 230;
+      const alto = 70 + lineasPago.length * 44;
+      x.fillStyle = '#F2F7EC'; x.fillRect(64, y - 50, W - 128, alto);
+      x.fillStyle = verde; x.fillRect(64, y - 50, 8, alto);
+      txt('DATOS DE PAGO', 100, y, '800 28px ' + ff, tinta);
+      lineasPago.forEach((l, k) => txt(cortar(l, W - 200, '500 28px ' + ff), 100, y + 46 + k * 44, '500 28px ' + ff, tinta));
+    }
+    txt(sinPagar ? '¡Gracias por tu pedido!' : '¡Gracias por tu compra!', W / 2, H - 90, '700 32px ' + ff, tinta, 'center');
     txt('crea3dve.com · WhatsApp 0424-2674222', W / 2, H - 45, '400 26px ' + ff, gris, 'center');
     const blob = await new Promise(r => c.toBlob(r, 'image/png'));
     const nombre = 'Nota-' + p.numero + '.png';
@@ -890,6 +934,8 @@ details[open] > summary{margin-bottom:4px}
       else if (e.target.closest('[data-guardar]')) guardarEdicion(card);
       return;
     }
+    const bc = e.target.closest('button[data-cobro]');
+    if (bc) { const p = datos.ventas.find(v => v.numero === bc.dataset.cobro); if (p) mensajeDePago(p); return; }
     const b = e.target.closest('button[data-nota]'); if (!b) return;
     const p = datos.ventas.find(v => v.numero === b.dataset.nota); if (p) notaDeEntrega(p);
   });
@@ -1176,12 +1222,15 @@ details[open] > summary{margin-bottom:4px}
       fila('<b>Ganancia del bazar</b>', fmt(r.bazarGanancia));
   }
 
+  $('#btnPago').addEventListener('click', () => { guardar('c3_pago', $('#txtPago').value.trim()); avisar('Datos de pago guardados'); $('#cardPago').open = false; });
+
   function pintarTodo() {
     if (!datos) return;
     try { guardar('c3_datos', JSON.stringify(datos)); } catch (e) {}
     $('#txtTasa').textContent = datos.tasa ? 'BCV ' + datos.tasa.valor.toLocaleString('es-VE', { maximumFractionDigits: 2 }) : '';
     const nWeb = (datos.pedidosWeb || []).length, bt = document.querySelector('nav.tabs button[data-ir="pedidos"]');
     if (bt) bt.dataset.badge = nWeb || '';
+    if (document.activeElement !== $('#txtPago')) $('#txtPago').value = datosPago();
     pintarProductos(); pintarCarrito(); pintarPedidos(); pintarInventario(); pintarGastos(); pintarPorPagar(); pintarResumen(); pintarClientes();
     recordatorioDiario();
   }
