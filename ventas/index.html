@@ -317,7 +317,6 @@ details[open] > summary{margin-bottom:4px}
       <button data-f="Entregado" aria-pressed="false">Entregados</button>
       <button data-f="todos" aria-pressed="false">Todos</button>
     </div>
-    <div class="card" id="cardImprimir" hidden></div>
     <div id="listaPedidos"></div>
   </section>
 
@@ -994,17 +993,6 @@ details[open] > summary{margin-bottom:4px}
     pintarWeb();
     const lista = datos.ventas.filter(p =>
       filtro === 'todos' ? true : filtro === 'pend' ? (p.estado === 'Pedido' || p.estado === 'Pagado') : p.estado === filtro);
-    // Lo que falta preparar de todo lo que no se ha entregado (pagado o no)
-    const falta = {};
-    if (filtro === 'pend') lista.forEach(p => p.items.forEach(i => {
-      if (/^Switch|^Delivery$|^Extra/.test(i.producto)) return;
-      const n = nombreCorto(i.producto).replace('Base de clicker – ', 'Base de ');
-      falta[n] = (falta[n] || 0) + i.cantidad;
-    }));
-    const filasFalta = Object.entries(falta).sort((a, b) => b[1] - a[1]);
-    $('#cardImprimir').hidden = !filasFalta.length;
-    $('#cardImprimir').innerHTML = `<b>🖨️ Lo que tienes que preparar</b><p class="chico" style="margin:2px 0 6px">De los ${lista.length} ${lista.length === 1 ? 'pedido' : 'pedidos'} sin entregar (pagados o no).</p>` +
-      filasFalta.map(([n, q]) => `<div class="stat"><span>${esc(n)}</span><b>${q}</b></div>`).join('');
     $('#listaPedidos').innerHTML = lista.map(p => {
       const botones = [];
       const regalo = esRegalo(p);
