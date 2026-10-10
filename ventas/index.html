@@ -177,7 +177,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
           <div><label for="kM">Minutos</label><input id="kM" type="number" inputmode="numeric" min="0" max="59" placeholder="0"></div>
         </div>
         <div class="dos">
-          <div><label for="kT">Tu trabajo (min)</label><input id="kT" type="number" inputmode="numeric" min="0" value="10"></div>
+          <div><label for="kT">Tu trabajo (min)</label><input id="kT" type="number" inputmode="numeric" min="0" value="15"></div>
           <div><label for="kPers">Tipo</label><select id="kPers"><option value="0">General</option><option value="1">Personalizado (falla más)</option></select></div>
         </div>
         <div id="kRes" class="kres" hidden></div>
@@ -544,7 +544,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     pintarCarrito();
   });
   /* ---------- Calculadora de precio (misma fórmula que la hoja Productos) ---------- */
-  const CONF_BASE = { hora: 3, fallos: 0.1, ganancia: 0.5, redondeo: 0.5, electricidad: 0, fallosPersonalizado: 0.5, gastoFijo: 0,
+  const CONF_BASE = { hora: 5, fallos: 0.1, ganancia: 1, redondeo: 0.5, electricidad: 0, fallosPersonalizado: 0.5, gastoFijo: 0,
     filamentos: { 'PLA': 0.0254, 'PLA Silk': 0.026, 'PETG': 0.026, 'TPU': 0.026 },
     impresoras: { 'X1C': 2015 / 3000, 'A1': 890 / 3000, 'A1 mini': 850 / 3000 } };
   const conf = () => Object.assign({}, CONF_BASE, (datos && datos.config) || {});
@@ -595,7 +595,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     try { await navigator.clipboard.writeText(msg); avisar('Mensaje copiado, pégalo en WhatsApp'); }
     catch (e) { prompt('Copia este mensaje:', msg); }
   });
-  function limpiarCalc() { ['#kG', '#kH', '#kM'].forEach(s => { $(s).value = ''; }); $('#kT').value = '10'; $('#kPers').value = '0'; precioTocado = false; kCosto = null; $('#kRes').hidden = true; $('#kGan').hidden = true; }
+  function limpiarCalc() { ['#kG', '#kH', '#kM'].forEach(s => { $(s).value = ''; }); $('#kT').value = '15'; $('#kPers').value = '0'; precioTocado = false; kCosto = null; $('#kRes').hidden = true; $('#kGan').hidden = true; }
   $('#btnAgregarOtro').addEventListener('click', () => {
     const n = $('#otroNombre').value.trim(); const pr = parseFloat($('#otroPrecio').value);
     const c = Math.max(1, parseInt($('#otroCant').value || '1', 10));
