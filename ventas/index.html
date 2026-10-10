@@ -336,6 +336,10 @@ details[open] > summary{margin-bottom:4px}
   <!-- RESUMEN -->
   <section id="tab-resumen" data-tab hidden>
     <h2>Cómo va el negocio</h2>
+    <div class="card" id="cardHoy">
+      <div class="fila" style="justify-content:space-between"><b>🧾 Cierre de hoy</b><button class="btn chico" id="btnCierre">Compartir</button></div>
+      <div id="hoyRes"></div>
+    </div>
     <div class="card">
       <div class="chico">Te falta por recuperar</div>
       <div class="grande" id="rFalta">—</div>
@@ -1243,7 +1247,42 @@ details[open] > summary{margin-bottom:4px}
   });
 
   /* ---------- Resumen ---------- */
+  // Cierre del día: lo cobrado hoy, separado por cómo pagaron, para cuadrar la caja
+  const hoyDMY = () => { const [a, m, d] = hoyISO().split('-'); return d + '/' + m + '/' + a; };
+  function cierreHoy() {
+    const v = datos.ventas.filter(p => p.fecha === hoyDMY() && p.estado !== 'Cancelado');
+    const cobradas = v.filter(p => p.estado === 'Pagado' || p.estado === 'Entregado');
+    const porMetodo = {};
+    cobradas.forEach(p => { const m = p.metodo || 'Sin método'; porMetodo[m] = (porMetodo[m] || 0) + p.total; });
+    const prods = {};
+    v.forEach(p => p.items.forEach(i => { if (!esIncluido(i) && i.producto !== 'Delivery') prods[nombreCorto(i.producto)] = (prods[nombreCorto(i.producto)] || 0) + i.cantidad; }));
+    return { v, cobradas, porMetodo, prods, total: cobradas.reduce((s, p) => s + p.total, 0),
+      pendiente: v.filter(p => p.estado === 'Pedido' && !esRegalo(p)).reduce((s, p) => s + p.total, 0) };
+  }
+  function pintarHoy() {
+    const c = cierreHoy(), fila = (a, b) => `<div class="stat"><span>${a}</span><b>${b}</b></div>`;
+    if (!c.v.length) { $('#hoyRes').innerHTML = '<p class="vacio">Todavía no hay ventas hoy.</p>'; $('#btnCierre').hidden = true; return; }
+    $('#btnCierre').hidden = false;
+    $('#hoyRes').innerHTML =
+      `<div class="grande" style="margin:6px 0 0">${fmt(c.total)}</div>` +
+      `<div class="chico" style="margin-bottom:6px">cobrado en ${c.cobradas.length} ${c.cobradas.length === 1 ? 'venta' : 'ventas'}${datos.tasa ? ' · ' + fmtBs(c.total * datos.tasa.valor) : ''}</div>` +
+      Object.entries(c.porMetodo).map(([m, t]) => fila(esc(m), fmt(t))).join('') +
+      (c.pendiente ? fila('Encargos de hoy sin pagar', fmt(c.pendiente)) : '') +
+      `<details style="margin-top:8px"><summary>➕ Qué se vendió hoy</summary>` +
+      Object.entries(c.prods).sort((a, b) => b[1] - a[1]).map(([n, q]) => fila(esc(n), q)).join('') + `</details>`;
+  }
+  $('#btnCierre').addEventListener('click', async () => {
+    const c = cierreHoy();
+    const t = `🧾 Cierre Crea3d · ${hoyDMY()}\n\nCobrado: ${fmt(c.total)} en ${c.cobradas.length} ventas` +
+      (datos.tasa ? ` (${fmtBs(c.total * datos.tasa.valor)})` : '') + '\n' +
+      Object.entries(c.porMetodo).map(([m, x]) => `• ${m}: ${fmt(x)}`).join('\n') +
+      (c.pendiente ? `\nEncargos sin pagar: ${fmt(c.pendiente)}` : '') +
+      '\n\nVendido:\n' + Object.entries(c.prods).sort((a, b) => b[1] - a[1]).map(([n, q]) => `• ${q} × ${n}`).join('\n');
+    if (navigator.share) { try { await navigator.share({ text: t }); return; } catch (e) { if (e.name === 'AbortError') return; } }
+    try { await navigator.clipboard.writeText(t); avisar('Cierre copiado'); } catch (e) { prompt('Copia el cierre:', t); }
+  });
   function pintarResumen() {
+    pintarHoy();
     const r = datos.resumen;
     $('#rFalta').textContent = fmt(r.falta);
     const pct = Math.round((r.recuperado || 0) * 100);
