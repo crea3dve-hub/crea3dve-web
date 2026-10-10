@@ -906,7 +906,7 @@ details[open] > summary{margin-bottom:4px}
         <div><label>Teléfono</label><input data-f="telefono" type="tel" value="${esc((buscarCliente(p.cliente) || {}).telefono || '')}"></div>
       </div>
       <div class="dos">
-        <div><label>Estado</label><select data-f="estado">${ops(L.estados, p.estado)}</select></div>
+        <div><label>Estado</label><select data-f="estado">${L.estados.map(x => `<option value="${esc(x)}"${x === p.estado ? ' selected' : ''}>${esc(ESTADO_TXT[x] || x)}</option>`).join('')}</select></div>
         <div><label>Cómo pagó</label><select data-f="metodo">${ops(L.metodosVenta, p.metodo, 'Todavía no paga')}</select></div>
       </div>
       <label>Comentario</label><input data-f="nota" value="${esc(p.nota || '')}" placeholder="Ej: pagó $10, lo retira el domingo…">
@@ -986,6 +986,9 @@ details[open] > summary{margin-bottom:4px}
     }
   });
   const esIncluido = i => /incluid[oa] en el precio/i.test(i.producto);
+  // Nombres claros para cada estado (en la hoja se guardan igual: Pedido, Pagado, Entregado, Cancelado)
+  const ESTADO_TXT = { Pedido: 'Sin pagar · por entregar', Pagado: 'Pagado · por entregar', Entregado: 'Entregado', Cancelado: 'Cancelado' };
+  const PILL_TXT = { Pedido: 'Sin pagar', Pagado: 'Por entregar', Entregado: 'Entregado', Cancelado: 'Cancelado' };
   const esRegalo = p => p.total === 0 && p.items.some(i => !esIncluido(i) && i.producto !== 'Delivery');
   function pintarPedidos() {
     pintarWeb();
@@ -1007,6 +1010,7 @@ details[open] > summary{margin-bottom:4px}
       const regalo = esRegalo(p);
       if (p.estado === 'Pedido' && !regalo) botones.push(`<button class="btn chico primario" data-num="${esc(p.numero)}" data-e="Pagado">Ya pagó</button>`);
       if (p.estado === 'Pedido' || p.estado === 'Pagado') botones.push(`<button class="btn chico" data-num="${esc(p.numero)}" data-e="Entregado">Entregado</button>`);
+      if (p.estado === 'Entregado') botones.push(`<button class="btn chico" data-num="${esc(p.numero)}" data-e="${p.metodo || regalo ? 'Pagado' : 'Pedido'}" data-sin-preguntar="1">↩︎ Todavía no lo entrego</button>`);
       if (p.estado !== 'Cancelado' && p.estado !== 'Entregado') botones.push(`<button class="btn chico peligro" data-num="${esc(p.numero)}" data-e="Cancelado">Cancelar</button>`);
       if (p.estado === 'Pedido' && !regalo) botones.push(`<button class="btn chico" data-cobro="${esc(p.numero)}">💬 Mensaje de pago</button>`);
       if (p.estado !== 'Cancelado') botones.push(`<button class="btn chico" data-nota="${esc(p.numero)}">📄 ${p.estado === 'Pedido' && !regalo ? 'Nota de pedido' : 'Nota de entrega'}</button>`);
@@ -1014,7 +1018,7 @@ details[open] > summary{margin-bottom:4px}
       if (editando === p.numero) return editorPedido(p);
       return `<div class="card">
         <div class="pedido-cab"><div><span class="num">${esc(p.numero)}</span> · ${esc(p.cliente || 'Sin nombre')}<div class="chico">${esc(p.fecha)} · ${esc(p.canal)}${p.metodo ? ' · ' + esc(p.metodo) : ''}</div></div>
-        <div style="text-align:right"><span class="pill ${esc(p.estado)}">${esc(p.estado || '—')}</span><div style="font-weight:800;margin-top:4px">${regalo ? '🎁 Regalo' : fmt(p.total)}</div></div></div>
+        <div style="text-align:right"><span class="pill ${esc(p.estado)}">${esc(PILL_TXT[p.estado] || p.estado || '—')}</span><div style="font-weight:800;margin-top:4px">${regalo ? '🎁 Regalo' : fmt(p.total)}</div></div></div>
         <ul class="lista-items">${p.items.map(i => `<li>${i.cantidad} × ${esc(i.producto)}</li>`).join('')}</ul>
         ${p.nota ? `<p class="chico" style="margin:4px 0 8px">📝 ${esc(p.nota)}</p>` : ''}
         ${botones.length ? `<div class="acciones">${botones.join('')}</div>` : ''}
@@ -1144,7 +1148,7 @@ details[open] > summary{margin-bottom:4px}
     const est = b.dataset.e;
     if (est === 'Cancelado' && !confirm('¿Cancelar ' + b.dataset.num + '? Las piezas vuelven al inventario.')) return;
     let metodo = '';
-    if (est === 'Pagado') {
+    if (est === 'Pagado' && !b.dataset.sinPreguntar) {
       const ms = datos.listas.metodosVenta;
       const r = prompt('¿Cómo pagó? Escribe el número:\n' + ms.map((m, i) => (i + 1) + '. ' + m).join('\n'), '1');
       if (r === null) return;
