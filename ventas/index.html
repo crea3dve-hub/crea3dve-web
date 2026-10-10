@@ -127,6 +127,7 @@ nav.tabs button:hover{color:var(--ink)}
 .grupo-cab{display:flex;justify-content:space-between;align-items:center;padding:8px 0 2px;font-size:15px;cursor:pointer}
 .grupo-cab span{font-size:13px;color:var(--muted)} .grupo-cab span b{font-size:16px;color:var(--ink)}
 #carrito .linea.sangria:last-child{border-bottom:0}
+.ed-agregar{margin-top:14px;padding:10px 12px;border:1px dashed var(--line);border-radius:12px}
 .resumen-carrito{margin:6px 0 4px;font-size:16px;font-weight:700;line-height:1.35}
 .resumen-carrito:empty{display:none}
 #carrito .linea{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:16px}
@@ -963,8 +964,30 @@ details[open] > summary{margin-bottom:4px}
         <button class="btn chico peligro" data-quitar aria-label="Quitar">✕</button>
       </div>`).join('')}
       <p class="chico" style="margin:6px 0 0">Cantidad y precio por unidad. ✕ quita el producto (vuelve al inventario).</p>
+      <div class="ed-agregar">
+        <label>➕ Agregar al pedido</label>
+        <div class="fila" style="gap:8px">
+          <select data-add-prod style="flex:1">${datos.productos.filter(x => !/^Switch/.test(x.nombre)).map(x => `<option value="${esc(x.nombre)}">${esc(nombreCorto(x.nombre))}${x.precio !== '' && x.precio != null ? ' · ' + fmt(x.precio) : ''}</option>`).join('')}</select>
+          <input data-add-cant type="number" inputmode="numeric" min="1" value="1" style="width:70px" aria-label="Cantidad">
+        </div>
+        <button class="btn ancho" data-add style="margin-top:8px">➕ Agregar</button>
+        <p class="chico" style="margin:6px 0 0">Si agregas letras o clickers de objeto, su switch se descuenta solo. Si cambia el tamaño de la base, agrega la base nueva y quita la vieja con ✕.</p>
+      </div>
       <button class="btn primario ancho" data-guardar style="margin-top:12px">Guardar cambios</button>
     </div>`;
+  }
+  // agrega productos a una venta ya guardada (mismo número, mismo cliente, estado y método)
+  async function agregarAPedido(card) {
+    const p = datos.ventas.find(v => v.numero === card.dataset.ed); if (!p) return;
+    const nombre = card.querySelector('[data-add-prod]').value, cant = parseInt(card.querySelector('[data-add-cant]').value, 10) || 1;
+    const prod = datos.productos.find(x => x.nombre === nombre); if (!prod) return;
+    const items = [{ producto: nombre, cantidad: cant, precio: prod.precio }];
+    const SW = 'Switch para clicker (sueltos, incluido en el precio)';
+    if ((esLetra(nombre) || esObjeto(nombre)) && datos.productos.some(x => x.nombre === SW)) items.push({ producto: SW, cantidad: cant, precio: 0 });
+    const ok = await accion({ accion: 'venta', numero: p.numero, cliente: p.cliente, canal: p.canal, metodo: p.metodo, estado: p.estado,
+      fecha: aISO(p.fecha), items, nota: p.nota || undefined }, 'Agregado a ' + p.numero);
+    if (ok) editando = p.numero;
+    pintarPedidos();
   }
   async function guardarEdicion(card) {
     const num = card.dataset.ed, p = datos.ventas.find(v => v.numero === num); if (!p) return;
@@ -1173,6 +1196,7 @@ details[open] > summary{margin-bottom:4px}
       if (e.target.closest('[data-cerrar]')) { editando = null; pintarPedidos(); }
       else if (e.target.closest('[data-quitar]')) { const row = e.target.closest('.ed-item'); row.classList.toggle('quitado'); }
       else if (e.target.closest('[data-guardar]')) guardarEdicion(card);
+      else if (e.target.closest('[data-add]')) agregarAPedido(card);
       return;
     }
     const bc = e.target.closest('button[data-cobro]');
