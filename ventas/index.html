@@ -108,6 +108,11 @@ nav.tabs button svg{width:22px;height:22px}
 nav.tabs button{position:relative}
 nav.tabs button[data-badge]:not([data-badge=""])::after{content:attr(data-badge);position:absolute;top:2px;right:calc(50% - 22px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--warn);color:#fff;font-size:11px;line-height:18px;text-align:center}
 nav.tabs button:hover{color:var(--ink)}
+.velo{position:fixed;inset:0;z-index:30;background:rgba(15,18,12,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+.velo[hidden]{display:none}
+.caja-rec{background:var(--surface);color:var(--ink);border-radius:20px;padding:20px;width:100%;max-width:380px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.caja-rec .stat{text-align:left}
+.pp-card{border-left:4px solid var(--warn)}
 nav.tabs button[aria-selected="true"]{color:var(--brand-ink);background:var(--brand)}
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) nav.tabs button[aria-selected="true"]{color:#0E1A08} }
 .aviso{position:fixed;left:16px;right:16px;bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:20;max-width:600px;margin:0 auto;
@@ -293,6 +298,10 @@ details[open] > summary{margin-bottom:4px}
   <section id="tab-gastos" data-tab hidden>
     <h2>Compras y gastos</h2>
     <div class="ayuda">💡 <b>Por comprar</b> es tu lista de pendientes. Cuando lo compres, toca <b>Ya lo compré</b> y pasa solo a tus gastos. Todo se puede <b>✏️ editar</b> o <b>🗑️ borrar</b>.</div>
+    <div id="bloquePorPagar" hidden>
+      <h3>💸 Me falta pagar</h3>
+      <div id="listaPorPagar"></div>
+    </div>
     <h3>Por comprar</h3>
     <div id="listaPorComprar"></div>
     <details class="card" id="cardNuevoPC">
@@ -343,6 +352,19 @@ details[open] > summary{margin-bottom:4px}
 </div>
 
 <div id="aviso" class="aviso" role="status" hidden></div>
+
+<div id="recordatorio" class="velo" hidden>
+  <div class="caja-rec" role="dialog" aria-labelledby="recTit">
+    <div style="font-size:34px;line-height:1">💸</div>
+    <h3 id="recTit" style="margin:8px 0 4px">Recordatorio del día</h3>
+    <p class="chico" style="margin:0 0 10px">Todavía te falta pagar:</p>
+    <div id="recLista"></div>
+    <div class="acciones" style="margin-top:14px;flex-direction:column">
+      <button class="btn primario ancho" id="recPagar">Ya pagué / ver</button>
+      <button class="btn ancho" id="recLuego">Recuérdamelo mañana</button>
+    </div>
+  </div>
+</div>
 
 <script>
 (() => {
@@ -930,7 +952,10 @@ details[open] > summary{margin-bottom:4px}
   function formGasto(g, modo) {
     const L = datos.listas, tasaB = (datos.config && datos.config.binance) || '', tasaBCV = datos.tasa ? datos.tasa.valor : '';
     const ops = (lista, v) => lista.map(x => `<option${x === v ? ' selected' : ''}>${esc(x)}</option>`).join('');
-    const boton = modo === 'nuevo' ? 'Guardar gasto' : modo === 'comprado' ? 'Pasar a mis gastos' : 'Guardar cambios';
+    const boton = modo === 'nuevo' ? 'Guardar gasto' : modo === 'comprado' ? 'Pasar a mis gastos' : modo === 'pagar' ? 'Listo, ya lo pagué' : 'Guardar cambios';
+    // Al marcar como pagado, propone Pago móvil y quita el aviso "POR PAGAR" de la nota
+    const metodoIni = modo === 'pagar' ? 'Pago móvil' : modo === 'nuevo' || modo === 'comprado' ? 'Pago móvil' : (g.metodo || '');
+    const notaIni = modo === 'pagar' ? limpiarNotaPP(g.nota) : (g.nota || '');
     return `<div class="fg" data-modo="${modo}">
       ${modo === 'comprado' ? `<b>${esc(g.que)}</b>` : `<label>Qué compraste</label><input data-k="que" value="${esc(g.que || '')}" placeholder="Ej: 2 rollos PLA negro">`}
       <div class="dos">
@@ -953,8 +978,8 @@ details[open] > summary{margin-bottom:4px}
         <div><label>Tipo</label><select data-k="tipo">${ops(L.tiposCompra, g.tipo || 'Insumos (switches, aros, bolsas)')}</select></div>
         <div><label>Para</label><select data-k="para">${ops(['Negocio', 'Bazar'], g.para || 'Negocio')}</select></div>
       </div>
-      <label>Cómo pagaste</label><select data-k="metodo"><option value="">—</option>${ops(L.metodosCompra, g.metodo || 'Pago móvil')}</select>
-      <label>Nota (opcional)</label><input data-k="nota" value="${esc(g.nota || '')}">
+      <label>Cómo pagaste</label><select data-k="metodo">${modo === 'pagar' ? '' : `<option value=""${metodoIni ? '' : ' selected'}>⚠️ Todavía no lo he pagado</option>`}${ops(L.metodosCompra, metodoIni)}</select>
+      <label>Nota (opcional)</label><input data-k="nota" value="${esc(notaIni)}">
       <div class="acciones" style="margin-top:12px">
         <button class="btn primario" data-guardar-g>${boton}</button>
         ${modo !== 'nuevo' ? '<button class="btn" data-cancelar-g>Cancelar</button>' : ''}
@@ -974,8 +999,56 @@ details[open] > summary{margin-bottom:4px}
     }
     if (!(monto >= 0)) { avisar('Pon el monto', true); return null; }
     if (esFutura(v('fecha'))) { avisar(avisoFecha, true); return null; }
+    // Sin método de pago = todavía no lo pagó: se marca en la nota para que se vea también en el Sheets
+    nota = limpiarNotaPP(nota);
+    if (!v('metodo')) nota = '⚠️ POR PAGAR' + (nota ? ' · ' + nota : '');
     return { que: v('que').trim(), fecha: v('fecha'), monto, pct: v('pct'), para: v('para'), tipo: v('tipo'), metodo: v('metodo'), nota };
   }
+  function limpiarNotaPP(n) { return String(n || '').replace(/⚠️?\s*POR PAGAR\s*(·\s*)?/gi, '').trim(); }
+  const porPagar = () => (datos && datos.gastos || []).filter(g => !g.metodo || /POR PAGAR/i.test(g.nota || ''));
+
+  let pagarG = null;
+  function pintarPorPagar() {
+    const lista = porPagar();
+    $('#bloquePorPagar').hidden = !lista.length;
+    const bt = document.querySelector('nav.tabs button[data-ir="gastos"]');
+    if (bt) bt.dataset.badge = lista.length || '';
+    $('#listaPorPagar').innerHTML = lista.map(g => pagarG === g.fila
+      ? `<div class="card pp-card" data-pp="${g.fila}">${formGasto(g, 'pagar')}<p class="chico" style="margin:8px 0 0"><b>${esc(g.que)}</b> · si pagaste en bolívares, cambia "Pagué en" y pon los Bs y la tasa.</p></div>`
+      : `<div class="card pp-card" data-pp="${g.fila}">
+        <div class="pedido-cab"><div><b>${esc(g.que)}</b><div class="chico">${esc(g.fecha || 'sin fecha')}${limpiarNotaPP(g.nota) ? ' · ' + esc(limpiarNotaPP(g.nota)) : ''}</div></div>
+        <b>${fmt(g.miParte)}</b></div>
+        <div class="acciones" style="margin-top:10px"><button class="btn chico primario" data-pp-pagar>Ya lo pagué</button></div>
+      </div>`).join('');
+    document.querySelectorAll('#listaPorPagar .fg').forEach(actualizarConv);
+  }
+  $('#listaPorPagar').addEventListener('click', async e => {
+    if (e.target.closest('[data-tasa]')) return;
+    const card = e.target.closest('[data-pp]'); if (!card) return;
+    const fila = +card.dataset.pp, g0 = datos.gastos.find(x => x.fila === fila); if (!g0) return;
+    if (e.target.closest('[data-pp-pagar]')) { pagarG = fila; pintarPorPagar(); return; }
+    if (e.target.closest('[data-cancelar-g]')) { pagarG = null; pintarPorPagar(); return; }
+    if (e.target.closest('[data-guardar-g]')) {
+      const g = leerFormGasto(card.querySelector('.fg')); if (!g) return;
+      if (await accion(Object.assign({ accion: 'editarGasto', fila, queOriginal: g0.que }, g))) { pagarG = null; pintarPorPagar(); }
+    }
+  });
+
+  // Aviso una vez al día si hay algo por pagar
+  function recordatorioDiario() {
+    const lista = porPagar();
+    if (!lista.length || leer('c3_recordado') === hoyISO()) return;
+    $('#recLista').innerHTML = lista.map(g => `<div class="stat"><span>${esc(g.que)}</span><b>${fmt(g.miParte)}</b></div>`).join('') +
+      (lista.length > 1 ? `<div class="stat"><span><b>Total</b></span><b>${fmt(lista.reduce((s, g) => s + g.miParte, 0))}</b></div>` : '');
+    $('#recordatorio').hidden = false;
+  }
+  function cerrarRecordatorio() { guardar('c3_recordado', hoyISO()); $('#recordatorio').hidden = true; }
+  $('#recLuego').addEventListener('click', cerrarRecordatorio);
+  $('#recPagar').addEventListener('click', () => {
+    cerrarRecordatorio();
+    const b = document.querySelector('nav.tabs button[data-ir="gastos"]'); if (b) b.click();
+    setTimeout(() => $('#bloquePorPagar').scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  });
   function actualizarConv(box) {
     const bs = box.querySelector('[data-k="moneda"]').value === 'bs';
     box.querySelector('[data-usd]').hidden = bs; box.querySelector('[data-bs]').hidden = !bs;
@@ -1090,7 +1163,8 @@ details[open] > summary{margin-bottom:4px}
     $('#rStats').innerHTML = fila('Invertido (tu parte)', fmt(r.invertido)) + fila('Cobrado', fmt(r.cobrado)) +
       fila('Ganancia de lo vendido', fmt(r.ganancia)) + fila('Cobrado este mes', fmt(r.cobradoMes)) +
       fila('Gastado este mes', fmt(r.gastadoMes)) + fila('Pedidos que te deben', fmt(r.porCobrar)) +
-      fila('Falta por comprar (estimado)', fmt(r.porComprar));
+      fila('Falta por comprar (estimado)', fmt(r.porComprar)) +
+      (porPagar().length ? fila('💸 Me falta pagar', fmt(porPagar().reduce((s, g) => s + g.miParte, 0))) : '');
     $('#rBazar').innerHTML = fila('Vendido en el bazar', fmt(r.bazarVendido)) + fila('Gastos solo del bazar', fmt(r.bazarGastos)) +
       fila('<b>Ganancia del bazar</b>', fmt(r.bazarGanancia));
   }
@@ -1101,7 +1175,8 @@ details[open] > summary{margin-bottom:4px}
     $('#txtTasa').textContent = datos.tasa ? 'BCV ' + datos.tasa.valor.toLocaleString('es-VE', { maximumFractionDigits: 2 }) : '';
     const nWeb = (datos.pedidosWeb || []).length, bt = document.querySelector('nav.tabs button[data-ir="pedidos"]');
     if (bt) bt.dataset.badge = nWeb || '';
-    pintarProductos(); pintarCarrito(); pintarPedidos(); pintarInventario(); pintarGastos(); pintarResumen(); pintarClientes();
+    pintarProductos(); pintarCarrito(); pintarPedidos(); pintarInventario(); pintarGastos(); pintarPorPagar(); pintarResumen(); pintarClientes();
+    recordatorioDiario();
   }
 
   let iniciado = false;
@@ -1118,7 +1193,7 @@ details[open] > summary{margin-bottom:4px}
       llenarCalc();
       ponerModo('bazar');
       iniciado = true;
-      setInterval(() => { if (cola.length) vaciarCola(); else if (!document.hidden && !editando && !webAbierto && !editProd && !editPC && !compraPC && !editG && !(document.activeElement && /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))) recargar(true); }, 60000);
+      setInterval(() => { if (cola.length) vaciarCola(); else if (!document.hidden && !editando && !webAbierto && !editProd && !editPC && !compraPC && !editG && !pagarG && !(document.activeElement && /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))) recargar(true); }, 60000);
       window.addEventListener('online', vaciarCola);
     }
     pintarCola(); pintarTodo();
