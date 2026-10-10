@@ -544,7 +544,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     pintarCarrito();
   });
   /* ---------- Calculadora de precio (misma fórmula que la hoja Productos) ---------- */
-  const CONF_BASE = { hora: 3, fallos: 0.1, ganancia: 1, redondeo: 0.5, electricidad: 0, fallosPersonalizado: 0.5, gastoFijo: 0,
+  const CONF_BASE = { hora: 3, fallos: 0.1, ganancia: 0.75, redondeo: 0.5, electricidad: 0, fallosPersonalizado: 0.5, gastoFijo: 0,
     filamentos: { 'PLA': 0.0254, 'PLA Silk': 0.026, 'PETG': 0.026, 'TPU': 0.026 },
     impresoras: { 'X1C': 2015 / 3000, 'A1': 890 / 3000, 'A1 mini': 850 / 3000 } };
   const conf = () => Object.assign({}, CONF_BASE, (datos && datos.config) || {});
