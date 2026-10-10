@@ -170,7 +170,19 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
 
     <div class="card">
       <label for="vCliente">Cliente <span id="clienteOpcional">(opcional)</span></label>
-      <input id="vCliente" placeholder="Nombre o @instagram" autocomplete="off">
+      <input id="vCliente" placeholder="Nombre o @instagram" autocomplete="off" list="listaClientes">
+      <datalist id="listaClientes"></datalist>
+      <details id="datosCliente" style="margin-top:8px">
+        <summary class="chico" style="font-weight:700">Datos del cliente (para la nota y el delivery)</summary>
+        <div class="dos">
+          <div><label for="cTel">Teléfono / WhatsApp</label><input id="cTel" type="tel" inputmode="tel" autocomplete="off"></div>
+          <div><label for="cIg">Instagram</label><input id="cIg" autocomplete="off" placeholder="@usuario"></div>
+        </div>
+        <label for="cCed">Cédula o RIF <span class="chico">(opcional)</span></label><input id="cCed" autocomplete="off">
+        <label for="cDir">Dirección de entrega</label><input id="cDir" autocomplete="off">
+        <label for="cZona">Zona</label><input id="cZona" autocomplete="off" placeholder="Ej: Chacao, Los Palos Grandes">
+        <p class="chico" style="margin:6px 0 0">Si el cliente ya compró antes, al escribir su nombre se llenan solos.</p>
+      </details>
       <div class="dos">
         <div><label for="vCanal">Canal</label><select id="vCanal"></select></div>
         <div id="cajaMetodo"><label for="vMetodo">Cómo pagó</label><select id="vMetodo"></select></div>
@@ -276,6 +288,9 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     <div class="card" id="rStats"></div>
     <h3>Bazar</h3>
     <div class="card" id="rBazar"></div>
+    <h3>Clientes</h3>
+    <input id="buscaCliente" placeholder="Buscar cliente" autocomplete="off" style="margin-bottom:8px">
+    <div class="card" id="rClientes"></div>
     <p class="chico" style="text-align:center"><button class="btn chico" id="btnSalir">Cerrar sesión en este teléfono</button></p>
   </section>
 </main>
@@ -419,6 +434,23 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
   function opciones(sel, lista, valor) {
     sel.innerHTML = lista.map(v => `<option${v === valor ? ' selected' : ''}>${esc(v)}</option>`).join('');
   }
+  const CAMPOS_CLIENTE = [['telefono', '#cTel'], ['instagram', '#cIg'], ['cedula', '#cCed'], ['direccion', '#cDir'], ['zona', '#cZona']];
+  const buscarCliente = n => (datos && datos.clientes || []).find(c => c.nombre.toLowerCase() === String(n || '').trim().toLowerCase());
+  function limpiarCliente() { $('#vCliente').value = ''; CAMPOS_CLIENTE.forEach(([, sel]) => { $(sel).value = ''; }); }
+  $('#vCliente').addEventListener('change', () => {
+    const c = buscarCliente($('#vCliente').value); if (!c) return;
+    CAMPOS_CLIENTE.forEach(([k, sel]) => { if (!$(sel).value) $(sel).value = c[k] || ''; });
+    avisar('Cliente encontrado: ' + c.nombre + (c.compras ? ' · ' + c.compras + (c.compras === 1 ? ' compra' : ' compras') : ''));
+  });
+  function pintarClientes() {
+    $('#listaClientes').innerHTML = (datos.clientes || []).map(c => `<option value="${esc(c.nombre)}">`).join('');
+    const q = ($('#buscaCliente').value || '').trim().toLowerCase();
+    const lista = (datos.clientes || []).filter(c => !q || (c.nombre + ' ' + c.telefono + ' ' + c.instagram).toLowerCase().includes(q))
+      .sort((a, b) => b.total - a.total);
+    $('#rClientes').innerHTML = lista.map(c => `<div class="stat"><span><b>${esc(c.nombre)}</b><div class="chico">${[c.telefono, c.instagram, c.zona].filter(Boolean).map(esc).join(' · ') || 'Sin datos de contacto'}${c.ultima ? ' · última: ' + esc(c.ultima) : ''}</div></span><b>${fmt(c.total)}<div class="chico" style="text-align:right">${c.compras} ${c.compras === 1 ? 'compra' : 'compras'}</div></b></div>`).join('')
+      || '<p class="vacio">Todavía no hay clientes.</p>';
+  }
+  $('#buscaCliente').addEventListener('input', () => pintarClientes());
   let pagado = false, delQuien = 'cliente';
   const esObjeto = n => n.startsWith('Clicker de objeto');
   const esLetra = n => n.startsWith('Clicker – cada letra');
@@ -449,6 +481,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     $('#modoPedido').setAttribute('aria-pressed', m === 'pedido');
     $('#vCanal').value = m === 'bazar' ? 'Bazar' : 'WhatsApp';
     $('#bloqueEncargo').hidden = m === 'bazar';
+    $('#datosCliente').open = m === 'pedido';
     if (m === 'bazar') { $('#vMetodo').value = 'Pago móvil'; }
     ponerPago(false);
     pintarCarrito();
@@ -517,6 +550,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
       accion: 'venta', cliente: $('#vCliente').value.trim(), canal: $('#vCanal').value,
       metodo: $('#vMetodo').value, estado: $('#vEstado').value,
       items: carrito.map(c => ({ producto: c.producto, cantidad: c.cantidad, precio: c.precio, precioManual: c.otro || c.precio !== c.base })),
+      datosCliente: Object.fromEntries(CAMPOS_CLIENTE.map(([k, sel]) => [k, $(sel).value.trim()])),
     };
     const del = montoDelivery();
     if (del && delQuien === 'cliente') cuerpo.items.push({ producto: 'Delivery', cantidad: 1, precio: del, precioManual: true });
@@ -525,7 +559,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
       await accion({ accion: 'gasto', que: 'Delivery – ' + (cuerpo.cliente || 'encargo'), monto: del, pct: 1, tipo: 'Otro',
         para: 'Negocio', metodo: '', nota: delQuien === 'cliente' ? 'Lo pagó el cliente (incluido en su venta)' : 'Envío gratis para el cliente' }, 'Delivery anotado');
     }
-    if (ok) { carrito = []; $('#vCliente').value = ''; $('#vDelivery').value = ''; $('#bloqueQuienDel').hidden = true; pintarCarrito(); }
+    if (ok) { carrito = []; limpiarCliente(); $('#vDelivery').value = ''; $('#bloqueQuienDel').hidden = true; pintarCarrito(); }
   });
 
   /* ---------- Pedidos ---------- */
@@ -556,7 +590,9 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
   async function notaDeEntrega(p) {
     try { await Promise.all([document.fonts.load('900 60px Orbitron'), document.fonts.load('700 30px Figtree'), document.fonts.load('400 30px Figtree')]); } catch (e) {}
     const items = p.items.filter(i => i.total > 0);
-    const W = 1080, filaH = 74, H = 760 + items.length * filaH + (datos.tasa ? 60 : 0);
+    const cli = buscarCliente(p.cliente) || {};
+    const extras = [cli.telefono && 'Tel: ' + cli.telefono, cli.cedula && 'C.I./RIF: ' + cli.cedula, cli.direccion && 'Entrega: ' + cli.direccion + (cli.zona ? ', ' + cli.zona : '')].filter(Boolean);
+    const W = 1080, filaH = 74, H = 760 + items.length * filaH + (datos.tasa ? 60 : 0) + extras.length * 45;
     const c = document.createElement('canvas'); c.width = W; c.height = H;
     const x = c.getContext('2d');
     const verde = '#5CBA2E', tinta = '#141712', gris = '#5E6659', linea = '#DDE3D6';
@@ -575,6 +611,8 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     txt('Cliente: ' + (p.cliente || '—'), 64, 330, '400 30px ' + ff, gris);
     if (p.metodo) txt('Pago: ' + p.metodo, W - 64, 285, '400 30px ' + ff, gris, 'right');
     let y = 400;
+    extras.forEach((t, k) => txt(cortar(t, W - 128, '400 30px ' + ff), 64, 375 + k * 45, '400 30px ' + ff, gris));
+    y += extras.length * 45;
     x.fillStyle = linea; x.fillRect(64, y, W - 128, 2); y += 50;
     txt('PRODUCTO', 64, y, '700 24px ' + ff, gris); txt('CANT.', 700, y, '700 24px ' + ff, gris, 'right'); txt('TOTAL', W - 64, y, '700 24px ' + ff, gris, 'right');
     y += 20;
@@ -698,7 +736,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     if (!datos) return;
     try { guardar('c3_datos', JSON.stringify(datos)); } catch (e) {}
     $('#txtTasa').textContent = datos.tasa ? 'BCV ' + datos.tasa.valor.toLocaleString('es-VE', { maximumFractionDigits: 2 }) : '';
-    pintarProductos(); pintarCarrito(); pintarPedidos(); pintarInventario(); pintarGastos(); pintarResumen();
+    pintarProductos(); pintarCarrito(); pintarPedidos(); pintarInventario(); pintarGastos(); pintarResumen(); pintarClientes();
   }
 
   let iniciado = false;
