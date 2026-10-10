@@ -169,20 +169,14 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     </div>
 
     <div class="card">
-      <label for="vCliente">Cliente <span id="clienteOpcional">(opcional)</span></label>
-      <input id="vCliente" placeholder="Nombre o @instagram" autocomplete="off" list="listaClientes">
+      <div class="dos">
+        <div><label for="cCed">Cédula o RIF</label><input id="cCed" inputmode="numeric" autocomplete="off" placeholder="Ej: 12345678"></div>
+        <div><label for="cTel">Teléfono</label><input id="cTel" type="tel" inputmode="tel" autocomplete="off"></div>
+      </div>
+      <label for="vCliente">Nombre <span id="clienteOpcional">(opcional)</span></label>
+      <input id="vCliente" placeholder="Nombre del cliente" autocomplete="off" list="listaClientes">
       <datalist id="listaClientes"></datalist>
-      <details id="datosCliente" style="margin-top:8px">
-        <summary class="chico" style="font-weight:700">Datos del cliente (para la nota y el delivery)</summary>
-        <div class="dos">
-          <div><label for="cTel">Teléfono / WhatsApp</label><input id="cTel" type="tel" inputmode="tel" autocomplete="off"></div>
-          <div><label for="cIg">Instagram</label><input id="cIg" autocomplete="off" placeholder="@usuario"></div>
-        </div>
-        <label for="cCed">Cédula o RIF <span class="chico">(opcional)</span></label><input id="cCed" autocomplete="off">
-        <label for="cDir">Dirección de entrega</label><input id="cDir" autocomplete="off">
-        <label for="cZona">Zona</label><input id="cZona" autocomplete="off" placeholder="Ej: Chacao, Los Palos Grandes">
-        <p class="chico" style="margin:6px 0 0">Si el cliente ya compró antes, al escribir su nombre se llenan solos.</p>
-      </details>
+      <p class="chico" id="txtClienteHallado" style="margin:6px 0 0" hidden></p>
       <div class="dos">
         <div><label for="vCanal">Canal</label><select id="vCanal"></select></div>
         <div id="cajaMetodo"><label for="vMetodo">Cómo pagó</label><select id="vMetodo"></select></div>
@@ -289,7 +283,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     <h3>Bazar</h3>
     <div class="card" id="rBazar"></div>
     <h3>Clientes</h3>
-    <input id="buscaCliente" placeholder="Buscar cliente" autocomplete="off" style="margin-bottom:8px">
+    <input id="buscaCliente" placeholder="Buscar por nombre, cédula o teléfono" autocomplete="off" style="margin-bottom:8px">
     <div class="card" id="rClientes"></div>
     <p class="chico" style="text-align:center"><button class="btn chico" id="btnSalir">Cerrar sesión en este teléfono</button></p>
   </section>
@@ -434,20 +428,34 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
   function opciones(sel, lista, valor) {
     sel.innerHTML = lista.map(v => `<option${v === valor ? ' selected' : ''}>${esc(v)}</option>`).join('');
   }
-  const CAMPOS_CLIENTE = [['telefono', '#cTel'], ['instagram', '#cIg'], ['cedula', '#cCed'], ['direccion', '#cDir'], ['zona', '#cZona']];
-  const buscarCliente = n => (datos && datos.clientes || []).find(c => c.nombre.toLowerCase() === String(n || '').trim().toLowerCase());
-  function limpiarCliente() { $('#vCliente').value = ''; CAMPOS_CLIENTE.forEach(([, sel]) => { $(sel).value = ''; }); }
+  const CAMPOS_CLIENTE = [['cedula', '#cCed'], ['telefono', '#cTel']];
+  const cedNorm = c => String(c || '').replace(/\D/g, '');
+  const listaCli = () => (datos && datos.clientes) || [];
+  const buscarCliente = n => listaCli().find(c => c.nombre.toLowerCase() === String(n || '').trim().toLowerCase());
+  const buscarPorCedula = ced => { const k = cedNorm(ced); return k.length >= 5 ? listaCli().find(c => cedNorm(c.cedula) === k) : null; };
+  function limpiarCliente() { $('#vCliente').value = ''; CAMPOS_CLIENTE.forEach(([, sel]) => { $(sel).value = ''; }); $('#txtClienteHallado').hidden = true; }
+  function mostrarHallado(c) {
+    const t = $('#txtClienteHallado');
+    if (!c) { t.hidden = true; return; }
+    t.hidden = false; t.textContent = '✓ Cliente registrado: ' + c.nombre + (c.compras ? ' · ' + c.compras + (c.compras === 1 ? ' compra' : ' compras') + ' · ' + fmt(c.total) : '');
+  }
+  $('#cCed').addEventListener('input', () => {
+    const c = buscarPorCedula($('#cCed').value);
+    if (c) { $('#vCliente').value = c.nombre; if (c.telefono) $('#cTel').value = c.telefono; }
+    mostrarHallado(c);
+  });
   $('#vCliente').addEventListener('change', () => {
     const c = buscarCliente($('#vCliente').value); if (!c) return;
-    CAMPOS_CLIENTE.forEach(([k, sel]) => { if (!$(sel).value) $(sel).value = c[k] || ''; });
-    avisar('Cliente encontrado: ' + c.nombre + (c.compras ? ' · ' + c.compras + (c.compras === 1 ? ' compra' : ' compras') : ''));
+    if (!$('#cCed').value) $('#cCed').value = c.cedula || '';
+    if (!$('#cTel').value) $('#cTel').value = c.telefono || '';
+    mostrarHallado(c);
   });
   function pintarClientes() {
     $('#listaClientes').innerHTML = (datos.clientes || []).map(c => `<option value="${esc(c.nombre)}">`).join('');
     const q = ($('#buscaCliente').value || '').trim().toLowerCase();
-    const lista = (datos.clientes || []).filter(c => !q || (c.nombre + ' ' + c.telefono + ' ' + c.instagram).toLowerCase().includes(q))
+    const lista = (datos.clientes || []).filter(c => !q || (c.nombre + ' ' + c.telefono + ' ' + c.cedula).toLowerCase().includes(q))
       .sort((a, b) => b.total - a.total);
-    $('#rClientes').innerHTML = lista.map(c => `<div class="stat"><span><b>${esc(c.nombre)}</b><div class="chico">${[c.telefono, c.instagram, c.zona].filter(Boolean).map(esc).join(' · ') || 'Sin datos de contacto'}${c.ultima ? ' · última: ' + esc(c.ultima) : ''}</div></span><b>${fmt(c.total)}<div class="chico" style="text-align:right">${c.compras} ${c.compras === 1 ? 'compra' : 'compras'}</div></b></div>`).join('')
+    $('#rClientes').innerHTML = lista.map(c => `<div class="stat"><span><b>${esc(c.nombre)}</b><div class="chico">${[c.cedula && 'C.I. ' + c.cedula, c.telefono].filter(Boolean).map(esc).join(' · ') || 'Sin cédula ni teléfono'}${c.ultima ? ' · última: ' + esc(c.ultima) : ''}</div></span><b>${fmt(c.total)}<div class="chico" style="text-align:right">${c.compras} ${c.compras === 1 ? 'compra' : 'compras'}</div></b></div>`).join('')
       || '<p class="vacio">Todavía no hay clientes.</p>';
   }
   $('#buscaCliente').addEventListener('input', () => pintarClientes());
@@ -481,7 +489,6 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     $('#modoPedido').setAttribute('aria-pressed', m === 'pedido');
     $('#vCanal').value = m === 'bazar' ? 'Bazar' : 'WhatsApp';
     $('#bloqueEncargo').hidden = m === 'bazar';
-    $('#datosCliente').open = m === 'pedido';
     if (m === 'bazar') { $('#vMetodo').value = 'Pago móvil'; }
     ponerPago(false);
     pintarCarrito();
@@ -591,7 +598,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     try { await Promise.all([document.fonts.load('900 60px Orbitron'), document.fonts.load('700 30px Figtree'), document.fonts.load('400 30px Figtree')]); } catch (e) {}
     const items = p.items.filter(i => i.total > 0);
     const cli = buscarCliente(p.cliente) || {};
-    const extras = [cli.telefono && 'Tel: ' + cli.telefono, cli.cedula && 'C.I./RIF: ' + cli.cedula, cli.direccion && 'Entrega: ' + cli.direccion + (cli.zona ? ', ' + cli.zona : '')].filter(Boolean);
+    const extras = [cli.cedula && 'C.I./RIF: ' + cli.cedula, cli.telefono && 'Tel: ' + cli.telefono].filter(Boolean);
     const W = 1080, filaH = 74, H = 760 + items.length * filaH + (datos.tasa ? 60 : 0) + extras.length * 45;
     const c = document.createElement('canvas'); c.width = W; c.height = H;
     const x = c.getContext('2d');
