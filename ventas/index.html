@@ -113,6 +113,11 @@ nav.tabs button[aria-selected="true"]{color:var(--brand)}
 .login .card{width:100%;max-width:380px}
 .pin{letter-spacing:8px;text-align:center;font-size:24px;font-weight:800}
 details summary{cursor:pointer;font-weight:700;padding:4px 0}
+.tres{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.calc{background:var(--bg);border-radius:12px;padding:10px 12px 12px;margin-top:12px}
+.kres{margin-top:10px;font-size:14px}
+.kres .stat{padding:5px 0}
+.kres .sug{display:flex;justify-content:space-between;align-items:baseline;margin-top:6px;font-weight:800;font-size:18px}
 .cargando{opacity:.6;pointer-events:none}
 </style>
 </head>
@@ -155,11 +160,32 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
       <summary>Otro producto (a la medida, presupuesto…)</summary>
       <label for="otroNombre">Qué es</label>
       <input id="otroNombre" placeholder="Ej: Organizador de joyas">
+      <div class="calc">
+        <b style="font-size:14px">Calcular precio</b>
+        <div class="dos">
+          <div><label for="kImp">Impresora</label><select id="kImp"></select></div>
+          <div><label for="kFil">Filamento</label><select id="kFil"></select></div>
+        </div>
+        <div class="tres">
+          <div><label for="kG">Gramos</label><input id="kG" type="number" inputmode="decimal" min="0" placeholder="0"></div>
+          <div><label for="kH">Horas</label><input id="kH" type="number" inputmode="numeric" min="0" placeholder="0"></div>
+          <div><label for="kM">Minutos</label><input id="kM" type="number" inputmode="numeric" min="0" max="59" placeholder="0"></div>
+        </div>
+        <div class="dos">
+          <div><label for="kT">Tu trabajo (min)</label><input id="kT" type="number" inputmode="numeric" min="0" value="10"></div>
+          <div><label for="kPers">Tipo</label><select id="kPers"><option value="0">General</option><option value="1">Personalizado (falla más)</option></select></div>
+        </div>
+        <div id="kRes" class="kres" hidden></div>
+      </div>
       <div class="dos">
         <div><label for="otroPrecio">Precio c/u $</label><input id="otroPrecio" type="number" inputmode="decimal" step="0.01" min="0"></div>
         <div><label for="otroCant">Cantidad</label><input id="otroCant" type="number" inputmode="numeric" min="1" value="1"></div>
       </div>
-      <button class="btn" id="btnAgregarOtro" style="margin-top:10px;width:100%">Agregar</button>
+      <p class="chico" id="kGan" style="margin:6px 0 0" hidden></p>
+      <div class="dos" style="margin-top:10px">
+        <button class="btn" id="btnCopiarPrecio">📋 Copiar mensaje</button>
+        <button class="btn primario" id="btnAgregarOtro">Agregar</button>
+      </div>
     </details>
 
     <div class="card" id="cardCarrito">
@@ -512,12 +538,65 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     if (ya) ya.cantidad++; else carrito.push({ producto: p.nombre, precio: p.precio, base: p.precio, cantidad: 1 });
     pintarCarrito();
   });
+  /* ---------- Calculadora de precio (misma fórmula que la hoja Productos) ---------- */
+  const CONF_BASE = { hora: 3, fallos: 0.1, ganancia: 0.5, redondeo: 0.5, electricidad: 0, fallosPersonalizado: 0.5, gastoFijo: 0,
+    filamentos: { 'PLA': 0.0254, 'PLA Silk': 0.026, 'PETG': 0.026, 'TPU': 0.026 },
+    impresoras: { 'X1C': 2015 / 3000, 'A1': 890 / 3000, 'A1 mini': 850 / 3000 } };
+  const conf = () => Object.assign({}, CONF_BASE, (datos && datos.config) || {});
+  let kSug = null, precioTocado = false;
+  function llenarCalc() {
+    const c = conf(), imp = $('#kImp').value, fil = $('#kFil').value;
+    $('#kImp').innerHTML = Object.keys(c.impresoras).map(k => `<option${k === (imp || 'X1C') ? ' selected' : ''}>${esc(k)}</option>`).join('');
+    $('#kFil').innerHTML = Object.keys(c.filamentos).map(k => `<option${k === (fil || 'PLA') ? ' selected' : ''}>${esc(k)}</option>`).join('');
+  }
+  function calcular() {
+    const c = conf(), g = parseFloat($('#kG').value) || 0, h = (parseFloat($('#kH').value) || 0) + (parseFloat($('#kM').value) || 0) / 60;
+    if (!g && !h) { $('#kRes').hidden = true; kSug = null; actualizarGanancia(); return; }
+    const mat = g * (c.filamentos[$('#kFil').value] || 0.0254);
+    const maq = h * ((c.impresoras[$('#kImp').value] || 0) + (c.electricidad || 0));
+    const tasaF = $('#kPers').value === '1' ? c.fallosPersonalizado : c.fallos;
+    const fallos = (mat + maq) * (tasaF >= 1 ? 0 : 1 / (1 - tasaF) - 1);
+    const trab = (parseFloat($('#kT').value) || 0) / 60 * c.hora;
+    const costo = mat + maq + fallos + trab + (c.gastoFijo || 0);
+    const r = c.redondeo || 0.5;
+    kSug = Math.ceil(costo * (1 + c.ganancia) / r - 1e-9) * r;
+    const fila = (a, b) => `<div class="stat"><span>${a}</span><b>${b}</b></div>`;
+    $('#kRes').hidden = false;
+    $('#kRes').innerHTML = fila('Filamento', fmt(mat)) + fila('Máquina', fmt(maq)) + fila('Fallos', fmt(fallos)) + fila('Tu trabajo', fmt(trab))
+      + fila('<b>Costo real</b>', fmt(costo))
+      + `<div class="sug"><span>Precio sugerido</span><span>${fmt(kSug)}</span></div>`;
+    kCosto = costo;
+    if (!precioTocado) $('#otroPrecio').value = kSug.toFixed(2);
+    actualizarGanancia();
+  }
+  let kCosto = null;
+  function actualizarGanancia() {
+    const p = parseFloat($('#otroPrecio').value), t = $('#kGan');
+    if (kCosto === null || !(p >= 0) || $('#kRes').hidden) { t.hidden = true; return; }
+    const gan = p - kCosto;
+    t.hidden = false;
+    t.style.color = gan < 0 ? 'var(--warn)' : '';
+    t.textContent = (gan < 0 ? 'Pierdes ' + fmt(-gan) : 'Ganancia ' + fmt(gan) + ' (' + Math.round(gan / (p || 1) * 100) + '% del precio)')
+      + (datos && datos.tasa ? ' · ' + fmtBs(p * datos.tasa.valor) : '');
+  }
+  ['#kImp', '#kFil', '#kG', '#kH', '#kM', '#kT', '#kPers'].forEach(sel => $(sel).addEventListener('input', calcular));
+  $('#otroPrecio').addEventListener('input', () => { precioTocado = $('#otroPrecio').value !== '' ; actualizarGanancia(); });
+  $('#btnCopiarPrecio').addEventListener('click', async () => {
+    const n = $('#otroNombre').value.trim() || 'la pieza', p = parseFloat($('#otroPrecio').value), c = Math.max(1, parseInt($('#otroCant').value || '1', 10));
+    if (!(p >= 0)) return avisar('Primero pon el precio', true);
+    const tot = p * c;
+    const msg = `¡Hola! El precio de ${c > 1 ? c + ' × ' : ''}${n} es ${fmt(tot)}` + (datos && datos.tasa ? ` (${fmtBs(tot * datos.tasa.valor)} a tasa BCV del día).` : '.')
+      + ' Para empezar a imprimir pedimos el 50% por adelantado. 😊';
+    try { await navigator.clipboard.writeText(msg); avisar('Mensaje copiado, pégalo en WhatsApp'); }
+    catch (e) { prompt('Copia este mensaje:', msg); }
+  });
+  function limpiarCalc() { ['#kG', '#kH', '#kM'].forEach(s => { $(s).value = ''; }); $('#kT').value = '10'; $('#kPers').value = '0'; precioTocado = false; kCosto = null; $('#kRes').hidden = true; $('#kGan').hidden = true; }
   $('#btnAgregarOtro').addEventListener('click', () => {
     const n = $('#otroNombre').value.trim(); const pr = parseFloat($('#otroPrecio').value);
     const c = Math.max(1, parseInt($('#otroCant').value || '1', 10));
     if (!n || !(pr >= 0)) return avisar('Pon qué es y el precio', true);
     carrito.push({ producto: n, precio: pr, base: null, cantidad: c, otro: true });
-    $('#otroNombre').value = ''; $('#otroPrecio').value = ''; $('#otroCant').value = '1';
+    $('#otroNombre').value = ''; $('#otroPrecio').value = ''; $('#otroCant').value = '1'; limpiarCalc();
     pintarCarrito();
   });
   function pintarCarrito() {
@@ -758,6 +837,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
       opciones($('#gTipo'), L.tiposCompra, 'Insumos (switches, aros, bolsas)');
       opciones($('#gMetodo'), L.metodosCompra, 'Pago móvil');
       ponerDel('cliente');
+      llenarCalc();
       ponerModo('bazar');
       iniciado = true;
       setInterval(() => { if (cola.length) vaciarCola(); else if (!document.hidden) recargar(true); }, 60000);
