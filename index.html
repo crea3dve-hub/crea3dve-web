@@ -790,6 +790,36 @@ async function openOrder(){
   $("ord-img").src = url.png; photoPng = dataURLtoBlob(url.png); photoBlob = photoPng;
   setStatus("Paso 1: copia la foto de tu clicker"); $("ord-copy").disabled = false;
 }
+/* ---------- avisa a la caja de Crea3d que llegó un pedido (para registrarlo como pendiente) ---------- */
+const CAJA_API = "https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec";
+const NOMBRE_AROS = {peq:"Aro redondo pequeño (metal)", gra:"Aro redondo grande (metal)", cor:"Corazón con puntitos (metal)", flor:"Flor con giratorio (metal)"};
+const NOMBRE_CHARMS = {carita:"Charm carita feliz", flor:"Charm flor", pelota:"Charm pelota de fútbol"};
+const NOMBRE_OBJ = {smore:"S'more de chocolate", tostada:"Tostada con mantequilla", margarita:"Margarita", queso:"Queso", libros:"Mini libros", mascota:"Mascota virtual"};
+function itemsDiseno(){   // productos del diseño cargado en st, con los nombres de la hoja de ventas
+  const out = [], n = keys().length;
+  if(n) out.push({producto:"Clicker – cada letra (base y cadena incluidas)", cantidad:n, precio:PRECIO_LETRA});
+  aroList().forEach(ar=>out.push({producto:NOMBRE_AROS[ar.tipo.id] || ar.tipo.nombre, cantidad:1, precio:ar.tipo.precio}));
+  st.charms.forEach(ch=>{ const x = charmInfo(ch.t); out.push({producto:NOMBRE_CHARMS[ch.t] || ("Charm " + x.nombre), cantidad:1, precio:x.precio}); });
+  st.objs.forEach((o,i)=>out.push({producto:"Clicker de objeto – " + (NOMBRE_OBJ[o.t] || objInfo(o.t).nombre), cantidad:1, precio:objPrice(i)}));
+  if(st.otro!==null) out.push({producto:"Charm personalizado (otro)", cantidad:1, precio:PRECIO_OTRO});
+  return out;
+}
+let pedidoEnviado = "";
+function avisarCaja(){
+  try{
+    const saved = st.cart.filter(hasContent), cur = snap(), list = hasContent(cur) ? saved.concat([cur]) : saved;
+    if(!list.length) return;
+    const items = [], palabras = [];
+    list.forEach(d=>withDesign(d, ()=>{ items.push(...itemsDiseno()); palabras.push(st.word || "objeto"); }));
+    const firma = JSON.stringify(items) + palabras.join();
+    if(firma === pedidoEnviado) return;   // no mandar el mismo pedido dos veces
+    pedidoEnviado = firma;
+    const body = JSON.stringify({accion:"pedidoWeb", id: Date.now().toString(36) + Math.random().toString(36).slice(2,8),
+      palabras: palabras.join(", "), texto: $("summary").textContent, items});
+    fetch(CAJA_API, {method:"POST", mode:"no-cors", keepalive:true, body}).catch(()=>{});
+  }catch(e){}
+}
+$("ord-wa").addEventListener("click", avisarCaja);
 $("ord-copy").onclick = copyPhoto;
 $("ord-skip").onclick = photoCopied;
 $("ord-close").onclick = ()=>{ $("order").hidden = true; document.body.classList.remove("sheet-open"); };

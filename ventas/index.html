@@ -31,7 +31,7 @@
 [hidden]{display:none!important}
 html,body{margin:0;max-width:100%;overflow-x:clip}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.4;
-  padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+  padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
 button,input,select,textarea{font:inherit;color:inherit}
 .wrap{max-width:640px;margin:0 auto;padding:12px 16px 24px}
 header.top{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
@@ -99,12 +99,18 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-o
 .grande{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums}
 .barra{height:10px;background:var(--line);border-radius:999px;overflow:hidden;margin-top:8px}
 .barra i{display:block;height:100%;background:var(--brand)}
-nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--surface);border-top:1px solid var(--line);
+nav.tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:10;width:calc(100% - 24px);max-width:560px;
+  background:color-mix(in srgb, var(--surface) 88%, transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid var(--line);border-radius:22px;box-shadow:0 10px 30px rgba(20,23,18,.14);padding:6px !important;gap:4px;
   display:grid;grid-template-columns:repeat(5,1fr);padding-bottom:env(safe-area-inset-bottom,0px)}
-nav.tabs button{border:0;background:transparent;padding:8px 2px 10px;font-size:11px;font-weight:700;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px}
+nav.tabs button{border:0;background:transparent;padding:8px 2px 7px;font-size:11px;font-weight:700;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:16px;cursor:pointer;transition:background .15s,color .15s}
 nav.tabs button svg{width:22px;height:22px}
-nav.tabs button[aria-selected="true"]{color:var(--brand)}
-.aviso{position:fixed;left:16px;right:16px;bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:20;max-width:600px;margin:0 auto;
+nav.tabs button{position:relative}
+nav.tabs button[data-badge]:not([data-badge=""])::after{content:attr(data-badge);position:absolute;top:2px;right:calc(50% - 22px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--warn);color:#fff;font-size:11px;line-height:18px;text-align:center}
+nav.tabs button:hover{color:var(--ink)}
+nav.tabs button[aria-selected="true"]{color:var(--brand-ink);background:var(--brand)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) nav.tabs button[aria-selected="true"]{color:#0E1A08} }
+.aviso{position:fixed;left:16px;right:16px;bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:20;max-width:600px;margin:0 auto;
   background:var(--ink);color:var(--bg);padding:12px 14px;border-radius:12px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.2)}
 .aviso.error{background:var(--warn);color:#fff}
 .cola{background:var(--amber-soft);color:var(--amber);border-radius:12px;padding:10px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600;font-size:14px}
@@ -243,6 +249,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
   <!-- PEDIDOS -->
   <section id="tab-pedidos" data-tab hidden>
     <h2>Pedidos y ventas</h2>
+    <div id="bandejaWeb"></div>
     <div class="chips" id="filtrosPedidos">
       <button data-f="pend" aria-pressed="true">Por resolver</button>
       <button data-f="Pedido" aria-pressed="false">Sin pagar</button>
@@ -293,10 +300,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
         <div><label for="pcPrecio">Precio estimado $</label><input id="pcPrecio" type="number" inputmode="decimal" step="0.01"></div>
         <div><label for="pcPrioridad">Prioridad</label><select id="pcPrioridad"><option>Urgente</option><option selected>Pronto</option><option>Cuando se pueda</option></select></div>
       </div>
-      <div class="dos">
-        <div><label for="pcPara">Para</label><select id="pcPara"><option>Negocio</option><option>Bazar</option></select></div>
-        <div><label for="pcPct">Me toca</label><select id="pcPct"><option value="1">100%</option><option value="0.5">50% (con tu amiga)</option></select></div>
-      </div>
+      <label for="pcPara">Para</label><select id="pcPara"><option>Negocio</option><option>Bazar</option></select>
       <button class="btn ancho" id="btnAgregarPC" style="margin-top:12px">Anotar</button>
     </details>
 
@@ -719,7 +723,45 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
       } else avisar(e.delServidor ? e.message : 'Sin señal: intenta de nuevo cuando haya conexión', true);
     } finally { document.body.classList.remove('cargando'); }
   }
+  let webAbierto = null;
+  function pintarWeb() {
+    const lista = datos.pedidosWeb || [];
+    $('#bandejaWeb').innerHTML = lista.length ? `<h3>📲 Llegaron desde la página (${lista.length})</h3>
+      <div class="ayuda" style="margin-top:0">Alguien armó un pedido en crea3dve.com y abrió WhatsApp. Revisa que te haya escrito y tócalo para pasarlo a <b>Sin pagar</b>, o descártalo si no siguió.</div>` +
+      lista.map(w => `<div class="card web" data-w="${w.fila}">
+        <div class="pedido-cab"><div><span class="num">${esc(w.palabras || 'Pedido web')}</span><div class="chico">${esc(w.fecha)}</div></div><b>${fmt(w.total)}</b></div>
+        <ul class="lista-items">${w.items.map(i => `<li>${i.cantidad} × ${esc(i.producto)}</li>`).join('')}</ul>
+        ${webAbierto === w.fila ? `<div class="dos">
+            <div><label>Cédula</label><input data-wk="cedula" inputmode="numeric"></div>
+            <div><label>Teléfono</label><input data-wk="telefono" type="tel"></div>
+          </div>
+          <label>Nombre del cliente</label><input data-wk="cliente" placeholder="Como aparece en WhatsApp">
+          <div class="acciones" style="margin-top:10px"><button class="btn chico primario" data-w-ok>Crear pedido</button><button class="btn chico" data-w-x>Cancelar</button></div>`
+        : `<div class="acciones"><button class="btn chico primario" data-w-pasar>Pasar a pedido</button><button class="btn chico peligro" data-w-del>Descartar</button></div>`}
+      </div>`).join('') + '<h3>Mis pedidos</h3>' : '';
+  }
+  $('#bandejaWeb').addEventListener('input', e => {
+    if (e.target.dataset.wk !== 'cedula') return;
+    const card = e.target.closest('[data-w]'), c = buscarPorCedula(e.target.value);
+    if (c) { card.querySelector('[data-wk="cliente"]').value = c.nombre; if (c.telefono) card.querySelector('[data-wk="telefono"]').value = c.telefono; }
+  });
+  $('#bandejaWeb').addEventListener('click', async e => {
+    const card = e.target.closest('[data-w]'); if (!card) return;
+    const fila = +card.dataset.w, w = (datos.pedidosWeb || []).find(x => x.fila === fila); if (!w) return;
+    if (e.target.closest('[data-w-pasar]')) { webAbierto = fila; pintarWeb(); return; }
+    if (e.target.closest('[data-w-x]')) { webAbierto = null; pintarWeb(); return; }
+    if (e.target.closest('[data-w-del]')) {
+      if (!confirm('¿Descartar este pedido de la web?')) return;
+      if (await accion({ accion: 'descartarWeb', fila, idWeb: w.id })) { webAbierto = null; }
+      return;
+    }
+    if (e.target.closest('[data-w-ok]')) {
+      const v = k => card.querySelector(`[data-wk="${k}"]`).value.trim();
+      if (await accion({ accion: 'convertirWeb', fila, idWeb: w.id, cliente: v('cliente'), datosCliente: { cedula: v('cedula'), telefono: v('telefono') } })) webAbierto = null;
+    }
+  });
   function pintarPedidos() {
+    pintarWeb();
     const lista = datos.ventas.filter(p =>
       filtro === 'todos' ? true : filtro === 'pend' ? (p.estado === 'Pedido' || p.estado === 'Pagado') : p.estado === filtro);
     $('#listaPedidos').innerHTML = lista.map(p => {
@@ -891,14 +933,12 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
         </div>
         <p class="chico conv" style="margin:4px 0 0"></p>
       </div>
-      <div class="dos">
-        <div><label>Me toca</label><select data-k="pct"><option value="1"${(g.pct ?? 1) >= 1 ? ' selected' : ''}>100%</option><option value="0.5"${g.pct === 0.5 ? ' selected' : ''}>50% (con tu amiga)</option></select></div>
-        <div><label>Para</label><select data-k="para">${ops(['Negocio', 'Bazar'], g.para || 'Negocio')}</select></div>
-      </div>
+      <input type="hidden" data-k="pct" value="${g.pct != null ? g.pct : 1}">
       <div class="dos">
         <div><label>Tipo</label><select data-k="tipo">${ops(L.tiposCompra, g.tipo || 'Insumos (switches, aros, bolsas)')}</select></div>
-        <div><label>Cómo pagaste</label><select data-k="metodo"><option value="">—</option>${ops(L.metodosCompra, g.metodo || 'Pago móvil')}</select></div>
+        <div><label>Para</label><select data-k="para">${ops(['Negocio', 'Bazar'], g.para || 'Negocio')}</select></div>
       </div>
+      <label>Cómo pagaste</label><select data-k="metodo"><option value="">—</option>${ops(L.metodosCompra, g.metodo || 'Pago móvil')}</select>
       <label>Nota (opcional)</label><input data-k="nota" value="${esc(g.nota || '')}">
       <div class="acciones" style="margin-top:12px">
         <button class="btn primario" data-guardar-g>${boton}</button>
@@ -944,15 +984,13 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
           <div><label>Precio estimado $</label><input data-k="precio" type="number" inputmode="decimal" step="0.01" value="${p.precio != null ? p.precio : ''}"></div>
           <div><label>Prioridad</label><select data-k="prioridad">${['Urgente', 'Pronto', 'Cuando se pueda'].map(x => `<option${x === p.prioridad ? ' selected' : ''}>${x}</option>`).join('')}</select></div>
         </div>
-        <div class="dos">
-          <div><label>Para</label><select data-k="para">${['Negocio', 'Bazar'].map(x => `<option${x === p.para ? ' selected' : ''}>${x}</option>`).join('')}</select></div>
-          <div><label>Me toca</label><select data-k="pct"><option value="1"${p.pct >= 1 ? ' selected' : ''}>100%</option><option value="0.5"${p.pct < 1 ? ' selected' : ''}>50% (con tu amiga)</option></select></div>
-        </div>
+        <label>Para</label><select data-k="para">${['Negocio', 'Bazar'].map(x => `<option${x === p.para ? ' selected' : ''}>${x}</option>`).join('')}</select>
+        <input type="hidden" data-k="pct" value="${p.pct}">
         <label>Nota</label><input data-k="nota" value="${esc(p.nota || '')}">
         <div class="acciones" style="margin-top:12px"><button class="btn primario" data-pc-ok>Guardar</button><button class="btn" data-pc-x>Cancelar</button><button class="btn peligro" data-pc-del>🗑️ Borrar</button></div>
       </div>`;
       return `<div class="card" data-pc="${p.fila}">
-        <div class="pedido-cab"><div><b>${esc(p.que)}</b><div class="chico">${esc(p.para)}${p.pct < 1 ? ' · te toca ' + Math.round(p.pct * 100) + '%' : ''}${p.nota ? ' · ' + esc(p.nota) : ''}</div></div>
+        <div class="pedido-cab"><div><b>${esc(p.que)}</b><div class="chico">${esc(p.para)}${p.nota ? ' · ' + esc(p.nota) : ''}</div></div>
         <div style="text-align:right"><span class="pill ${p.prioridad === 'Urgente' ? 'Cancelado' : p.prioridad === 'Pronto' ? 'Pedido' : ''}">${esc(p.prioridad || '')}</span><div class="chico" style="margin-top:4px">${p.precio != null ? '≈ ' + fmt(p.precio) : 'sin precio'}</div></div></div>
         <div class="acciones" style="margin-top:10px"><button class="btn chico primario" data-pc-comprar>Ya lo compré</button><button class="btn chico" data-pc-ed>✏️ Editar</button><button class="btn chico peligro" data-pc-del>🗑️</button></div>
       </div>`;
@@ -966,7 +1004,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     const total = lista.reduce((s, g) => s + g.miParte, 0);
     $('#listaGastos').innerHTML = (lista.length ? `<div class="stat"><span class="chico">${lista.length} ${lista.length === 1 ? 'gasto' : 'gastos'}</span><b>Tu parte: ${fmt(total)}</b></div>` : '') +
       lista.map(g => editG === g.fila ? `<div class="g-edit" data-g="${g.fila}">${formGasto(g, 'editar')}</div>` : `
-      <div class="stat g-row"><span><b>${esc(g.que)}</b><div class="chico">${esc(g.fecha || 'sin fecha')} · ${esc(g.para)}${g.pct < 1 ? ' · 50%' : ''}${g.monto === null ? ' · ⚠️ sin monto' : ''}</div></span>
+      <div class="stat g-row"><span><b>${esc(g.que)}</b><div class="chico">${esc(g.fecha || 'sin fecha')} · ${esc(g.para)}${g.pct < 1 ? ' · tu mitad' : ''}${g.monto === null ? ' · ⚠️ sin monto' : ''}</div></span>
       <span class="fila" style="gap:8px"><b>${fmt(g.miParte)}</b><button class="icono-btn" data-g-ed="${g.fila}" aria-label="Editar">✏️</button></span></div>`).join('')
       || '<p class="vacio">Sin gastos registrados.</p>';
     document.querySelectorAll('#listaGastos .fg').forEach(actualizarConv);
@@ -1022,7 +1060,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
   $('#btnAgregarPC').addEventListener('click', async () => {
     const que = $('#pcQue').value.trim(); if (!que) return avisar('¿Qué vas a comprar?', true);
     const ok = await accion({ accion: 'porComprar', que, precio: $('#pcPrecio').value, prioridad: $('#pcPrioridad').value,
-      para: $('#pcPara').value, pct: $('#pcPct').value });
+      para: $('#pcPara').value, pct: 1 });
     if (ok) { $('#pcQue').value = ''; $('#pcPrecio').value = ''; $('#cardNuevoPC').open = false; }
   });
 
@@ -1045,6 +1083,8 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     if (!datos) return;
     try { guardar('c3_datos', JSON.stringify(datos)); } catch (e) {}
     $('#txtTasa').textContent = datos.tasa ? 'BCV ' + datos.tasa.valor.toLocaleString('es-VE', { maximumFractionDigits: 2 }) : '';
+    const nWeb = (datos.pedidosWeb || []).length, bt = document.querySelector('nav.tabs button[data-ir="pedidos"]');
+    if (bt) bt.dataset.badge = nWeb || '';
     pintarProductos(); pintarCarrito(); pintarPedidos(); pintarInventario(); pintarGastos(); pintarResumen(); pintarClientes();
   }
 
@@ -1062,7 +1102,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
       llenarCalc();
       ponerModo('bazar');
       iniciado = true;
-      setInterval(() => { if (cola.length) vaciarCola(); else if (!document.hidden && !editando && !editProd && !editPC && !compraPC && !editG && !(document.activeElement && /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))) recargar(true); }, 60000);
+      setInterval(() => { if (cola.length) vaciarCola(); else if (!document.hidden && !editando && !webAbierto && !editProd && !editPC && !compraPC && !editG && !(document.activeElement && /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))) recargar(true); }, 60000);
       window.addEventListener('online', vaciarCola);
     }
     pintarCola(); pintarTodo();
@@ -1072,7 +1112,13 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
   $('#btnReintentar').addEventListener('click', vaciarCola);
 
   // Arranque
-  if (api && pin) {
+  let copiaInicial = null; try { copiaInicial = JSON.parse(leer('c3_datos') || 'null'); } catch (x) {}
+  if (api && pin && copiaInicial) {
+    // abre al instante con lo último que se vio y actualiza por detrás
+    datos = copiaInicial; iniciarApp();
+    $('#txtTasa').textContent = 'Actualizando…';
+    recargar(true).then(() => { if (datos.tasa) $('#txtTasa').textContent = 'BCV ' + datos.tasa.valor.toLocaleString('es-VE', { maximumFractionDigits: 2 }); });
+  } else if (api && pin) {
     pedirDatos().then(j => { datos = j; iniciarApp(); })
       .catch(e => {
         if (e.message === 'Clave incorrecta') return mostrarLogin('Clave incorrecta');
