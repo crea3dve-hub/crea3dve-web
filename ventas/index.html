@@ -122,6 +122,11 @@ nav.tabs button:hover{color:var(--ink)}
   display:flex;justify-content:space-between;align-items:center;gap:10px;border:0;border-radius:16px;padding:12px 16px;background:var(--ink);color:var(--bg);font-size:15px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.2);cursor:pointer}
 .barra-total b{font-size:20px}
 .barra-total[hidden]{display:none}
+.grupo-clicker{border:1px solid var(--line);border-radius:14px;padding:4px 12px 2px;margin:8px 0}
+.grupo-clicker.activo{border-color:var(--brand);box-shadow:0 0 0 2px color-mix(in srgb, var(--brand) 35%, transparent)}
+.grupo-cab{display:flex;justify-content:space-between;align-items:center;padding:8px 0 2px;font-size:15px;cursor:pointer}
+.grupo-cab span{font-size:13px;color:var(--muted)} .grupo-cab span b{font-size:16px;color:var(--ink)}
+#carrito .linea.sangria:last-child{border-bottom:0}
 .resumen-carrito{margin:6px 0 4px;font-size:16px;font-weight:700;line-height:1.35}
 .resumen-carrito:empty{display:none}
 #carrito .linea{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:16px}
@@ -646,10 +651,13 @@ details[open] > summary{margin-bottom:4px}
 
   // Extras de un toque: aros, charms y piezas de metal
   const esExtra = n => /^(Aro|Charm|Corazón con|Flor con|Clicker de objeto)/.test(n) && !/personalizado/i.test(n);
-  function agregarProducto(nombre, cant) {
+  // grupoActual: el clicker que estás armando; lo que toques después se le agrega a ese
+  let grupoActual = null;
+  function agregarProducto(nombre, cant, grupo) {
     const p = datos.productos.find(x => x.nombre === nombre); if (!p) return false;
-    const ya = carrito.find(c => c.producto === p.nombre && !c.otro && !c.grupo);
-    if (ya) ya.cantidad += cant; else carrito.push({ producto: p.nombre, precio: p.precio, base: p.precio, cantidad: cant });
+    const g = grupo || null;
+    const ya = carrito.find(c => c.producto === p.nombre && !c.otro && (c.grupo || null) === g);
+    if (ya) ya.cantidad += cant; else carrito.push({ producto: p.nombre, precio: p.precio, base: p.precio, cantidad: cant, grupo: g || undefined });
     return true;
   }
   $('#numsLetras').addEventListener('click', e => {
@@ -658,7 +666,7 @@ details[open] > summary{margin-bottom:4px}
     const letra = datos.productos.find(x => esLetra(x.nombre));
     if (!letra) return avisar('No encuentro las letras en el inventario', true);
     // cada toque es un clicker aparte (con su propia base), así se pueden vender varios distintos
-    const grupo = Date.now() + Math.random();
+    const grupo = Date.now() + Math.random(); grupoActual = grupo;
     carrito.push({ producto: letra.nombre, precio: letra.precio, base: letra.precio, cantidad: n, grupo });
     const base = baseDe(n);
     if (base) carrito.push({ producto: base.nombre, precio: base.precio, base: base.precio, cantidad: 1, grupo });
@@ -677,7 +685,8 @@ details[open] > summary{margin-bottom:4px}
   }
   $('#gridExtras').addEventListener('click', e => {
     const b = e.target.closest('button[data-x]'); if (!b) return;
-    if (agregarProducto(b.dataset.x, 1)) { pintarCarrito(); avisar('+ ' + nombreCorto(b.dataset.x)); }
+    const g = carrito.some(c => c.grupo === grupoActual) ? grupoActual : null;
+    if (agregarProducto(b.dataset.x, 1, g)) { pintarCarrito(); avisar('+ ' + nombreCorto(b.dataset.x) + (g ? ' (para el clicker ' + numClicker(g) + ')' : '')); }
   });
   $('#buscaProd').addEventListener('input', pintarProductos);
   function pintarProductos() {
@@ -826,12 +835,26 @@ details[open] > summary{margin-bottom:4px}
     carrito.forEach(c => { if (esObjeto(c.producto) && !c.manual) c.precio = conLetras ? 3 : 4; });
     $('#resumenCarrito').innerHTML = resumenCarrito();
     if (!carrito.length) { box.innerHTML = '<p class="vacio">Toca arriba lo que lleva y aquí ves cuánto cobrar.</p>'; }
-    else box.innerHTML = carrito.map((c, i) => esIncluidoN(c.producto) ? '' : `
-      <div class="linea">
-        <span class="nom">${c.grupo && esLetra(c.producto) ? `<b>Clicker de ${c.cantidad} ${c.cantidad === 1 ? 'letra' : 'letras'}</b>` : `<b>${c.cantidad} ×</b> ${esc(nombreCorto(c.producto))}`}</span>
+    else {
+      const linea = (c, i, sangria) => esIncluidoN(c.producto) ? '' : `
+      <div class="linea${sangria ? ' sangria' : ''}">
+        <span class="nom">${c.grupo && esLetra(c.producto) ? `<b>${c.cantidad} ${c.cantidad === 1 ? 'letra' : 'letras'}</b>` : `<b>${c.cantidad} ×</b> ${esc(nombreCorto(c.producto))}`}</span>
         <span class="cant"><button data-a="-" data-i="${i}" aria-label="Menos">−</button><button data-a="+" data-i="${i}" aria-label="Más">+</button></span>
         <button class="precio-btn" data-pe="${i}" aria-label="Cambiar precio">${fmt(c.cantidad * (Number(c.precio) || 0))}</button>
-      </div>`).join('');
+      </div>`;
+      const grupos = [...new Set(carrito.filter(c => c.grupo).map(c => c.grupo))];
+      let html = grupos.map((g, k) => {
+        const its = carrito.map((c, i) => ({ c, i })).filter(x => x.c.grupo === g);
+        const subt = its.reduce((s2, x) => s2 + x.c.cantidad * (Number(x.c.precio) || 0), 0);
+        const sel = g === grupoActual && grupos.length > 1;
+        return `<div class="grupo-clicker${sel ? ' activo' : ''}" data-g="${g}">
+          <div class="grupo-cab"><b>🔑 Clicker ${k + 1}</b><span>${sel ? 'lo que toques va aquí · ' : ''}<b>${fmt(subt)}</b></span></div>
+          ${its.map(x => linea(x.c, x.i, true)).join('')}</div>`;
+      }).join('');
+      const sueltos = carrito.map((c, i) => ({ c, i })).filter(x => !x.c.grupo);
+      if (sueltos.length) html += (grupos.length ? '<div class="grupo-cab" style="margin-top:8px"><b>Aparte</b></div>' : '') + sueltos.map(x => linea(x.c, x.i, false)).join('');
+      box.innerHTML = html;
+    }
     const del = montoDelivery();
     const sub = carrito.reduce((s, c) => s + c.cantidad * c.precio, 0);
     const conDesc = carrito.reduce((s, c) => s + c.cantidad * conDescuento(c.precio), 0);
@@ -855,7 +878,8 @@ details[open] > summary{margin-bottom:4px}
     const c = carrito[+b.dataset.i];
     c.cantidad += b.dataset.a === '+' ? 1 : -1;
     if (c.cantidad <= 0) carrito.splice(+b.dataset.i, 1);
-    if (c.grupo) ajustarBase(c.grupo);
+    if (c.grupo && esLetra(c.producto) && c.cantidad <= 0) carrito = carrito.filter(x => x.grupo !== c.grupo);
+    else if (c.grupo) ajustarBase(c.grupo);
     pintarCarrito();
   });
   $('#carrito').addEventListener('change', e => {
@@ -864,7 +888,14 @@ details[open] > summary{margin-bottom:4px}
   });
   $('#vMetodo').addEventListener('change', () => pintarCarrito());
   $('#vExtra').addEventListener('input', () => pintarCarrito());
-  $('#btnVaciar').addEventListener('click', () => { carrito = []; pintarCarrito(); });
+  $('#btnVaciar').addEventListener('click', () => { carrito = []; grupoActual = null; pintarCarrito(); });
+  const numClicker = g => [...new Set(carrito.filter(c => c.grupo).map(c => c.grupo))].indexOf(g) + 1;
+  // tocar el título de un clicker lo vuelve el actual (lo siguiente que agregues va para él)
+  $('#carrito').addEventListener('click', e => {
+    const cab = e.target.closest('.grupo-cab'); if (!cab || e.target.closest('button')) return;
+    const box = cab.closest('[data-g]'); if (!box) return;
+    grupoActual = +box.dataset.g; pintarCarrito(); avisar('Ahora agregas al clicker ' + numClicker(grupoActual));
+  });
 
   $('#btnGuardarVenta').addEventListener('click', async () => {
     if (!carrito.length) return avisar('No hay productos en la venta', true);
@@ -894,7 +925,7 @@ details[open] > summary{margin-bottom:4px}
       await accion({ accion: 'gasto', que: 'Delivery – ' + (cuerpo.cliente || 'encargo'), monto: del, pct: 1, tipo: 'Otro',
         para: 'Negocio', metodo: '', nota: delQuien === 'cliente' ? 'Lo pagó el cliente (incluido en su venta)' : 'Envío gratis para el cliente' }, 'Delivery anotado');
     }
-    if (ok) { carrito = []; quitarDescuento(); $('#vNota').value = ''; $('#vExtra').value = ''; limpiarCliente(); $('#vFecha').value = hoyISO(); $('#vDelivery').value = ''; $('#bloqueQuienDel').hidden = true; pintarCarrito(); }
+    if (ok) { carrito = []; grupoActual = null; quitarDescuento(); $('#vNota').value = ''; $('#vExtra').value = ''; limpiarCliente(); $('#vFecha').value = hoyISO(); $('#vDelivery').value = ''; $('#bloqueQuienDel').hidden = true; pintarCarrito(); }
   });
 
   /* ---------- Pedidos ---------- */
