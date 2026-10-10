@@ -543,6 +543,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
       if (p.estado === 'Pedido') botones.push(`<button class="btn chico primario" data-num="${esc(p.numero)}" data-e="Pagado">Ya pagó</button>`);
       if (p.estado === 'Pedido' || p.estado === 'Pagado') botones.push(`<button class="btn chico" data-num="${esc(p.numero)}" data-e="Entregado">Entregado</button>`);
       if (p.estado !== 'Cancelado' && p.estado !== 'Entregado') botones.push(`<button class="btn chico peligro" data-num="${esc(p.numero)}" data-e="Cancelado">Cancelar</button>`);
+      if (p.estado === 'Pagado' || p.estado === 'Entregado') botones.push(`<button class="btn chico" data-nota="${esc(p.numero)}">📄 Nota de entrega</button>`);
       return `<div class="card">
         <div class="pedido-cab"><div><span class="num">${esc(p.numero)}</span> · ${esc(p.cliente || 'Sin nombre')}<div class="chico">${esc(p.fecha)} · ${esc(p.canal)}${p.metodo ? ' · ' + esc(p.metodo) : ''}</div></div>
         <div style="text-align:right"><span class="pill ${esc(p.estado)}">${esc(p.estado || '—')}</span><div style="font-weight:800;margin-top:4px">${fmt(p.total)}</div></div></div>
@@ -551,6 +552,63 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
       </div>`;
     }).join('') || '<p class="vacio">Nada por aquí.</p>';
   }
+  /* ---------- Nota de entrega (imagen para mandar por WhatsApp) ---------- */
+  async function notaDeEntrega(p) {
+    try { await Promise.all([document.fonts.load('900 60px Orbitron'), document.fonts.load('700 30px Figtree'), document.fonts.load('400 30px Figtree')]); } catch (e) {}
+    const items = p.items.filter(i => i.total > 0);
+    const W = 1080, filaH = 74, H = 760 + items.length * filaH + (datos.tasa ? 60 : 0);
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const x = c.getContext('2d');
+    const verde = '#5CBA2E', tinta = '#141712', gris = '#5E6659', linea = '#DDE3D6';
+    const txt = (t, px, py, font, color, align) => { x.font = font; x.fillStyle = color; x.textAlign = align || 'left'; x.fillText(t, px, py); };
+    const cortar = (t, max, font) => { x.font = font; if (x.measureText(t).width <= max) return t; while (t.length && x.measureText(t + '…').width > max) t = t.slice(0, -1); return t + '…'; };
+    const ff = 'Figtree, system-ui, sans-serif';
+    x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, W, H);
+    x.fillStyle = verde; x.fillRect(0, 0, W, 150);
+    txt('CREA', 64, 100, '900 62px Orbitron, Arial Black, sans-serif', tinta);
+    const wCrea = x.measureText('CREA').width;
+    txt('3D', 64 + wCrea, 100, '900 62px Orbitron, Arial Black, sans-serif', '#FFFFFF');
+    txt('@crea3d.ve', W - 64, 96, '700 30px ' + ff, tinta, 'right');
+    txt('NOTA DE ENTREGA', 64, 230, '800 40px ' + ff, tinta);
+    txt('N° ' + p.numero, W - 64, 230, '800 40px ' + ff, tinta, 'right');
+    txt('Fecha: ' + p.fecha, 64, 285, '400 30px ' + ff, gris);
+    txt('Cliente: ' + (p.cliente || '—'), 64, 330, '400 30px ' + ff, gris);
+    if (p.metodo) txt('Pago: ' + p.metodo, W - 64, 285, '400 30px ' + ff, gris, 'right');
+    let y = 400;
+    x.fillStyle = linea; x.fillRect(64, y, W - 128, 2); y += 50;
+    txt('PRODUCTO', 64, y, '700 24px ' + ff, gris); txt('CANT.', 700, y, '700 24px ' + ff, gris, 'right'); txt('TOTAL', W - 64, y, '700 24px ' + ff, gris, 'right');
+    y += 20;
+    items.forEach(i => {
+      y += filaH - 20;
+      const nom = i.producto.replace(/\s*\([^)]*\)/g, '').replace('Clicker – cada letra', 'Letras de clicker').replace('Clicker de objeto – ', 'Clicker ');
+      txt(cortar(nom, 560, '600 30px ' + ff), 64, y, '600 30px ' + ff, tinta);
+      txt(String(i.cantidad), 700, y, '400 30px ' + ff, tinta, 'right');
+      txt(fmt(i.total), W - 64, y, '600 30px ' + ff, tinta, 'right');
+      y += 20; x.fillStyle = linea; x.fillRect(64, y, W - 128, 1);
+    });
+    const total = items.reduce((a, i) => a + i.total, 0);
+    y += 80;
+    txt('TOTAL', 64, y, '800 44px ' + ff, tinta); txt(fmt(total), W - 64, y, '800 44px ' + ff, tinta, 'right');
+    if (datos.tasa) { y += 52; txt(fmtBs(total * datos.tasa.valor) + ' · tasa BCV ' + datos.tasa.valor.toLocaleString('es-VE', { maximumFractionDigits: 2 }), W - 64, y, '400 26px ' + ff, gris, 'right'); }
+    // sello PAGADO
+    x.save(); x.translate(250, y + 30); x.rotate(-0.12);
+    x.strokeStyle = verde; x.lineWidth = 6; x.strokeRect(-150, -48, 300, 84);
+    txt('PAGADO', 0, 16, '900 46px ' + ff, verde, 'center'); x.restore();
+    txt('¡Gracias por tu compra!', W / 2, H - 90, '700 32px ' + ff, tinta, 'center');
+    txt('crea3dve.com · WhatsApp 0424-2674222', W / 2, H - 45, '400 26px ' + ff, gris, 'center');
+    const blob = await new Promise(r => c.toBlob(r, 'image/png'));
+    const nombre = 'Nota-' + p.numero + '.png';
+    const archivo = new File([blob], nombre, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+      try { await navigator.share({ files: [archivo], title: 'Nota de entrega ' + p.numero }); return; } catch (e) { if (e.name === 'AbortError') return; }
+    }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nombre;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  $('#listaPedidos').addEventListener('click', e => {
+    const b = e.target.closest('button[data-nota]'); if (!b) return;
+    const p = datos.ventas.find(v => v.numero === b.dataset.nota); if (p) notaDeEntrega(p);
+  });
   $('#listaPedidos').addEventListener('click', async e => {
     const b = e.target.closest('button[data-num]'); if (!b) return;
     const est = b.dataset.e;
