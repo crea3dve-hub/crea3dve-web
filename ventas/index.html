@@ -822,7 +822,7 @@ details[open] > summary{margin-bottom:4px}
     const items = p.items.filter(i => i.total > 0);
     const cli = buscarCliente(p.cliente) || {};
     const extras = [cli.cedula && 'C.I./RIF: ' + cli.cedula, cli.telefono && 'Tel: ' + cli.telefono].filter(Boolean);
-    const W = 1080, filaH = 74, H = 760 + items.length * filaH + (datos.tasa ? 60 : 0) + extras.length * 45;
+    const W = 1080, filaH = 74, H = 810 + items.length * filaH + (datos.tasa ? 60 : 0) + extras.length * 45;
     const c = document.createElement('canvas'); c.width = W; c.height = H;
     const x = c.getContext('2d');
     const verde = '#5CBA2E', tinta = '#141712', gris = '#5E6659', linea = '#DDE3D6';
@@ -859,9 +859,16 @@ details[open] > summary{margin-bottom:4px}
     txt('TOTAL', 64, y, '800 44px ' + ff, tinta); txt(fmt(total), W - 64, y, '800 44px ' + ff, tinta, 'right');
     if (datos.tasa) { y += 52; txt(fmtBs(total * datos.tasa.valor) + ' · tasa BCV ' + datos.tasa.valor.toLocaleString('es-VE', { maximumFractionDigits: 2 }), W - 64, y, '400 26px ' + ff, gris, 'right'); }
     // sello PAGADO
-    x.save(); x.translate(250, y + 30); x.rotate(-0.12);
+    x.save(); x.translate(250, y + 85); x.rotate(-0.12);
     x.strokeStyle = verde; x.lineWidth = 6; x.strokeRect(-150, -48, 300, 84);
     txt('PAGADO', 0, 16, '900 46px ' + ff, verde, 'center'); x.restore();
+    // sello POR ENTREGAR si todavía no se ha entregado
+    if (p.estado !== 'Entregado') {
+      const naranja = '#E07B00';
+      x.save(); x.translate(W - 290, y + 85); x.rotate(0.08);
+      x.strokeStyle = naranja; x.lineWidth = 6; x.strokeRect(-200, -48, 400, 84);
+      txt('POR ENTREGAR', 0, 16, '900 44px ' + ff, naranja, 'center'); x.restore();
+    }
     txt('¡Gracias por tu compra!', W / 2, H - 90, '700 32px ' + ff, tinta, 'center');
     txt('crea3dve.com · WhatsApp 0424-2674222', W / 2, H - 45, '400 26px ' + ff, gris, 'center');
     const blob = await new Promise(r => c.toBlob(r, 'image/png'));
