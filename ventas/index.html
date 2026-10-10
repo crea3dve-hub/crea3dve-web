@@ -278,6 +278,14 @@ details[open] > summary{margin-bottom:4px}
       </div>
       <label for="vExtra">Pagó de más $ <span class="chico">(si no quiere vuelto)</span></label>
       <input id="vExtra" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0">
+      <div id="bloqueVenta">
+        <label>¿Ya se lo llevó?</label>
+        <div class="segmento" role="group" aria-label="¿Ya se lo llevó?">
+          <button id="llevoSi" aria-pressed="true">Sí, ya se lo llevó</button>
+          <button id="llevoNo" aria-pressed="false">No, lo preparo</button>
+        </div>
+        <p class="chico" style="margin:6px 0 0">Si falta imprimir letras o la base, toca <b>No, lo preparo</b>: queda pagado y en Pedidos → Por entregar.</p>
+      </div>
       <div id="bloqueEncargo" hidden>
         <label>¿Ya pagó?</label>
         <div class="segmento" role="group" aria-label="¿Ya pagó?">
@@ -594,7 +602,7 @@ details[open] > summary{margin-bottom:4px}
   function ponerPago(si) {
     pagado = si;
     $('#pagoSi').setAttribute('aria-pressed', si); $('#pagoNo').setAttribute('aria-pressed', !si);
-    $('#vEstado').value = modo === 'bazar' ? 'Entregado' : (si ? 'Pagado' : 'Pedido');
+    $('#vEstado').value = modo === 'bazar' ? (llevo ? 'Entregado' : 'Pagado') : (si ? 'Pagado' : 'Pedido');
     $('#cajaMetodo').hidden = modo === 'pedido' && !si;
     if (modo === 'pedido') $('#vMetodo').value = si ? 'Pago móvil' : '';
   }
@@ -606,6 +614,15 @@ details[open] > summary{margin-bottom:4px}
       : 'No se le cobra al cliente. Queda anotado como gasto del negocio.';
     pintarCarrito();
   }
+  // En Venta: ¿se lo llevó ya o falta prepararlo? (se recuerda la última opción)
+  let llevo = leer('c3_llevo') !== 'no';
+  function ponerLlevo(si) {
+    llevo = si; guardar('c3_llevo', si ? 'si' : 'no');
+    $('#llevoSi').setAttribute('aria-pressed', si); $('#llevoNo').setAttribute('aria-pressed', !si);
+    ponerPago(pagado);
+  }
+  $('#llevoSi').addEventListener('click', () => ponerLlevo(true));
+  $('#llevoNo').addEventListener('click', () => ponerLlevo(false));
   $('#pagoSi').addEventListener('click', () => ponerPago(true));
   $('#pagoNo').addEventListener('click', () => ponerPago(false));
   $('#delCliente').addEventListener('click', () => ponerDel('cliente'));
@@ -617,6 +634,8 @@ details[open] > summary{margin-bottom:4px}
     $('#modoPedido').setAttribute('aria-pressed', m === 'pedido');
     $('#vCanal').value = m === 'bazar' ? 'Bazar' : 'WhatsApp';
     $('#bloqueEncargo').hidden = m === 'bazar';
+    $('#bloqueVenta').hidden = m !== 'bazar';
+    $('#llevoSi').setAttribute('aria-pressed', llevo); $('#llevoNo').setAttribute('aria-pressed', !llevo);
     if (m === 'bazar') { $('#vMetodo').value = 'Pago móvil'; }
     ponerPago(false);
     pintarCarrito();
