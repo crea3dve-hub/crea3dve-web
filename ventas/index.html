@@ -114,6 +114,11 @@ nav.tabs button[aria-selected="true"]{color:var(--brand)}
 .pin{letter-spacing:8px;text-align:center;font-size:24px;font-weight:800}
 details summary{cursor:pointer;font-weight:700;padding:4px 0}
 .tres{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.ed-item{display:grid;grid-template-columns:1fr 56px 72px auto;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.ed-item .nom{font-size:13px;font-weight:600;line-height:1.25}
+.ed-item input{padding:7px 6px;text-align:right}
+.ed-item.quitado .nom{text-decoration:line-through;color:var(--muted)}
+.ed-item.quitado input{opacity:.4}
 .calc{background:var(--bg);border-radius:12px;padding:10px 12px 12px;margin-top:12px}
 .kres{margin-top:10px;font-size:14px}
 .kres .stat{padding:5px 0}
@@ -655,6 +660,51 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     document.querySelectorAll('#filtrosPedidos button').forEach(x => x.setAttribute('aria-pressed', x === b));
     pintarPedidos();
   });
+  let editando = null;
+  function editorPedido(p) {
+    const L = datos.listas;
+    const ops = (lista, v, vacio) => (vacio ? `<option value="">${vacio}</option>` : '') + lista.map(x => `<option${x === v ? ' selected' : ''}>${esc(x)}</option>`).join('');
+    return `<div class="card editor" data-ed="${esc(p.numero)}">
+      <div class="pedido-cab"><div><span class="num">${esc(p.numero)}</span> · editando</div><button class="btn chico" data-cerrar>Cerrar</button></div>
+      <label>Cliente</label><input data-f="cliente" value="${esc(p.cliente)}">
+      <div class="dos">
+        <div><label>Estado</label><select data-f="estado">${ops(L.estados, p.estado)}</select></div>
+        <div><label>Cómo pagó</label><select data-f="metodo">${ops(L.metodosVenta, p.metodo, 'Todavía no paga')}</select></div>
+      </div>
+      <label>Productos</label>
+      ${p.items.map((i, k) => `<div class="ed-item" data-k="${k}">
+        <span class="nom">${esc(i.producto)}</span>
+        <input data-q type="number" inputmode="numeric" min="0" value="${i.cantidad}" aria-label="Cantidad">
+        <input data-p type="number" inputmode="decimal" step="0.01" min="0" value="${i.precio || (i.cantidad ? +(i.total / i.cantidad).toFixed(2) : 0)}" aria-label="Precio c/u">
+        <button class="btn chico peligro" data-quitar aria-label="Quitar">✕</button>
+      </div>`).join('')}
+      <p class="chico" style="margin:6px 0 0">Cantidad y precio por unidad. ✕ quita el producto (vuelve al inventario).</p>
+      <button class="btn primario ancho" data-guardar style="margin-top:12px">Guardar cambios</button>
+    </div>`;
+  }
+  async function guardarEdicion(card) {
+    const num = card.dataset.ed, p = datos.ventas.find(v => v.numero === num); if (!p) return;
+    const f = k => card.querySelector(`[data-f="${k}"]`).value;
+    const items = [];
+    card.querySelectorAll('.ed-item').forEach(row => {
+      const i = p.items[+row.dataset.k], q = row.classList.contains('quitado') ? 0 : parseFloat(row.querySelector('[data-q]').value);
+      const pr = parseFloat(row.querySelector('[data-p]').value), prViejo = i.precio || (i.cantidad ? i.total / i.cantidad : 0);
+      const cambioQ = q !== i.cantidad, cambioP = pr >= 0 && Math.abs(pr - prViejo) > 0.001;
+      if (cambioQ || cambioP) items.push({ fila: i.fila, producto: i.producto, cantidad: isNaN(q) ? i.cantidad : q, precio: pr, precioCambiado: cambioP });
+    });
+    const cuerpo = { accion: 'editar', numero: num, estado: f('estado'), metodo: f('metodo'), cliente: f('cliente').trim(), items, id: idNuevo() };
+    document.body.classList.add('cargando');
+    try {
+      datos = await enviar(cuerpo); editando = null; pintarTodo(); avisar(datos.mensaje || 'Venta corregida');
+    } catch (e) {
+      if (String(e.message).includes('Acción desconocida')) {
+        // puente viejo: al menos se puede cambiar el estado
+        try { datos = await enviar({ accion: 'estado', numero: num, estado: f('estado'), metodo: f('metodo'), id: idNuevo() }); editando = null; pintarTodo();
+          avisar(items.length ? 'Se cambió el estado. Para corregir productos actualiza el puente (Apps Script).' : 'Estado corregido', !!items.length); }
+        catch (e2) { avisar(e2.message, true); }
+      } else avisar(e.delServidor ? e.message : 'Sin señal: intenta de nuevo cuando haya conexión', true);
+    } finally { document.body.classList.remove('cargando'); }
+  }
   function pintarPedidos() {
     const lista = datos.ventas.filter(p =>
       filtro === 'todos' ? true : filtro === 'pend' ? (p.estado === 'Pedido' || p.estado === 'Pagado') : p.estado === filtro);
@@ -664,6 +714,8 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
       if (p.estado === 'Pedido' || p.estado === 'Pagado') botones.push(`<button class="btn chico" data-num="${esc(p.numero)}" data-e="Entregado">Entregado</button>`);
       if (p.estado !== 'Cancelado' && p.estado !== 'Entregado') botones.push(`<button class="btn chico peligro" data-num="${esc(p.numero)}" data-e="Cancelado">Cancelar</button>`);
       if (p.estado === 'Pagado' || p.estado === 'Entregado') botones.push(`<button class="btn chico" data-nota="${esc(p.numero)}">📄 Nota de entrega</button>`);
+      botones.push(`<button class="btn chico" data-editar="${esc(p.numero)}">✏️ Editar</button>`);
+      if (editando === p.numero) return editorPedido(p);
       return `<div class="card">
         <div class="pedido-cab"><div><span class="num">${esc(p.numero)}</span> · ${esc(p.cliente || 'Sin nombre')}<div class="chico">${esc(p.fecha)} · ${esc(p.canal)}${p.metodo ? ' · ' + esc(p.metodo) : ''}</div></div>
         <div style="text-align:right"><span class="pill ${esc(p.estado)}">${esc(p.estado || '—')}</span><div style="font-weight:800;margin-top:4px">${fmt(p.total)}</div></div></div>
@@ -730,6 +782,15 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   }
   $('#listaPedidos').addEventListener('click', e => {
+    const ed = e.target.closest('button[data-editar]');
+    if (ed) { editando = ed.dataset.editar; pintarPedidos(); return; }
+    const card = e.target.closest('.editor');
+    if (card) {
+      if (e.target.closest('[data-cerrar]')) { editando = null; pintarPedidos(); }
+      else if (e.target.closest('[data-quitar]')) { const row = e.target.closest('.ed-item'); row.classList.toggle('quitado'); }
+      else if (e.target.closest('[data-guardar]')) guardarEdicion(card);
+      return;
+    }
     const b = e.target.closest('button[data-nota]'); if (!b) return;
     const p = datos.ventas.find(v => v.numero === b.dataset.nota); if (p) notaDeEntrega(p);
   });
@@ -840,7 +901,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
       llenarCalc();
       ponerModo('bazar');
       iniciado = true;
-      setInterval(() => { if (cola.length) vaciarCola(); else if (!document.hidden) recargar(true); }, 60000);
+      setInterval(() => { if (cola.length) vaciarCola(); else if (!document.hidden && !editando) recargar(true); }, 60000);
       window.addEventListener('online', vaciarCola);
     }
     pintarCola(); pintarTodo();
