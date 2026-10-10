@@ -904,7 +904,8 @@ details[open] > summary{margin-bottom:4px}
     const cuerpo = {
       accion: 'venta', cliente: $('#vCliente').value.trim(), canal: $('#vCanal').value,
       metodo: descuento === 1 ? '' : $('#vMetodo').value,
-      estado: descuento === 1 && $('#vEstado').value === 'Pagado' ? 'Pedido' : $('#vEstado').value,
+      // sin método de pago = no ha pagado: si se lo llevó queda "Entregado · debe", si no, "Sin pagar"
+      estado: (descuento === 1 || (modo === 'bazar' && !$('#vMetodo').value)) && $('#vEstado').value === 'Pagado' ? 'Pedido' : $('#vEstado').value,
       items: carrito.map(c => ({ producto: c.producto, cantidad: c.cantidad, precio: conDescuento(c.precio), precioManual: c.otro || descuento > 0 || c.precio !== c.base })),
       datosCliente: Object.fromEntries(CAMPOS_CLIENTE.map(([k, sel]) => [k, $(sel).value.trim()])),
       fecha: $('#vFecha').value || hoyISO(),
@@ -1032,26 +1033,29 @@ details[open] > summary{margin-bottom:4px}
   const esIncluido = i => /incluid[oa] en el precio/i.test(i.producto);
   // Nombres claros para cada estado (en la hoja se guardan igual: Pedido, Pagado, Entregado, Cancelado)
   const ESTADO_TXT = { Pedido: 'Sin pagar · por entregar', Pagado: 'Pagado · por entregar', Entregado: 'Entregado', Cancelado: 'Cancelado' };
+  // entregado pero sin método de pago = todavía debe
+  const debe = p => p.estado === 'Entregado' && !p.metodo && p.total > 0;
   const PILL_TXT = { Pedido: 'Sin pagar', Pagado: 'Por entregar', Entregado: 'Entregado', Cancelado: 'Cancelado' };
   const esRegalo = p => p.total === 0 && p.items.some(i => !esIncluido(i) && i.producto !== 'Delivery');
   function pintarPedidos() {
     pintarWeb();
     const lista = datos.ventas.filter(p =>
-      filtro === 'todos' ? true : filtro === 'pend' ? (p.estado === 'Pedido' || p.estado === 'Pagado') : p.estado === filtro);
+      filtro === 'todos' ? true : filtro === 'pend' ? (p.estado === 'Pedido' || p.estado === 'Pagado') : filtro === 'Pedido' ? (p.estado === 'Pedido' || debe(p)) : p.estado === filtro);
     $('#listaPedidos').innerHTML = lista.map(p => {
       const botones = [];
       const regalo = esRegalo(p);
       if (p.estado === 'Pedido' && !regalo) botones.push(`<button class="btn chico primario" data-num="${esc(p.numero)}" data-e="Pagado">Ya pagó</button>`);
+      if (debe(p)) botones.push(`<button class="btn chico primario" data-num="${esc(p.numero)}" data-e="Entregado" data-pide="1">Ya pagó</button>`);
       if (p.estado === 'Pedido' || p.estado === 'Pagado') botones.push(`<button class="btn chico" data-num="${esc(p.numero)}" data-e="Entregado">Entregado</button>`);
       if (p.estado === 'Entregado') botones.push(`<button class="btn chico" data-num="${esc(p.numero)}" data-e="${p.metodo || regalo ? 'Pagado' : 'Pedido'}" data-sin-preguntar="1">↩︎ Todavía no lo entrego</button>`);
       if (p.estado !== 'Cancelado' && p.estado !== 'Entregado') botones.push(`<button class="btn chico peligro" data-num="${esc(p.numero)}" data-e="Cancelado">Cancelar</button>`);
-      if (p.estado === 'Pedido' && !regalo) botones.push(`<button class="btn chico" data-cobro="${esc(p.numero)}">💬 Mensaje de pago</button>`);
+      if ((p.estado === 'Pedido' || debe(p)) && !regalo) botones.push(`<button class="btn chico" data-cobro="${esc(p.numero)}">💬 Mensaje de pago</button>`);
       if (p.estado !== 'Cancelado') botones.push(`<button class="btn chico" data-nota="${esc(p.numero)}">📄 ${p.estado === 'Pedido' && !regalo ? 'Nota de pedido' : 'Nota de entrega'}</button>`);
       botones.push(`<button class="btn chico" data-editar="${esc(p.numero)}">✏️ Editar</button>`);
       if (editando === p.numero) return editorPedido(p);
       return `<div class="card">
         <div class="pedido-cab"><div><span class="num">${esc(p.numero)}</span> · ${esc(p.cliente || 'Sin nombre')}<div class="chico">${esc(p.fecha)} · ${esc(p.canal)}${p.metodo ? ' · ' + esc(p.metodo) : ''}</div></div>
-        <div style="text-align:right"><span class="pill ${esc(p.estado)}">${esc(PILL_TXT[p.estado] || p.estado || '—')}</span><div style="font-weight:800;margin-top:4px">${regalo ? '🎁 Regalo' : fmt(p.total)}</div></div></div>
+        <div style="text-align:right"><span class="pill ${esc(p.estado)}">${esc(debe(p) ? 'Entregado · debe' : PILL_TXT[p.estado] || p.estado || '—')}</span><div style="font-weight:800;margin-top:4px">${regalo ? '🎁 Regalo' : fmt(p.total)}</div></div></div>
         <ul class="lista-items">${p.items.map(i => `<li>${i.cantidad} × ${esc(i.producto)}</li>`).join('')}</ul>
         ${p.nota ? `<p class="chico" style="margin:4px 0 8px">📝 ${esc(p.nota)}</p>` : ''}
         ${botones.length ? `<div class="acciones">${botones.join('')}</div>` : ''}
@@ -1090,7 +1094,7 @@ details[open] > summary{margin-bottom:4px}
     const items = regalo ? p.items.filter(i => !esIncluido(i)) : p.items.filter(i => i.total > 0);
     const cli = buscarCliente(p.cliente) || {};
     const extras = [cli.cedula && 'C.I./RIF: ' + cli.cedula, cli.telefono && 'Tel: ' + cli.telefono].filter(Boolean);
-    const sinPagar = p.estado === 'Pedido' && !regalo;
+    const sinPagar = (p.estado === 'Pedido' || debe(p)) && !regalo;
     if (sinPagar && faltanDatosPago()) return;
     const lineasPago = sinPagar ? datosPago().split('\n').map(l => l.trim()).filter(Boolean) : [];
     const W = 1080, filaH = 74, H = 810 + items.length * filaH + (datos.tasa ? 60 : 0) + extras.length * 45 + (sinPagar ? 170 + lineasPago.length * 44 : 0);
@@ -1181,7 +1185,7 @@ details[open] > summary{margin-bottom:4px}
     const est = b.dataset.e;
     if (est === 'Cancelado' && !confirm('¿Cancelar ' + b.dataset.num + '? Las piezas vuelven al inventario.')) return;
     let metodo = '';
-    if (est === 'Pagado' && !b.dataset.sinPreguntar) {
+    if ((est === 'Pagado' && !b.dataset.sinPreguntar) || b.dataset.pide) {
       const ms = datos.listas.metodosVenta;
       const r = prompt('¿Cómo pagó? Escribe el número:\n' + ms.map((m, i) => (i + 1) + '. ' + m).join('\n'), '1');
       if (r === null) return;
@@ -1447,7 +1451,7 @@ details[open] > summary{margin-bottom:4px}
   const hoyDMY = () => { const [a, m, d] = hoyISO().split('-'); return d + '/' + m + '/' + a; };
   function cierreHoy() {
     const v = datos.ventas.filter(p => p.fecha === hoyDMY() && p.estado !== 'Cancelado');
-    const cobradas = v.filter(p => p.estado === 'Pagado' || p.estado === 'Entregado');
+    const cobradas = v.filter(p => p.estado === 'Pagado' || (p.estado === 'Entregado' && p.metodo));
     const porMetodo = {};
     cobradas.forEach(p => { const m = p.metodo || 'Sin método'; porMetodo[m] = (porMetodo[m] || 0) + p.total; });
     const prods = {};
@@ -1456,7 +1460,7 @@ details[open] > summary{margin-bottom:4px}
     const usoAnotado = datos.gastos.some(g => g.fecha === hoyDMY() && /uso del punto/i.test(g.que));
     return { v, cobradas, porMetodo, prods, punto, comision: punto * COMISION_PUNTO, uso: punto ? USO_PUNTO_DIA : 0, usoAnotado,
       bazar: v.some(p => p.canal === 'Bazar'), total: cobradas.reduce((s, p) => s + p.total, 0),
-      pendiente: v.filter(p => p.estado === 'Pedido' && !esRegalo(p)).reduce((s, p) => s + p.total, 0) };
+      pendiente: v.filter(p => (p.estado === 'Pedido' || debe(p)) && !esRegalo(p)).reduce((s, p) => s + p.total, 0) };
   }
   function pintarHoy() {
     const c = cierreHoy(), fila = (a, b) => `<div class="stat"><span>${a}</span><b>${b}</b></div>`;
