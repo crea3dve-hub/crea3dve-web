@@ -825,7 +825,8 @@ details[open] > summary{margin-bottom:4px}
   }
   /* ---------- Datos de pago (se guardan en este teléfono) ---------- */
   const nombreCorto = t => String(t).replace(/\s*\([^)]*\)/g, '').replace('Clicker – cada letra', 'Letras de clicker').replace('Clicker de objeto – ', 'Clicker ');
-  const datosPago = () => (leer('c3_pago') || '').trim();
+  const PAGO_FIJO = 'Pago móvil: Banco de Venezuela · C.I. 26.716.439 · 0412-0172988\nZelle: pieraldf@gmail.com\nBinance: pieraldf@gmail.com';
+  const datosPago = () => (leer('c3_pago') || PAGO_FIJO).trim();
   function faltanDatosPago() {
     if (datosPago()) return false;
     avisar('Primero escribe tus datos de pago en Resumen → Mis datos de pago', true);
