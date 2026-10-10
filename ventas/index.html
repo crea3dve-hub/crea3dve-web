@@ -242,6 +242,11 @@ details[open] > summary{margin-bottom:4px}
       <select id="vEstado" hidden></select>
       <label for="vFecha">Fecha</label>
       <input id="vFecha" type="date" max="">
+      <div class="dos">
+        <div style="grid-column:span 2"><label for="vNota">Comentario <span class="chico">(opcional)</span></label><input id="vNota" placeholder="Ej: lo retira mañana, color de la base…" autocomplete="off"></div>
+      </div>
+      <label for="vExtra">Pagó de más $ <span class="chico">(si no quiere vuelto)</span></label>
+      <input id="vExtra" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0">
       <div id="bloqueEncargo" hidden>
         <label>¿Ya pagó?</label>
         <div class="segmento" role="group" aria-label="¿Ya pagó?">
@@ -697,7 +702,8 @@ details[open] > summary{margin-bottom:4px}
     const del = montoDelivery();
     const sub = carrito.reduce((s, c) => s + c.cantidad * c.precio, 0);
     const conDesc = carrito.reduce((s, c) => s + c.cantidad * conDescuento(c.precio), 0);
-    const total = conDesc + (delQuien === 'cliente' ? del : 0);
+    const extraV = parseFloat($('#vExtra').value) > 0 ? parseFloat($('#vExtra').value) : 0;
+    const total = conDesc + (delQuien === 'cliente' ? del : 0) + extraV;
     $('#txtDesc').hidden = !descuento || !carrito.length;
     $('#txtDesc').innerHTML = descuento === 1
       ? '🎁 <b>Regalo:</b> no cobras nada. Queda registrado y en Resumen ves cuánto te costó regalarlo.'
@@ -719,6 +725,7 @@ details[open] > summary{margin-bottom:4px}
     const v = parseFloat(e.target.value); carrito[+i].precio = v >= 0 ? v : 0; carrito[+i].manual = true; pintarCarrito();
   });
   $('#vMetodo').addEventListener('change', () => pintarCarrito());
+  $('#vExtra').addEventListener('input', () => pintarCarrito());
   $('#btnVaciar').addEventListener('click', () => { carrito = []; pintarCarrito(); });
 
   $('#btnGuardarVenta').addEventListener('click', async () => {
@@ -735,12 +742,21 @@ details[open] > summary{margin-bottom:4px}
     };
     const del = montoDelivery();
     if (del && delQuien === 'cliente') cuerpo.items.push({ producto: 'Delivery', cantidad: 1, precio: del, precioManual: true });
+    // cada tecla (letra) y cada clicker de objeto lleva un switch: se descuenta solo del inventario
+    const nSw = carrito.reduce((n, c) => n + (esLetra(c.producto) || esObjeto(c.producto) ? c.cantidad : 0), 0);
+    const SW = 'Switch para clicker (sueltos, incluido en el precio)';
+    if (nSw && datos.productos.some(x => x.nombre === SW) && !carrito.some(c => c.producto === SW))
+      cuerpo.items.push({ producto: SW, cantidad: nSw, precio: 0, precioManual: descuento === 1 });
+    const extra = parseFloat($('#vExtra').value);
+    if (extra > 0) cuerpo.items.push({ producto: 'Extra (pagó de más)', cantidad: 1, precio: extra, precioManual: true });
+    const nota = $('#vNota').value.trim();
+    if (nota) cuerpo.nota = nota;
     const ok = await accion(cuerpo, 'Venta guardada');
     if (ok && del) {
       await accion({ accion: 'gasto', que: 'Delivery – ' + (cuerpo.cliente || 'encargo'), monto: del, pct: 1, tipo: 'Otro',
         para: 'Negocio', metodo: '', nota: delQuien === 'cliente' ? 'Lo pagó el cliente (incluido en su venta)' : 'Envío gratis para el cliente' }, 'Delivery anotado');
     }
-    if (ok) { carrito = []; quitarDescuento(); limpiarCliente(); $('#vFecha').value = hoyISO(); $('#vDelivery').value = ''; $('#bloqueQuienDel').hidden = true; pintarCarrito(); }
+    if (ok) { carrito = []; quitarDescuento(); $('#vNota').value = ''; $('#vExtra').value = ''; limpiarCliente(); $('#vFecha').value = hoyISO(); $('#vDelivery').value = ''; $('#bloqueQuienDel').hidden = true; pintarCarrito(); }
   });
 
   /* ---------- Pedidos ---------- */
@@ -768,6 +784,7 @@ details[open] > summary{margin-bottom:4px}
         <div><label>Estado</label><select data-f="estado">${ops(L.estados, p.estado)}</select></div>
         <div><label>Cómo pagó</label><select data-f="metodo">${ops(L.metodosVenta, p.metodo, 'Todavía no paga')}</select></div>
       </div>
+      <label>Comentario</label><input data-f="nota" value="${esc(p.nota || '')}" placeholder="Ej: pagó $10, lo retira el domingo…">
       <label>Productos</label>
       ${p.items.map((i, k) => `<div class="ed-item" data-k="${k}">
         <span class="nom">${esc(i.producto)}</span>
@@ -792,6 +809,7 @@ details[open] > summary{margin-bottom:4px}
     if (esFutura(f('fecha'))) return avisar(avisoFecha, true);
     const cuerpo = { accion: 'editar', numero: num, estado: f('estado'), metodo: f('metodo'), cliente: f('cliente').trim(), items, id: idNuevo(),
       clienteAnterior: p.cliente, datosCliente: { cedula: f('cedula').trim(), telefono: f('telefono').trim() } };
+    if (f('nota').trim() !== (p.nota || '')) cuerpo.nota = f('nota').trim();
     if (f('fecha') && f('fecha') !== aISO(p.fecha)) cuerpo.fecha = f('fecha');
     document.body.classList.add('cargando');
     try {
@@ -862,6 +880,7 @@ details[open] > summary{margin-bottom:4px}
         <div class="pedido-cab"><div><span class="num">${esc(p.numero)}</span> · ${esc(p.cliente || 'Sin nombre')}<div class="chico">${esc(p.fecha)} · ${esc(p.canal)}${p.metodo ? ' · ' + esc(p.metodo) : ''}</div></div>
         <div style="text-align:right"><span class="pill ${esc(p.estado)}">${esc(p.estado || '—')}</span><div style="font-weight:800;margin-top:4px">${regalo ? '🎁 Regalo' : fmt(p.total)}</div></div></div>
         <ul class="lista-items">${p.items.map(i => `<li>${i.cantidad} × ${esc(i.producto)}</li>`).join('')}</ul>
+        ${p.nota ? `<p class="chico" style="margin:4px 0 8px">📝 ${esc(p.nota)}</p>` : ''}
         ${botones.length ? `<div class="acciones">${botones.join('')}</div>` : ''}
       </div>`;
     }).join('') || '<p class="vacio">Nada por aquí.</p>';
@@ -1259,7 +1278,7 @@ details[open] > summary{margin-bottom:4px}
     const porMetodo = {};
     cobradas.forEach(p => { const m = p.metodo || 'Sin método'; porMetodo[m] = (porMetodo[m] || 0) + p.total; });
     const prods = {};
-    v.forEach(p => p.items.forEach(i => { if (!esIncluido(i) && i.producto !== 'Delivery') prods[nombreCorto(i.producto)] = (prods[nombreCorto(i.producto)] || 0) + i.cantidad; }));
+    v.forEach(p => p.items.forEach(i => { if (!esIncluido(i) && i.producto !== 'Delivery' && !/^Extra/.test(i.producto)) prods[nombreCorto(i.producto)] = (prods[nombreCorto(i.producto)] || 0) + i.cantidad; }));
     const punto = porMetodo['Punto de venta'] || 0;
     const usoAnotado = datos.gastos.some(g => g.fecha === hoyDMY() && /uso del punto/i.test(g.que));
     return { v, cobradas, porMetodo, prods, punto, comision: punto * COMISION_PUNTO, uso: punto ? USO_PUNTO_DIA : 0, usoAnotado,
