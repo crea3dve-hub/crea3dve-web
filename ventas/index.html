@@ -648,7 +648,7 @@ details[open] > summary{margin-bottom:4px}
   const esExtra = n => /^(Aro|Charm|Corazón con|Flor con|Clicker de objeto)/.test(n) && !/personalizado/i.test(n);
   function agregarProducto(nombre, cant) {
     const p = datos.productos.find(x => x.nombre === nombre); if (!p) return false;
-    const ya = carrito.find(c => c.producto === p.nombre && !c.otro);
+    const ya = carrito.find(c => c.producto === p.nombre && !c.otro && !c.grupo);
     if (ya) ya.cantidad += cant; else carrito.push({ producto: p.nombre, precio: p.precio, base: p.precio, cantidad: cant });
     return true;
   }
@@ -657,12 +657,24 @@ details[open] > summary{margin-bottom:4px}
     const n = +b.dataset.n;
     const letra = datos.productos.find(x => esLetra(x.nombre));
     if (!letra) return avisar('No encuentro las letras en el inventario', true);
-    agregarProducto(letra.nombre, n);
-    const base = datos.productos.find(x => x.nombre.startsWith('Base de clicker – ' + n + ' tecla'));
-    if (base) agregarProducto(base.nombre, 1);
+    // cada toque es un clicker aparte (con su propia base), así se pueden vender varios distintos
+    const grupo = Date.now() + Math.random();
+    carrito.push({ producto: letra.nombre, precio: letra.precio, base: letra.precio, cantidad: n, grupo });
+    const base = baseDe(n);
+    if (base) carrito.push({ producto: base.nombre, precio: base.precio, base: base.precio, cantidad: 1, grupo });
     pintarCarrito();
     avisar(`${n} ${n === 1 ? 'letra' : 'letras'}${base ? ' + base' : ''} = ${fmt(n * letra.precio)}`);
   });
+  const baseDe = n => datos.productos.find(x => x.nombre.startsWith('Base de clicker – ' + n + ' tecla'));
+  // si cambian las letras de un clicker, su base cambia de tamaño (o se quita si ya no tiene letras)
+  function ajustarBase(g) {
+    const le = carrito.find(c => c.grupo === g && esLetra(c.producto));
+    const bi = carrito.findIndex(c => c.grupo === g && esBase(c.producto));
+    if (!le) { if (bi >= 0) carrito.splice(bi, 1); return; }
+    const nb = baseDe(le.cantidad);
+    if (bi >= 0) { if (nb) carrito[bi].producto = nb.nombre; else carrito.splice(bi, 1); }
+    else if (nb) carrito.push({ producto: nb.nombre, precio: nb.precio, base: nb.precio, cantidad: 1, grupo: g });
+  }
   $('#gridExtras').addEventListener('click', e => {
     const b = e.target.closest('button[data-x]'); if (!b) return;
     if (agregarProducto(b.dataset.x, 1)) { pintarCarrito(); avisar('+ ' + nombreCorto(b.dataset.x)); }
@@ -784,9 +796,10 @@ details[open] > summary{margin-bottom:4px}
     if (!carrito.length) return '';
     const cuenta = f => carrito.filter(c => f(c.producto)).reduce((n, c) => n + c.cantidad, 0);
     const pl = (n, uno, varios) => n + ' ' + (n === 1 ? uno : varios);
-    const bases = carrito.filter(c => esBase(c.producto)).map(c => (c.producto.match(/(\d+) tecla/) || [])[1]).filter(Boolean);
+    const bases = carrito.filter(c => esBase(c.producto)).flatMap(c => Array(c.cantidad).fill((c.producto.match(/(\d+) tecla/) || [])[1])).filter(Boolean);
     const partes = [];
-    if (bases.length) partes.push(bases.length === 1 ? 'base de ' + bases[0] : pl(bases.length, 'base', 'bases') + ' (' + bases.join(' y ') + ')');
+    const lista = xs => xs.length > 1 ? xs.slice(0, -1).join(', ') + ' y ' + xs[xs.length - 1] : xs[0];
+    if (bases.length) partes.push(bases.length === 1 ? 'base de ' + bases[0] : bases.length + ' bases (de ' + lista(bases) + ')');
     const l = cuenta(esLetra); if (l) partes.push(pl(l, 'letra', 'letras'));
     const o = cuenta(esObjeto); if (o) partes.push(pl(o, 'clicker de objeto', 'clickers de objeto'));
     const ch = cuenta(n => /^Charm/.test(n)); if (ch) partes.push(pl(ch, 'charm', 'charms'));
@@ -815,7 +828,7 @@ details[open] > summary{margin-bottom:4px}
     if (!carrito.length) { box.innerHTML = '<p class="vacio">Toca arriba lo que lleva y aquí ves cuánto cobrar.</p>'; }
     else box.innerHTML = carrito.map((c, i) => esIncluidoN(c.producto) ? '' : `
       <div class="linea">
-        <span class="nom"><b>${c.cantidad} ×</b> ${esc(nombreCorto(c.producto))}</span>
+        <span class="nom">${c.grupo && esLetra(c.producto) ? `<b>Clicker de ${c.cantidad} ${c.cantidad === 1 ? 'letra' : 'letras'}</b>` : `<b>${c.cantidad} ×</b> ${esc(nombreCorto(c.producto))}`}</span>
         <span class="cant"><button data-a="-" data-i="${i}" aria-label="Menos">−</button><button data-a="+" data-i="${i}" aria-label="Más">+</button></span>
         <button class="precio-btn" data-pe="${i}" aria-label="Cambiar precio">${fmt(c.cantidad * (Number(c.precio) || 0))}</button>
       </div>`).join('');
@@ -842,6 +855,7 @@ details[open] > summary{margin-bottom:4px}
     const c = carrito[+b.dataset.i];
     c.cantidad += b.dataset.a === '+' ? 1 : -1;
     if (c.cantidad <= 0) carrito.splice(+b.dataset.i, 1);
+    if (c.grupo) ajustarBase(c.grupo);
     pintarCarrito();
   });
   $('#carrito').addEventListener('change', e => {
