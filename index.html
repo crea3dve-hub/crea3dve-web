@@ -79,6 +79,10 @@ h1{font-family:var(--display);font-weight:900;font-size:clamp(26px,6vw,40px);let
 #view3d{width:100%;height:clamp(250px,64vw,440px);border-radius:12px;overflow:hidden;touch-action:none;cursor:grab;position:relative;contain:size}
 #view3d:active{cursor:grabbing}
 #view3d canvas{position:absolute;inset:0;display:block;width:100%!important;height:100%!important}
+.colgar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 14px}
+.colgar button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);font:600 14px var(--body);color:var(--ink);cursor:pointer;text-align:left}
+.colgar button small{font-weight:500;color:var(--muted)}
+.colgar button[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
 .incl{font-size:13px;color:var(--muted);margin:0 0 8px}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);border-radius:18px 18px 0 0;
   box-shadow:0 -10px 30px rgba(0,0,0,.18);padding:12px 16px calc(14px + env(safe-area-inset-bottom,0px));max-height:56vh;overflow:auto;
@@ -230,7 +234,11 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
 
       <section class="sec">
         <h2><span class="step">3</span>Charms y extras</h2>
-        <p class="incl">Todos los llaveros incluyen su <b>cadena de bolitas</b>.</p>
+        <span class="label">¿Cómo lo quieres colgar?</span>
+        <div class="colgar" id="colgar">
+          <button type="button" data-c="cadena" aria-pressed="true"><b>⛓️ Cadena de bolitas</b><small>Incluida</small></button>
+          <button type="button" data-c="llavero" aria-pressed="false"><b>🔑 Aro de llavero</b><small>+$0,50</small></button>
+        </div>
         <span class="label">Aros para colgar <span class="notice">(toca uno para agregarlo; puedes poner varios)</span></span>
         <div class="aros" id="aros"></div>
         <div id="arolist"></div>
@@ -328,6 +336,7 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
 const WHATSAPP = "584242674222";
 const LINK_PAGINA = "https://crea3dve.com/";   // link público de esta página
 const PRECIO_LETRA = 1.50;           // cada letra: tecla + switch + su parte de la base (base y cadena incluidas)
+const PRECIO_LLAVERO = 0.50;   // aro de llavero en vez de la cadena de bolitas
 const PRECIO_OTRO = 1.00;   // charm personalizado ("Otro charm"), precio fijo
 const CHARMS = [   // charms impresos en 3D (cada uno del color que el cliente escoja)
   {id:"carita", nombre:"Carita feliz", precio:0.50, color:"Amarillo"},
@@ -422,9 +431,9 @@ function aroList(){ return st.aros.map(aroInfo).filter(Boolean); }
 function aroSel(){ return aroList()[0] || null; }
 window.aroSel = aroSel; window.aroList = aroList;
 // ---------- varios clickers en un pedido ----------
-const DKEYS = ["word","base","style","mode","font","tiles","legs","charms","objs","otro","aros"];
+const DKEYS = ["word","base","style","mode","font","tiles","legs","charms","objs","otro","aros","colgar"];
 const snap = () => JSON.parse(JSON.stringify(Object.fromEntries(DKEYS.map(k=>[k, st[k]]))));
-function loadDesign(d){ Object.assign(st, JSON.parse(JSON.stringify(d))); st.sel = 0; st.mixTiles = null; st.mixLegs = null; }
+function loadDesign(d){ Object.assign(st, {colgar:"cadena"}, JSON.parse(JSON.stringify(d))); st.sel = 0; st.mixTiles = null; st.mixLegs = null; }
 function withDesign(d, fn){ const keep = snap(), ks = st.sel; loadDesign(d); try{ return fn(); } finally{ loadDesign(keep); st.sel = ks; } }
 const hasContent = d => (d.word && d.word.length) || (d.objs && d.objs.length);
 function save(){ try{ localStorage.setItem("clicker-crea3d-v3",JSON.stringify(st)); }catch(e){} }
@@ -602,6 +611,7 @@ function render(){
     return `<div class="vrow"><div class="n">${x.nombre}: escoge cuál</div><div class="vchips">${x.var.map(([k,nm])=>`<button class="vchip" type="button" data-i="${i}" data-v="${k}" aria-pressed="${o.v===k}"><img src="obj/${x.id}-${k}.webp" alt="" loading="lazy">${nm}</button>`).join("")}</div></div>`; }).join("");
   $("objvars").querySelectorAll(".vchip").forEach(b=>b.onclick=()=>{ st.objs[+b.dataset.i].v = b.dataset.v; render(); });
   window.__onlyObj = !keys().length && st.objs.length>0;
+  document.querySelectorAll("#colgar button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.c === (st.colgar||"cadena")));
   $("otrobox").hidden = st.otro===null;
   if(st.otro!==null && document.activeElement!==$("otro")) $("otro").value = st.otro;
   if(window.__3d) window.__3d.update(); else drawPreview(); pricing(); save(); renderSheet();
@@ -612,7 +622,9 @@ const EMO = {"Rojo":"🔴","Naranja":"🟠","Amarillo":"🟡","Marrón":"🟤","
 const colTxt = n => EMO[n] ? `${EMO[n]} *${n.toLowerCase()}*` : `*${n.toLowerCase()}*`;
 function designCalc(){   // usa el diseño cargado en st
   const n = keys().length, ks = keys(), lines = []; let tot = 0;
-  if(n){ const l = n*PRECIO_LETRA; lines.push([`${n} ${n===1?"letra":"letras"} × ${money(PRECIO_LETRA)} (base y cadena incluidas)`, l]); tot += l; }
+  const llavero = st.colgar === "llavero" && (n || st.objs.length);
+  if(n){ const l = n*PRECIO_LETRA; lines.push([`${n} ${n===1?"letra":"letras"} × ${money(PRECIO_LETRA)} (base${llavero?"":" y cadena"} incluida${llavero?"":"s"})`, l]); tot += l; }
+  if(llavero){ lines.push(["Aro de llavero (en vez de cadena)", PRECIO_LLAVERO]); tot += PRECIO_LLAVERO; }
   aroList().forEach(ar=>{ lines.push([`${ar.tipo.nombre} (${ar.nombre.toLowerCase()})`, ar.tipo.precio]); tot+=ar.tipo.precio; });
   st.charms.forEach(ch=>{ const x = charmInfo(ch.t); lines.push([`Charm ${x.nombre.toLowerCase()} (${ch.c.toLowerCase()})`, x.precio]); tot+=x.precio; });
   st.objs.forEach((o,i)=>{ const x = objInfo(o.t), p = objPrice(i); lines.push([`Clicker de objeto: ${x.nombre.toLowerCase()}${o.v?` (${objVarName(o).toLowerCase()})`:''}${!n&&i===0?' (con cadena)':''}`, p]); tot+=p; });
@@ -625,6 +637,7 @@ function designCalc(){   // usa el diseño cargado en st
     body = `🔤 Palabra: *${ks.map(c=>SYMS[c]?`[${SYMS[c]}]`:c).join("")}*\n🧱 Base: ${colTxt(st.base)} · ${st.style}\n✍️ Tipografía: ${FONTS[st.font][2]}\n\n⌨️ Teclas:\n${teclas}`;
   }
   const extras = [];
+  if(llavero) extras.push(`🔑 *Aro de llavero* en vez de cadena — ${money(PRECIO_LLAVERO)}`);
   aroList().forEach(ar=>extras.push(`*${ar.tipo.nombre}* color *${ar.nombre.toLowerCase()}* — ${money(ar.tipo.precio)}`));
   st.charms.forEach(ch=>{ const x = charmInfo(ch.t); extras.push(`${charmEmo[ch.t] ? charmEmo[ch.t]+" " : ""}Charm ${x.nombre.toLowerCase()} ${colTxt(ch.c)} — ${money(x.precio)}`); });
   st.objs.forEach((o,i)=>{ const x = objInfo(o.t); extras.push(`${x.emo} Clicker *${x.nombre.toLowerCase()}*${o.v?` *${objVarName(o).toLowerCase()}*`:""}${!ks.length&&i===0?" (con cadena)":""} — ${money(objPrice(i))}`); });
@@ -798,6 +811,7 @@ const NOMBRE_OBJ = {smore:"S'more de chocolate", tostada:"Tostada con mantequill
 function itemsDiseno(){   // productos del diseño cargado en st, con los nombres de la hoja de ventas
   const out = [], n = keys().length;
   if(n) out.push({producto:"Clicker – cada letra (base y cadena incluidas)", cantidad:n, precio:PRECIO_LETRA});
+  if(st.colgar === "llavero" && (n || st.objs.length)) out.push({producto:"Aro de llavero (en vez de cadena)", cantidad:1, precio:PRECIO_LLAVERO});
   aroList().forEach(ar=>out.push({producto:NOMBRE_AROS[ar.tipo.id] || ar.tipo.nombre, cantidad:1, precio:ar.tipo.precio}));
   st.charms.forEach(ch=>{ const x = charmInfo(ch.t); out.push({producto:NOMBRE_CHARMS[ch.t] || ("Charm " + x.nombre), cantidad:1, precio:x.precio}); });
   st.objs.forEach((o,i)=>out.push({producto:"Clicker de objeto – " + (NOMBRE_OBJ[o.t] || objInfo(o.t).nombre), cantidad:1, precio:objPrice(i)}));
@@ -820,6 +834,7 @@ function avisarCaja(){
   }catch(e){}
 }
 $("ord-wa").addEventListener("click", avisarCaja);
+document.querySelectorAll("#colgar button").forEach(b=>b.onclick=()=>{ st.colgar = b.dataset.c; render(); });
 $("ord-copy").onclick = copyPhoto;
 $("ord-skip").onclick = photoCopied;
 $("ord-close").onclick = ()=>{ $("order").hidden = true; document.body.classList.remove("sheet-open"); };
