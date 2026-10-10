@@ -212,6 +212,14 @@ details[open] > summary{margin-bottom:4px}
     <div class="card" id="cardCarrito">
       <div class="fila" style="justify-content:space-between"><b>Esta venta</b><button class="btn chico" id="btnVaciar">Vaciar</button></div>
       <div id="carrito"></div>
+      <label style="margin-top:10px">Descuento</label>
+      <div class="chips" id="chipsDesc" style="margin:4px 0 0;flex-wrap:wrap">
+        <button type="button" data-d="0" aria-pressed="true">Sin descuento</button>
+        <button type="button" data-d="0.1" aria-pressed="false">10%</button>
+        <button type="button" data-d="0.2" aria-pressed="false">20% familia</button>
+        <button type="button" data-d="1" aria-pressed="false">🎁 Regalo</button>
+      </div>
+      <p class="chico" id="txtDesc" style="margin:6px 0 0" hidden></p>
       <div class="total"><span>Total</span><span><span id="txtTotal">$0,00</span><br><small id="txtTotalBs"></small></span></div>
     </div>
 
@@ -657,6 +665,15 @@ details[open] > summary{margin-bottom:4px}
     $('#otroNombre').value = ''; $('#otroPrecio').value = ''; $('#otroCant').value = '1'; limpiarCalc();
     pintarCarrito();
   });
+  let descuento = 0;
+  const conDescuento = pr => Math.round(pr * (1 - descuento) * 100) / 100;
+  $('#chipsDesc').addEventListener('click', e => {
+    const b = e.target.closest('button[data-d]'); if (!b) return;
+    descuento = parseFloat(b.dataset.d);
+    document.querySelectorAll('#chipsDesc button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    pintarCarrito();
+  });
+  function quitarDescuento() { descuento = 0; document.querySelectorAll('#chipsDesc button').forEach(x => x.setAttribute('aria-pressed', x.dataset.d === '0')); }
   function pintarCarrito() {
     const box = $('#carrito');
     const conLetras = carrito.some(c => esLetra(c.producto));
@@ -669,7 +686,13 @@ details[open] > summary{margin-bottom:4px}
         <input class="precio-input" data-p="${i}" type="number" inputmode="decimal" step="0.01" value="${c.precio}" aria-label="Precio c/u">
       </div>`).join('');
     const del = montoDelivery();
-    const total = carrito.reduce((s, c) => s + c.cantidad * c.precio, 0) + (delQuien === 'cliente' ? del : 0);
+    const sub = carrito.reduce((s, c) => s + c.cantidad * c.precio, 0);
+    const conDesc = carrito.reduce((s, c) => s + c.cantidad * conDescuento(c.precio), 0);
+    const total = conDesc + (delQuien === 'cliente' ? del : 0);
+    $('#txtDesc').hidden = !descuento || !carrito.length;
+    $('#txtDesc').innerHTML = descuento === 1
+      ? '🎁 <b>Regalo:</b> no cobras nada. Queda registrado y en Resumen ves cuánto te costó regalarlo.'
+      : `Antes ${fmt(sub)} · descuento ${Math.round(descuento * 100)}%: <b>−${fmt(sub - conDesc)}</b>`;
     $('#txtTotal').title = del && delQuien === 'cliente' ? 'Incluye delivery' : '';
     $('#txtTotal').textContent = fmt(total);
     $('#txtTotalBs').textContent = (datos && datos.tasa ? fmtBs(total * datos.tasa.valor) : '') + (del && delQuien === 'cliente' ? ' · incluye delivery ' + fmt(del) : '');
@@ -693,8 +716,9 @@ details[open] > summary{margin-bottom:4px}
     if (esFutura($('#vFecha').value)) { $('#vFecha').value = hoyISO(); return avisar(avisoFecha, true); }
     const cuerpo = {
       accion: 'venta', cliente: $('#vCliente').value.trim(), canal: $('#vCanal').value,
-      metodo: $('#vMetodo').value, estado: $('#vEstado').value,
-      items: carrito.map(c => ({ producto: c.producto, cantidad: c.cantidad, precio: c.precio, precioManual: c.otro || c.precio !== c.base })),
+      metodo: descuento === 1 ? '' : $('#vMetodo').value,
+      estado: descuento === 1 && $('#vEstado').value === 'Pagado' ? 'Pedido' : $('#vEstado').value,
+      items: carrito.map(c => ({ producto: c.producto, cantidad: c.cantidad, precio: conDescuento(c.precio), precioManual: c.otro || descuento > 0 || c.precio !== c.base })),
       datosCliente: Object.fromEntries(CAMPOS_CLIENTE.map(([k, sel]) => [k, $(sel).value.trim()])),
       fecha: $('#vFecha').value || hoyISO(),
     };
@@ -705,7 +729,7 @@ details[open] > summary{margin-bottom:4px}
       await accion({ accion: 'gasto', que: 'Delivery – ' + (cuerpo.cliente || 'encargo'), monto: del, pct: 1, tipo: 'Otro',
         para: 'Negocio', metodo: '', nota: delQuien === 'cliente' ? 'Lo pagó el cliente (incluido en su venta)' : 'Envío gratis para el cliente' }, 'Delivery anotado');
     }
-    if (ok) { carrito = []; limpiarCliente(); $('#vFecha').value = hoyISO(); $('#vDelivery').value = ''; $('#bloqueQuienDel').hidden = true; pintarCarrito(); }
+    if (ok) { carrito = []; quitarDescuento(); limpiarCliente(); $('#vFecha').value = hoyISO(); $('#vDelivery').value = ''; $('#bloqueQuienDel').hidden = true; pintarCarrito(); }
   });
 
   /* ---------- Pedidos ---------- */
@@ -802,22 +826,25 @@ details[open] > summary{margin-bottom:4px}
       if (await accion({ accion: 'convertirWeb', fila, idWeb: w.id, cliente: v('cliente'), datosCliente: { cedula: v('cedula'), telefono: v('telefono') } })) webAbierto = null;
     }
   });
+  const esIncluido = i => /incluid[oa] en el precio/i.test(i.producto);
+  const esRegalo = p => p.total === 0 && p.items.some(i => !esIncluido(i) && i.producto !== 'Delivery');
   function pintarPedidos() {
     pintarWeb();
     const lista = datos.ventas.filter(p =>
       filtro === 'todos' ? true : filtro === 'pend' ? (p.estado === 'Pedido' || p.estado === 'Pagado') : p.estado === filtro);
     $('#listaPedidos').innerHTML = lista.map(p => {
       const botones = [];
-      if (p.estado === 'Pedido') botones.push(`<button class="btn chico primario" data-num="${esc(p.numero)}" data-e="Pagado">Ya pagó</button>`);
+      const regalo = esRegalo(p);
+      if (p.estado === 'Pedido' && !regalo) botones.push(`<button class="btn chico primario" data-num="${esc(p.numero)}" data-e="Pagado">Ya pagó</button>`);
       if (p.estado === 'Pedido' || p.estado === 'Pagado') botones.push(`<button class="btn chico" data-num="${esc(p.numero)}" data-e="Entregado">Entregado</button>`);
       if (p.estado !== 'Cancelado' && p.estado !== 'Entregado') botones.push(`<button class="btn chico peligro" data-num="${esc(p.numero)}" data-e="Cancelado">Cancelar</button>`);
-      if (p.estado === 'Pedido') botones.push(`<button class="btn chico" data-cobro="${esc(p.numero)}">💬 Mensaje de pago</button>`);
-      if (p.estado !== 'Cancelado') botones.push(`<button class="btn chico" data-nota="${esc(p.numero)}">📄 ${p.estado === 'Pedido' ? 'Nota de pedido' : 'Nota de entrega'}</button>`);
+      if (p.estado === 'Pedido' && !regalo) botones.push(`<button class="btn chico" data-cobro="${esc(p.numero)}">💬 Mensaje de pago</button>`);
+      if (p.estado !== 'Cancelado') botones.push(`<button class="btn chico" data-nota="${esc(p.numero)}">📄 ${p.estado === 'Pedido' && !regalo ? 'Nota de pedido' : 'Nota de entrega'}</button>`);
       botones.push(`<button class="btn chico" data-editar="${esc(p.numero)}">✏️ Editar</button>`);
       if (editando === p.numero) return editorPedido(p);
       return `<div class="card">
         <div class="pedido-cab"><div><span class="num">${esc(p.numero)}</span> · ${esc(p.cliente || 'Sin nombre')}<div class="chico">${esc(p.fecha)} · ${esc(p.canal)}${p.metodo ? ' · ' + esc(p.metodo) : ''}</div></div>
-        <div style="text-align:right"><span class="pill ${esc(p.estado)}">${esc(p.estado || '—')}</span><div style="font-weight:800;margin-top:4px">${fmt(p.total)}</div></div></div>
+        <div style="text-align:right"><span class="pill ${esc(p.estado)}">${esc(p.estado || '—')}</span><div style="font-weight:800;margin-top:4px">${regalo ? '🎁 Regalo' : fmt(p.total)}</div></div></div>
         <ul class="lista-items">${p.items.map(i => `<li>${i.cantidad} × ${esc(i.producto)}</li>`).join('')}</ul>
         ${botones.length ? `<div class="acciones">${botones.join('')}</div>` : ''}
       </div>`;
@@ -851,10 +878,11 @@ details[open] > summary{margin-bottom:4px}
   /* ---------- Nota de entrega (imagen para mandar por WhatsApp) ---------- */
   async function notaDeEntrega(p) {
     try { await Promise.all([document.fonts.load('900 60px Orbitron'), document.fonts.load('700 30px Figtree'), document.fonts.load('400 30px Figtree')]); } catch (e) {}
-    const items = p.items.filter(i => i.total > 0);
+    const regalo = esRegalo(p);
+    const items = regalo ? p.items.filter(i => !esIncluido(i)) : p.items.filter(i => i.total > 0);
     const cli = buscarCliente(p.cliente) || {};
     const extras = [cli.cedula && 'C.I./RIF: ' + cli.cedula, cli.telefono && 'Tel: ' + cli.telefono].filter(Boolean);
-    const sinPagar = p.estado === 'Pedido';
+    const sinPagar = p.estado === 'Pedido' && !regalo;
     if (sinPagar && faltanDatosPago()) return;
     const lineasPago = sinPagar ? datosPago().split('\n').map(l => l.trim()).filter(Boolean) : [];
     const W = 1080, filaH = 74, H = 810 + items.length * filaH + (datos.tasa ? 60 : 0) + extras.length * 45 + (sinPagar ? 170 + lineasPago.length * 44 : 0);
@@ -886,18 +914,18 @@ details[open] > summary{margin-bottom:4px}
       const nom = nombreCorto(i.producto);
       txt(cortar(nom, 560, '600 30px ' + ff), 64, y, '600 30px ' + ff, tinta);
       txt(String(i.cantidad), 700, y, '400 30px ' + ff, tinta, 'right');
-      txt(fmt(i.total), W - 64, y, '600 30px ' + ff, tinta, 'right');
+      txt(regalo ? '—' : fmt(i.total), W - 64, y, '600 30px ' + ff, tinta, 'right');
       y += 20; x.fillStyle = linea; x.fillRect(64, y, W - 128, 1);
     });
     const total = items.reduce((a, i) => a + i.total, 0);
     y += 80;
-    txt('TOTAL', 64, y, '800 44px ' + ff, tinta); txt(fmt(total), W - 64, y, '800 44px ' + ff, tinta, 'right');
-    if (datos.tasa) { y += 52; txt(fmtBs(total * datos.tasa.valor) + ' · tasa BCV ' + datos.tasa.valor.toLocaleString('es-VE', { maximumFractionDigits: 2 }), W - 64, y, '400 26px ' + ff, gris, 'right'); }
+    txt('TOTAL', 64, y, '800 44px ' + ff, tinta); txt(regalo ? 'Es un regalo 💚' : fmt(total), W - 64, y, '800 44px ' + ff, tinta, 'right');
+    if (datos.tasa && !regalo) { y += 52; txt(fmtBs(total * datos.tasa.valor) + ' · tasa BCV ' + datos.tasa.valor.toLocaleString('es-VE', { maximumFractionDigits: 2 }), W - 64, y, '400 26px ' + ff, gris, 'right'); }
     // sello PAGADO o PENDIENTE DE PAGO
     const rojo = '#D33A2C';
     x.save(); x.translate(250, y + 85); x.rotate(-0.12);
     x.strokeStyle = sinPagar ? rojo : verde; x.lineWidth = 6; x.strokeRect(sinPagar ? -175 : -150, -48, sinPagar ? 350 : 300, 84);
-    txt(sinPagar ? 'POR PAGAR' : 'PAGADO', 0, 16, '900 46px ' + ff, sinPagar ? rojo : verde, 'center'); x.restore();
+    txt(sinPagar ? 'POR PAGAR' : regalo ? 'REGALO' : 'PAGADO', 0, 16, '900 46px ' + ff, sinPagar ? rojo : verde, 'center'); x.restore();
     // sello POR ENTREGAR si todavía no se ha entregado
     if (p.estado !== 'Entregado') {
       const naranja = '#E07B00';
@@ -914,7 +942,7 @@ details[open] > summary{margin-bottom:4px}
       txt('DATOS DE PAGO', 100, y, '800 28px ' + ff, tinta);
       lineasPago.forEach((l, k) => txt(cortar(l, W - 200, '500 28px ' + ff), 100, y + 46 + k * 44, '500 28px ' + ff, tinta));
     }
-    txt(sinPagar ? '¡Gracias por tu pedido!' : '¡Gracias por tu compra!', W / 2, H - 90, '700 32px ' + ff, tinta, 'center');
+    txt(regalo ? '¡Hecho con cariño para ti!' : sinPagar ? '¡Gracias por tu pedido!' : '¡Gracias por tu compra!', W / 2, H - 90, '700 32px ' + ff, tinta, 'center');
     txt('crea3dve.com · WhatsApp 0424-2674222', W / 2, H - 45, '400 26px ' + ff, gris, 'center');
     const blob = await new Promise(r => c.toBlob(r, 'image/png'));
     const nombre = 'Nota-' + p.numero + '.png';
