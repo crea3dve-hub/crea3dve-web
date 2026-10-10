@@ -213,6 +213,8 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
         <div id="cajaMetodo"><label for="vMetodo">Cómo pagó</label><select id="vMetodo"></select></div>
       </div>
       <select id="vEstado" hidden></select>
+      <label for="vFecha">Fecha</label>
+      <input id="vFecha" type="date">
       <div id="bloqueEncargo" hidden>
         <label>¿Ya pagó?</label>
         <div class="segmento" role="group" aria-label="¿Ya pagó?">
@@ -353,6 +355,8 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
   const fmt = n => '$' + (Number(n) || 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtBs = n => 'Bs ' + (Number(n) || 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const hoyISO = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  const aISO = f => { const m = String(f || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); return m ? m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0') : hoyISO(); };
   const idNuevo = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
   let avisoT;
@@ -642,6 +646,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
       metodo: $('#vMetodo').value, estado: $('#vEstado').value,
       items: carrito.map(c => ({ producto: c.producto, cantidad: c.cantidad, precio: c.precio, precioManual: c.otro || c.precio !== c.base })),
       datosCliente: Object.fromEntries(CAMPOS_CLIENTE.map(([k, sel]) => [k, $(sel).value.trim()])),
+      fecha: $('#vFecha').value || hoyISO(),
     };
     const del = montoDelivery();
     if (del && delQuien === 'cliente') cuerpo.items.push({ producto: 'Delivery', cantidad: 1, precio: del, precioManual: true });
@@ -650,7 +655,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
       await accion({ accion: 'gasto', que: 'Delivery – ' + (cuerpo.cliente || 'encargo'), monto: del, pct: 1, tipo: 'Otro',
         para: 'Negocio', metodo: '', nota: delQuien === 'cliente' ? 'Lo pagó el cliente (incluido en su venta)' : 'Envío gratis para el cliente' }, 'Delivery anotado');
     }
-    if (ok) { carrito = []; limpiarCliente(); $('#vDelivery').value = ''; $('#bloqueQuienDel').hidden = true; pintarCarrito(); }
+    if (ok) { carrito = []; limpiarCliente(); $('#vFecha').value = hoyISO(); $('#vDelivery').value = ''; $('#bloqueQuienDel').hidden = true; pintarCarrito(); }
   });
 
   /* ---------- Pedidos ---------- */
@@ -666,7 +671,10 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
     const ops = (lista, v, vacio) => (vacio ? `<option value="">${vacio}</option>` : '') + lista.map(x => `<option${x === v ? ' selected' : ''}>${esc(x)}</option>`).join('');
     return `<div class="card editor" data-ed="${esc(p.numero)}">
       <div class="pedido-cab"><div><span class="num">${esc(p.numero)}</span> · editando</div><button class="btn chico" data-cerrar>Cerrar</button></div>
-      <label>Cliente</label><input data-f="cliente" value="${esc(p.cliente)}">
+      <div class="dos">
+        <div><label>Cliente</label><input data-f="cliente" value="${esc(p.cliente)}"></div>
+        <div><label>Fecha</label><input data-f="fecha" type="date" value="${aISO(p.fecha)}"></div>
+      </div>
       <div class="dos">
         <div><label>Estado</label><select data-f="estado">${ops(L.estados, p.estado)}</select></div>
         <div><label>Cómo pagó</label><select data-f="metodo">${ops(L.metodosVenta, p.metodo, 'Todavía no paga')}</select></div>
@@ -693,6 +701,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
       if (cambioQ || cambioP) items.push({ fila: i.fila, producto: i.producto, cantidad: isNaN(q) ? i.cantidad : q, precio: pr, precioCambiado: cambioP });
     });
     const cuerpo = { accion: 'editar', numero: num, estado: f('estado'), metodo: f('metodo'), cliente: f('cliente').trim(), items, id: idNuevo() };
+    if (f('fecha') && f('fecha') !== aISO(p.fecha)) cuerpo.fecha = f('fecha');
     document.body.classList.add('cargando');
     try {
       datos = await enviar(cuerpo); editando = null; pintarTodo(); avisar(datos.mensaje || 'Venta corregida');
@@ -898,6 +907,7 @@ details summary{cursor:pointer;font-weight:700;padding:4px 0}
       opciones($('#gTipo'), L.tiposCompra, 'Insumos (switches, aros, bolsas)');
       opciones($('#gMetodo'), L.metodosCompra, 'Pago móvil');
       ponerDel('cliente');
+      $('#vFecha').value = hoyISO();
       llenarCalc();
       ponerModo('bazar');
       iniciado = true;
