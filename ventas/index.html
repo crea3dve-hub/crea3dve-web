@@ -47,6 +47,9 @@ h3{font-size:15px;margin:18px 0 8px;color:var(--muted);text-transform:uppercase;
 .fila > *{min-width:0}
 .crece{flex:1}
 label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:10px 0 4px}
+input[type="date"]{-webkit-appearance:none;appearance:none;display:block;min-width:0;min-height:46px;text-align:left}
+input[type="date"]::-webkit-date-and-time-value{text-align:left}
+.dos > div,.tres > div{min-width:0}
 input,select,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:16px}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-offset:0}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer;background:var(--brand-soft);color:var(--ink)}
@@ -398,7 +401,7 @@ details[open] > summary{margin-bottom:4px}
   let cola = [];
   try { cola = JSON.parse(leer('c3_cola') || '[]'); } catch (e) { cola = []; }
 
-  const fmt = n => '$' + (Number(n) || 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmt = n => { n = Number(n) || 0; return (n < -0.004 ? '−$' : '$') + Math.abs(n).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
   const fmtBs = n => 'Bs ' + (Number(n) || 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const hoyISO = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
@@ -750,6 +753,10 @@ details[open] > summary{margin-bottom:4px}
         <div><label>Fecha</label><input data-f="fecha" type="date" max="${hoyISO()}" value="${aISO(p.fecha)}"></div>
       </div>
       <div class="dos">
+        <div><label>Cédula o RIF</label><input data-f="cedula" inputmode="numeric" value="${esc((buscarCliente(p.cliente) || {}).cedula || '')}"></div>
+        <div><label>Teléfono</label><input data-f="telefono" type="tel" value="${esc((buscarCliente(p.cliente) || {}).telefono || '')}"></div>
+      </div>
+      <div class="dos">
         <div><label>Estado</label><select data-f="estado">${ops(L.estados, p.estado)}</select></div>
         <div><label>Cómo pagó</label><select data-f="metodo">${ops(L.metodosVenta, p.metodo, 'Todavía no paga')}</select></div>
       </div>
@@ -775,7 +782,8 @@ details[open] > summary{margin-bottom:4px}
       if (cambioQ || cambioP) items.push({ fila: i.fila, producto: i.producto, cantidad: isNaN(q) ? i.cantidad : q, precio: pr, precioCambiado: cambioP });
     });
     if (esFutura(f('fecha'))) return avisar(avisoFecha, true);
-    const cuerpo = { accion: 'editar', numero: num, estado: f('estado'), metodo: f('metodo'), cliente: f('cliente').trim(), items, id: idNuevo() };
+    const cuerpo = { accion: 'editar', numero: num, estado: f('estado'), metodo: f('metodo'), cliente: f('cliente').trim(), items, id: idNuevo(),
+      clienteAnterior: p.cliente, datosCliente: { cedula: f('cedula').trim(), telefono: f('telefono').trim() } };
     if (f('fecha') && f('fecha') !== aISO(p.fecha)) cuerpo.fecha = f('fecha');
     document.body.classList.add('cargando');
     try {
