@@ -567,7 +567,10 @@ details[open] > summary{margin-bottom:4px}
     document.querySelectorAll('[data-tab]').forEach(s => { s.hidden = s.id !== 'tab-' + t; });
     document.querySelectorAll('nav.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.ir === t));
     window.scrollTo(0, 0);
+    guardar('c3_tab', t);   // al recargar, la página vuelve a esta pestaña
   }
+  // recuerda también dónde estabas en la pestaña (para volver al mismo sitio al recargar)
+  addEventListener('pagehide', () => { try { sessionStorage.setItem('c3_scroll', String(scrollY)); } catch (e) {} });
   document.querySelectorAll('nav.tabs button').forEach(b => b.addEventListener('click', () => irA(b.dataset.ir)));
 
   /* ---------- Vender ---------- */
@@ -950,7 +953,7 @@ details[open] > summary{margin-bottom:4px}
   /* ---------- Pedidos ---------- */
   $('#filtrosPedidos').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
-    filtro = b.dataset.f;
+    filtro = b.dataset.f; guardar('c3_filtro', filtro);
     document.querySelectorAll('#filtrosPedidos button').forEach(x => x.setAttribute('aria-pressed', x === b));
     pintarPedidos();
   });
@@ -1579,6 +1582,16 @@ details[open] > summary{margin-bottom:4px}
       $('#vFecha').value = hoyISO(); $('#vFecha').max = hoyISO();
       llenarCalc();
       ponerModo('bazar');
+      // volver a la pestaña y al filtro donde estabas antes de recargar
+      const tab = leer('c3_tab'), f = leer('c3_filtro');
+      if (f && document.querySelector(`#filtrosPedidos [data-f="${f}"]`)) {
+        filtro = f; document.querySelectorAll('#filtrosPedidos button').forEach(x => x.setAttribute('aria-pressed', x.dataset.f === f));
+      }
+      if (tab && $('#tab-' + tab)) {
+        irA(tab);
+        let y = 0; try { y = +sessionStorage.getItem('c3_scroll') || 0; } catch (e) {}
+        if (y) setTimeout(() => scrollTo(0, y), 60);
+      }
       iniciado = true;
       setInterval(() => { if (cola.length) vaciarCola(); else if (!document.hidden && !editando && !webAbierto && !editProd && !editPC && !compraPC && !editG && !pagarG && !(document.activeElement && /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))) recargar(true); }, 60000);
       window.addEventListener('online', vaciarCola);
