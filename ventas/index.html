@@ -141,7 +141,7 @@ select.falta{border-color:#D33A2C;box-shadow:0 0 0 3px rgba(211,58,44,.2)}
 .pp-card{border-left:4px solid var(--warn)}
 nav.tabs button[aria-selected="true"]{color:var(--brand-ink);background:var(--brand)}
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) nav.tabs button[aria-selected="true"]{color:#0E1A08} }
-.aviso{position:fixed;left:16px;right:16px;bottom:calc(150px + env(safe-area-inset-bottom,0px));z-index:20;max-width:600px;margin:0 auto;
+.aviso{pointer-events:none;position:fixed;left:16px;right:16px;bottom:calc(150px + env(safe-area-inset-bottom,0px));z-index:20;max-width:600px;margin:0 auto;
   background:var(--ink);color:var(--bg);padding:12px 14px;border-radius:12px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.2)}
 .aviso.error{background:var(--warn);color:#fff}
 .cola{background:var(--amber-soft);color:var(--amber);border-radius:12px;padding:10px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600;font-size:14px}
@@ -491,10 +491,24 @@ details[open] > summary{margin-bottom:4px}
     return j;
   }
   function guardarCola() { guardar('c3_cola', JSON.stringify(cola)); pintarCola(); }
+  let enviandoCola = false;
   function pintarCola() {
     $('#avisoCola').hidden = !cola.length;
-    $('#txtCola').textContent = cola.length === 1 ? '1 registro sin enviar (sin señal)' : cola.length + ' registros sin enviar (sin señal)';
+    const n = cola.length;
+    $('#txtCola').textContent = enviandoCola ? (n === 1 ? '⏳ Guardando 1 registro en la hoja…' : `⏳ Guardando ${n} registros en la hoja…`)
+      : (n === 1 ? '1 registro sin enviar (sin señal)' : n + ' registros sin enviar (sin señal)');
+    $('#btnReintentar').hidden = enviandoCola;
   }
+  // Guarda sin bloquear la pantalla: queda en el teléfono y se envía a la hoja por detrás, uno por uno
+  function accionFondo(cuerpo, okTexto) {
+    cuerpo.id = cuerpo.id || idNuevo();
+    cola.push(cuerpo); guardarCola();
+    avisar((okTexto || 'Guardado') + ' ✓');
+    vaciarCola();
+    return true;
+  }
+  const puedeRepintar = () => !editando && !webAbierto && !editProd && !editPC && !compraPC && !editG && !pagarG && !agregandoA &&
+    !(document.activeElement && /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName));
   // Envía; si no hay señal, lo guarda en el teléfono para reintentar
   async function accion(cuerpo, okTexto) {
     cuerpo.id = cuerpo.id || idNuevo();
@@ -514,19 +528,24 @@ details[open] > summary{margin-bottom:4px}
     }
   }
   async function vaciarCola() {
-    if (!cola.length) return;
-    const pendientes = cola.slice();
-    for (const c of pendientes) {
-      try {
-        datos = await enviar(c);
-        cola = cola.filter(x => x.id !== c.id); guardarCola();
-      } catch (e) {
-        if (e.delServidor) { cola = cola.filter(x => x.id !== c.id); guardarCola(); avisar('No se pudo guardar: ' + e.message, true); }
-        else break;
+    if (!cola.length || enviandoCola) return;
+    enviandoCola = true; pintarCola();
+    let huboCambios = false;
+    try {
+      while (cola.length) {
+        const c = cola[0];
+        try {
+          datos = await enviar(c); huboCambios = true;
+          cola = cola.filter(x => x.id !== c.id); guardarCola();
+        } catch (e) {
+          if (e.delServidor) { cola = cola.filter(x => x.id !== c.id); guardarCola(); avisar('No se pudo guardar: ' + e.message, true); }
+          else break;   // sin señal: se reintenta luego
+        }
       }
+    } finally {
+      enviandoCola = false; pintarCola();
+      if (huboCambios && datos && puedeRepintar()) pintarTodo();
     }
-    if (datos) pintarTodo();
-    if (!cola.length) avisar('Todo enviado');
   }
   async function recargar(silencioso) {
     try {
@@ -938,9 +957,9 @@ details[open] > summary{margin-bottom:4px}
     if (extra > 0) cuerpo.items.push({ producto: 'Extra (pagó de más)', cantidad: 1, precio: extra, precioManual: true });
     const nota = $('#vNota').value.trim();
     if (nota) cuerpo.nota = nota;
-    const ok = await accion(cuerpo, 'Venta guardada');
+    const ok = accionFondo(cuerpo, 'Venta guardada');
     if (ok && del) {
-      await accion({ accion: 'gasto', que: 'Delivery – ' + (cuerpo.cliente || 'encargo'), monto: del, pct: 1, tipo: 'Otro',
+      accionFondo({ accion: 'gasto', que: 'Delivery – ' + (cuerpo.cliente || 'encargo'), monto: del, pct: 1, tipo: 'Otro',
         para: 'Negocio', metodo: '', nota: delQuien === 'cliente' ? 'Lo pagó el cliente (incluido en su venta)' : 'Envío gratis para el cliente' }, 'Delivery anotado');
     }
     if (ok) { carrito = []; grupoActual = null; quitarDescuento(); $('#vNota').value = ''; $('#vExtra').value = ''; limpiarCliente(); $('#vMetodo').value = modo === 'pedido' && !pagado ? 'nopaga' : ''; $('#vFecha').value = hoyISO(); $('#vDelivery').value = ''; $('#bloqueQuienDel').hidden = true; pintarCarrito(); }
@@ -1305,7 +1324,10 @@ details[open] > summary{margin-bottom:4px}
       if (r === null) return;
       metodo = ms[parseInt(r, 10) - 1] || '';
     }
-    await accion({ accion: 'estado', numero: b.dataset.num, estado: est, metodo });
+    // se ve el cambio al instante y se guarda en la hoja por detrás
+    const pv = datos.ventas.find(v => v.numero === b.dataset.num);
+    if (pv) { pv.estado = est; if (metodo) pv.metodo = metodo; pintarPedidos(); pintarResumen(); }
+    accionFondo({ accion: 'estado', numero: b.dataset.num, estado: est, metodo }, b.dataset.num + ': ' + (est === 'Entregado' ? 'entregado' : est === 'Pagado' ? 'pagado' : est.toLowerCase()));
   });
 
   /* ---------- Inventario ---------- */
