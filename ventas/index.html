@@ -1116,13 +1116,31 @@ details[open] > summary{margin-bottom:4px}
     if (!p) { box.innerHTML = '<b>📲 Notas por WhatsApp</b><p class="chico" style="margin:4px 0 0">Ya le mandaste la nota a todos los que tienen teléfono. 🎉</p>'; return; }
     const cs = contactos(p.cliente);
     box.innerHTML = `<b>📲 Mandar la nota por WhatsApp</b>
-      <p class="chico" style="margin:2px 0 8px">Faltan <b>${lista.length}</b>. Toca el botón: se abre el chat con el mensaje listo, solo le das a enviar y vuelves aquí para el siguiente.</p>
+      <p class="chico" style="margin:2px 0 8px">Faltan <b>${lista.length}</b>. Para cada cliente: copia la imagen, abre su chat, pega y envía. Al volver aquí te sale el siguiente.</p>
       <div class="stat"><span><b>${esc(p.numero)}</b> · ${esc(p.cliente)}</span><b>${fmt(p.total)}</b></div>
-      ${cs.map(c => `<a class="btn primario ancho" style="margin-top:8px;text-align:center;text-decoration:none" target="_blank" rel="noopener" data-wa="${esc(p.numero)}" href="https://wa.me/${telWa(c.telefono)}?text=${encodeURIComponent(textoNota(p))}">Enviar a ${esc(p.cliente)} · ${esc(c.telefono)}</a>`).join('')}
+      <button class="btn ancho" data-copiar="${esc(p.numero)}" style="margin-top:8px">1 · 🖼️ Copiar la imagen de la nota</button>
+      ${cs.map(c => `<a class="btn primario ancho" style="margin-top:8px;text-align:center;text-decoration:none" target="_blank" rel="noopener" data-wa="${esc(p.numero)}" href="https://wa.me/${telWa(c.telefono)}?text=${encodeURIComponent(textoNota(p))}">2 · Abrir el chat de ${esc(p.cliente)} · ${esc(c.telefono)}</a>`).join('')}
+      <p class="chico" style="margin:6px 0 0">En WhatsApp: mantén presionado donde se escribe → <b>Pegar</b> para poner la imagen, y envía junto con el mensaje que ya sale escrito.</p>
       ${cs.length > 1 ? '<p class="chico" style="margin:6px 0 0">Hay dos clientes con ese nombre: escoge el teléfono correcto.</p>' : ''}
       <button class="btn chico" data-saltar="${esc(p.numero)}" style="margin-top:8px">Saltar este</button>`;
   }
+  // copia la imagen de la nota al portapapeles (para pegarla en WhatsApp)
+  async function copiarImagen(p, btn) {
+    try {
+      if (!navigator.clipboard || !window.ClipboardItem) throw new Error('sin portapapeles');
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': imagenNota(p).then(b => { if (!b) throw new Error('sin imagen'); return b; }) })]);
+      if (btn) { btn.textContent = '✓ Imagen copiada'; btn.classList.add('primario'); }
+      avisar('Imagen copiada. Ahora abre el chat y pégala.');
+    } catch (e) {
+      // si el teléfono no deja copiar imágenes, se comparte el archivo (luego escoges WhatsApp y el contacto)
+      const blob = await imagenNota(p); if (!blob) return;
+      const archivo = new File([blob], 'Nota-' + p.numero + '.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [archivo] })) { try { await navigator.share({ files: [archivo], text: textoNota(p) }); } catch (e2) {} }
+      else avisar('Este teléfono no deja copiar la imagen; usa 📄 Nota de entrega para guardarla.', true);
+    }
+  }
   $('#cardEnviar').addEventListener('click', e => {
+    const cp = e.target.closest('[data-copiar]'); if (cp) { const p = datos.ventas.find(v => v.numero === cp.dataset.copiar); if (p) copiarImagen(p, cp); return; }
     const a = e.target.closest('[data-wa]'); if (a) { marcarEnviada(a.dataset.wa); setTimeout(() => { pintarEnviar(); pintarPedidos(); }, 300); return; }
     const s2 = e.target.closest('[data-saltar]'); if (s2) { marcarEnviada(s2.dataset.saltar); pintarEnviar(); pintarPedidos(); }
   });
@@ -1179,7 +1197,7 @@ details[open] > summary{margin-bottom:4px}
   }
 
   /* ---------- Nota de entrega (imagen para mandar por WhatsApp) ---------- */
-  async function notaDeEntrega(p) {
+  async function imagenNota(p) {
     try { await Promise.all([document.fonts.load('900 60px Orbitron'), document.fonts.load('700 30px Figtree'), document.fonts.load('400 30px Figtree')]); } catch (e) {}
     const regalo = esRegalo(p);
     const items = regalo ? p.items.filter(i => !esIncluido(i)) : p.items.filter(i => i.total > 0);
@@ -1247,7 +1265,10 @@ details[open] > summary{margin-bottom:4px}
     }
     txt(regalo ? '¡Hecho con cariño para ti!' : sinPagar ? '¡Gracias por tu pedido!' : '¡Gracias por tu compra!', W / 2, H - 90, '700 32px ' + ff, tinta, 'center');
     txt('crea3dve.com · WhatsApp 0424-2674222', W / 2, H - 45, '400 26px ' + ff, gris, 'center');
-    const blob = await new Promise(r => c.toBlob(r, 'image/png'));
+    return await new Promise(r => c.toBlob(r, 'image/png'));
+  }
+  async function notaDeEntrega(p) {
+    const blob = await imagenNota(p); if (!blob) return;
     const nombre = 'Nota-' + p.numero + '.png';
     const archivo = new File([blob], nombre, { type: 'image/png' });
     if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
