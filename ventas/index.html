@@ -327,6 +327,7 @@ details[open] > summary{margin-bottom:4px}
       <button data-f="Entregado" aria-pressed="false">Entregados</button>
       <button data-f="todos" aria-pressed="false">Todos</button>
     </div>
+    <div class="card" id="cardEnviar" hidden></div>
     <div id="listaPedidos"></div>
   </section>
 
@@ -1090,7 +1091,43 @@ details[open] > summary{margin-bottom:4px}
   const debe = p => p.estado === 'Entregado' && !p.metodo && p.total > 0;
   const PILL_TXT = { Pedido: 'Sin pagar', Pagado: 'Por entregar', Entregado: 'Entregado', Cancelado: 'Cancelado' };
   const esRegalo = p => p.total === 0 && p.items.some(i => !esIncluido(i) && i.producto !== 'Delivery');
+  /* ---------- Mandar la nota por WhatsApp ---------- */
+  // número venezolano para wa.me: 0414-1234567 → 584141234567 (si está incompleto, no se usa)
+  const telWa = t => { let d = String(t || '').replace(/\D/g, ''); if (d.startsWith('58')) d = d.slice(2); if (d.startsWith('0')) d = d.slice(1); return d.length === 10 ? '58' + d : ''; };
+  const contactos = nombre => listaCli().filter(c => c.nombre.trim().toLowerCase() === String(nombre || '').trim().toLowerCase() && telWa(c.telefono));
+  let enviadas = {}; try { enviadas = JSON.parse(leer('c3_enviadas') || '{}'); } catch (e) {}
+  const marcarEnviada = num => { enviadas[num] = Date.now(); guardar('c3_enviadas', JSON.stringify(enviadas)); };
+  function textoNota(p) {
+    const items = esRegalo(p) ? p.items.filter(i => !esIncluido(i)) : p.items.filter(i => i.total > 0);
+    const nombre = (p.cliente || '').split(' ')[0];
+    const pagado = p.estado === 'Pagado' || (p.estado === 'Entregado' && p.metodo);
+    return `¡Hola${nombre ? ' ' + nombre : ''}! 💚 Gracias por tu compra en *Crea3d*.\n\n` +
+      `🧾 *Nota de entrega ${p.numero}* · ${p.fecha}\n` +
+      items.map(i => `• ${i.cantidad} × ${nombreCorto(i.producto)} — ${fmt(i.total)}`).join('\n') +
+      `\n\n*Total: ${fmt(p.total)}*` + (pagado ? ` · Pagado${p.metodo ? ' (' + p.metodo + ')' : ''} ✅` : '') +
+      `\n\nSíguenos en Instagram @crea3d.ve y arma otro en crea3dve.com ✨`;
+  }
+  const paraEnviar = () => datos.ventas.filter(p => p.estado === 'Entregado' && p.metodo && !enviadas[p.numero] && contactos(p.cliente).length);
+  function pintarEnviar() {
+    const box = $('#cardEnviar');
+    if (filtro !== 'Entregado') { box.hidden = true; return; }
+    const lista = paraEnviar(), p = lista[0];
+    box.hidden = false;
+    if (!p) { box.innerHTML = '<b>📲 Notas por WhatsApp</b><p class="chico" style="margin:4px 0 0">Ya le mandaste la nota a todos los que tienen teléfono. 🎉</p>'; return; }
+    const cs = contactos(p.cliente);
+    box.innerHTML = `<b>📲 Mandar la nota por WhatsApp</b>
+      <p class="chico" style="margin:2px 0 8px">Faltan <b>${lista.length}</b>. Toca el botón: se abre el chat con el mensaje listo, solo le das a enviar y vuelves aquí para el siguiente.</p>
+      <div class="stat"><span><b>${esc(p.numero)}</b> · ${esc(p.cliente)}</span><b>${fmt(p.total)}</b></div>
+      ${cs.map(c => `<a class="btn primario ancho" style="margin-top:8px;text-align:center;text-decoration:none" target="_blank" rel="noopener" data-wa="${esc(p.numero)}" href="https://wa.me/${telWa(c.telefono)}?text=${encodeURIComponent(textoNota(p))}">Enviar a ${esc(p.cliente)} · ${esc(c.telefono)}</a>`).join('')}
+      ${cs.length > 1 ? '<p class="chico" style="margin:6px 0 0">Hay dos clientes con ese nombre: escoge el teléfono correcto.</p>' : ''}
+      <button class="btn chico" data-saltar="${esc(p.numero)}" style="margin-top:8px">Saltar este</button>`;
+  }
+  $('#cardEnviar').addEventListener('click', e => {
+    const a = e.target.closest('[data-wa]'); if (a) { marcarEnviada(a.dataset.wa); setTimeout(() => { pintarEnviar(); pintarPedidos(); }, 300); return; }
+    const s2 = e.target.closest('[data-saltar]'); if (s2) { marcarEnviada(s2.dataset.saltar); pintarEnviar(); pintarPedidos(); }
+  });
   function pintarPedidos() {
+    pintarEnviar();
     pintarWeb();
     const lista = datos.ventas.filter(p =>
       filtro === 'todos' ? true : filtro === 'pend' ? (p.estado === 'Pedido' || p.estado === 'Pagado') : filtro === 'Pedido' ? (p.estado === 'Pedido' || debe(p)) : p.estado === filtro);
@@ -1104,6 +1141,7 @@ details[open] > summary{margin-bottom:4px}
       if (p.estado !== 'Cancelado' && p.estado !== 'Entregado') botones.push(`<button class="btn chico peligro" data-num="${esc(p.numero)}" data-e="Cancelado">Cancelar</button>`);
       if ((p.estado === 'Pedido' || debe(p)) && !regalo) botones.push(`<button class="btn chico" data-cobro="${esc(p.numero)}">💬 Mensaje de pago</button>`);
       if (p.estado !== 'Cancelado') botones.push(`<button class="btn chico" data-nota="${esc(p.numero)}">📄 ${p.estado === 'Pedido' && !regalo ? 'Nota de pedido' : 'Nota de entrega'}</button>`);
+      if (p.estado === 'Entregado' && contactos(p.cliente).length) botones.push(`<a class="btn chico" style="text-decoration:none" target="_blank" rel="noopener" data-wa1="${esc(p.numero)}" href="https://wa.me/${telWa(contactos(p.cliente)[0].telefono)}?text=${encodeURIComponent(textoNota(p))}">📲 WhatsApp${enviadas[p.numero] ? ' ✓' : ''}</a>`);
       botones.push(`<button class="btn chico" data-editar="${esc(p.numero)}">✏️ Editar</button>`);
       if (editando === p.numero) return editorPedido(p);
       return `<div class="card">
@@ -1219,6 +1257,7 @@ details[open] > summary{margin-bottom:4px}
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   }
   $('#listaPedidos').addEventListener('click', e => {
+    const w1 = e.target.closest('[data-wa1]'); if (w1) { marcarEnviada(w1.dataset.wa1); setTimeout(pintarPedidos, 300); return; }
     const ed = e.target.closest('button[data-editar]');
     if (ed) { editando = ed.dataset.editar; pintarPedidos(); return; }
     const card = e.target.closest('.editor');
