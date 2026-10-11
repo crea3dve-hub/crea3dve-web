@@ -959,7 +959,7 @@ details[open] > summary{margin-bottom:4px}
     const L = datos.listas;
     const ops = (lista, v, vacio) => (vacio ? `<option value="">${vacio}</option>` : '') + lista.map(x => `<option${x === v ? ' selected' : ''}>${esc(x)}</option>`).join('');
     return `<div class="card editor" data-ed="${esc(p.numero)}">
-      <div class="pedido-cab"><div><span class="num">${esc(p.numero)}</span> · editando</div><button class="btn chico" data-cerrar>Cerrar</button></div>
+      <div class="pedido-cab"><div><span class="num">${esc(p.numero)}</span> · editando</div><button class="btn chico" data-cerrar>✕ Cancelar</button></div>
       <div class="dos">
         <div><label>Cliente</label><input data-f="cliente" value="${esc(p.cliente)}"></div>
         <div><label>Fecha</label><input data-f="fecha" type="date" max="${hoyISO()}" value="${aISO(p.fecha)}"></div>
@@ -985,7 +985,10 @@ details[open] > summary{margin-bottom:4px}
         <button class="btn ancho" data-add-vender>➕ Agregar productos a este pedido</button>
         <p class="chico" style="margin:6px 0 0">Te lleva a Vender para escoger lo que sea: clickers, charms, aros, llaveros u "Otro producto" con el nombre y precio que quieras. Todo se suma a este mismo pedido.</p>
       </div>
-      <button class="btn primario ancho" data-guardar style="margin-top:12px">Guardar cambios</button>
+      <div class="dos" style="margin-top:12px">
+        <button class="btn" data-cerrar>Cancelar (no cambiar nada)</button>
+        <button class="btn primario" data-guardar>Guardar cambios</button>
+      </div>
     </div>`;
   }
   // Agregar a un pedido ya guardado usando la pantalla de Vender (mismo número, cliente, estado y método)
