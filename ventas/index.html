@@ -127,6 +127,7 @@ nav.tabs button:hover{color:var(--ink)}
 .grupo-cab{display:flex;justify-content:space-between;align-items:center;padding:8px 0 2px;font-size:15px;cursor:pointer}
 .grupo-cab span{font-size:13px;color:var(--muted)} .grupo-cab span b{font-size:16px;color:var(--ink)}
 #carrito .linea.sangria:last-child{border-bottom:0}
+.aviso-agregar{position:sticky;top:64px;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--brand);color:var(--brand-ink);border-radius:14px;padding:10px 12px;margin-bottom:10px;font-weight:600}
 .ed-agregar{margin-top:14px;padding:10px 12px;border:1px dashed var(--line);border-radius:12px}
 .resumen-carrito{margin:6px 0 4px;font-size:16px;font-weight:700;line-height:1.35}
 .resumen-carrito:empty{display:none}
@@ -202,6 +203,10 @@ details[open] > summary{margin-bottom:4px}
     <div class="segmento" role="group" aria-label="Tipo de venta">
       <button id="modoBazar" aria-pressed="true">Venta</button>
       <button id="modoPedido" aria-pressed="false">Encargo</button>
+    </div>
+    <div class="aviso-agregar" id="avisoAgregar" hidden>
+      <span>➕ Agregando al pedido <b id="agrNum"></b> · <span id="agrCli"></span></span>
+      <button class="btn chico" id="agrCancelar">Cancelar</button>
     </div>
     <div class="card rapido">
       <b>⚡ Clicker de letras</b>
@@ -645,7 +650,7 @@ details[open] > summary{margin-bottom:4px}
     ponerPago(false);
     pintarCarrito();
     $('#clienteOpcional').textContent = m === 'bazar' ? '(opcional)' : '';
-    $('#btnGuardarVenta').textContent = m === 'bazar' ? 'Guardar venta' : 'Guardar encargo';
+    $('#btnGuardarVenta').textContent = agregandoA ? 'Agregar a ' + agregandoA : m === 'bazar' ? 'Guardar venta' : 'Guardar encargo';
   }
   $('#modoBazar').addEventListener('click', () => ponerModo('bazar'));
   $('#modoPedido').addEventListener('click', () => ponerModo('pedido'));
@@ -900,6 +905,7 @@ details[open] > summary{margin-bottom:4px}
 
   $('#btnGuardarVenta').addEventListener('click', async () => {
     if (!carrito.length) return avisar('No hay productos en la venta', true);
+    if (agregandoA) return guardarAgregado();
     if (modo === 'pedido' && !$('#vCliente').value.trim()) return avisar('Para un pedido pon el nombre del cliente', true);
     if (esFutura($('#vFecha').value)) { $('#vFecha').value = hoyISO(); return avisar(avisoFecha, true); }
     const cuerpo = {
@@ -929,6 +935,17 @@ details[open] > summary{margin-bottom:4px}
     }
     if (ok) { carrito = []; grupoActual = null; quitarDescuento(); $('#vNota').value = ''; $('#vExtra').value = ''; limpiarCliente(); $('#vFecha').value = hoyISO(); $('#vDelivery').value = ''; $('#bloqueQuienDel').hidden = true; pintarCarrito(); }
   });
+
+  async function guardarAgregado() {
+    const p = datos.ventas.find(v => v.numero === agregandoA); if (!p) return terminarAgregar(false);
+    const items = carrito.map(c => ({ producto: c.producto, cantidad: c.cantidad, precio: conDescuento(c.precio), precioManual: c.otro || descuento > 0 || c.precio !== c.base }));
+    const nSw = carrito.reduce((n, c) => n + (esLetra(c.producto) || esObjeto(c.producto) ? c.cantidad : 0), 0);
+    const SW = 'Switch para clicker (sueltos, incluido en el precio)';
+    if (nSw && datos.productos.some(x => x.nombre === SW) && !carrito.some(c => c.producto === SW)) items.push({ producto: SW, cantidad: nSw, precio: 0 });
+    const ok = await accion({ accion: 'venta', numero: p.numero, cliente: p.cliente, canal: p.canal, metodo: p.metodo, estado: p.estado,
+      fecha: aISO(p.fecha), items, nota: p.nota || undefined }, 'Agregado a ' + p.numero);
+    if (ok) { carrito = []; grupoActual = null; quitarDescuento(); pintarCarrito(); terminarAgregar(true); }
+  }
 
   /* ---------- Pedidos ---------- */
   $('#filtrosPedidos').addEventListener('click', e => {
@@ -965,30 +982,28 @@ details[open] > summary{margin-bottom:4px}
       </div>`).join('')}
       <p class="chico" style="margin:6px 0 0">Cantidad y precio por unidad. ✕ quita el producto (vuelve al inventario).</p>
       <div class="ed-agregar">
-        <label>➕ Agregar al pedido</label>
-        <div class="fila" style="gap:8px">
-          <select data-add-prod style="flex:1">${datos.productos.filter(x => !/^Switch/.test(x.nombre)).map(x => `<option value="${esc(x.nombre)}">${esc(nombreCorto(x.nombre))}${x.precio !== '' && x.precio != null ? ' · ' + fmt(x.precio) : ''}</option>`).join('')}</select>
-          <input data-add-cant type="number" inputmode="numeric" min="1" value="1" style="width:70px" aria-label="Cantidad">
-        </div>
-        <button class="btn ancho" data-add style="margin-top:8px">➕ Agregar</button>
-        <p class="chico" style="margin:6px 0 0">Si agregas letras o clickers de objeto, su switch se descuenta solo. Si cambia el tamaño de la base, agrega la base nueva y quita la vieja con ✕.</p>
+        <button class="btn ancho" data-add-vender>➕ Agregar productos a este pedido</button>
+        <p class="chico" style="margin:6px 0 0">Te lleva a Vender para escoger lo que sea: clickers, charms, aros, llaveros u "Otro producto" con el nombre y precio que quieras. Todo se suma a este mismo pedido.</p>
       </div>
       <button class="btn primario ancho" data-guardar style="margin-top:12px">Guardar cambios</button>
     </div>`;
   }
-  // agrega productos a una venta ya guardada (mismo número, mismo cliente, estado y método)
-  async function agregarAPedido(card) {
-    const p = datos.ventas.find(v => v.numero === card.dataset.ed); if (!p) return;
-    const nombre = card.querySelector('[data-add-prod]').value, cant = parseInt(card.querySelector('[data-add-cant]').value, 10) || 1;
-    const prod = datos.productos.find(x => x.nombre === nombre); if (!prod) return;
-    const items = [{ producto: nombre, cantidad: cant, precio: prod.precio }];
-    const SW = 'Switch para clicker (sueltos, incluido en el precio)';
-    if ((esLetra(nombre) || esObjeto(nombre)) && datos.productos.some(x => x.nombre === SW)) items.push({ producto: SW, cantidad: cant, precio: 0 });
-    const ok = await accion({ accion: 'venta', numero: p.numero, cliente: p.cliente, canal: p.canal, metodo: p.metodo, estado: p.estado,
-      fecha: aISO(p.fecha), items, nota: p.nota || undefined }, 'Agregado a ' + p.numero);
-    if (ok) editando = p.numero;
-    pintarPedidos();
+  // Agregar a un pedido ya guardado usando la pantalla de Vender (mismo número, cliente, estado y método)
+  var agregandoA = null;
+  function empezarAgregar(num) {
+    const p = datos.ventas.find(v => v.numero === num); if (!p) return;
+    agregandoA = num; carrito = []; grupoActual = null; quitarDescuento();
+    $('#agrNum').textContent = num; $('#agrCli').textContent = p.cliente || 'Sin nombre';
+    $('#avisoAgregar').hidden = false; $('#btnGuardarVenta').textContent = 'Agregar a ' + num;
+    irA('vender'); pintarCarrito(); scrollTo({ top: 0 });
   }
+  function terminarAgregar(volver) {
+    const num = agregandoA; agregandoA = null; $('#avisoAgregar').hidden = true;
+    $('#btnGuardarVenta').textContent = modo === 'bazar' ? 'Guardar venta' : 'Guardar encargo';
+    if (volver && num) { editando = num; irA('pedidos'); pintarPedidos();
+      setTimeout(() => { const ed = document.querySelector('.editor'); if (ed) ed.scrollIntoView({ block: 'start' }); }, 50); }
+  }
+  $('#agrCancelar').addEventListener('click', () => { carrito = []; pintarCarrito(); terminarAgregar(true); });
   async function guardarEdicion(card) {
     const num = card.dataset.ed, p = datos.ventas.find(v => v.numero === num); if (!p) return;
     const f = k => card.querySelector(`[data-f="${k}"]`).value;
@@ -1196,7 +1211,7 @@ details[open] > summary{margin-bottom:4px}
       if (e.target.closest('[data-cerrar]')) { editando = null; pintarPedidos(); }
       else if (e.target.closest('[data-quitar]')) { const row = e.target.closest('.ed-item'); row.classList.toggle('quitado'); }
       else if (e.target.closest('[data-guardar]')) guardarEdicion(card);
-      else if (e.target.closest('[data-add]')) agregarAPedido(card);
+      else if (e.target.closest('[data-add-vender]')) empezarAgregar(card.dataset.ed);
       return;
     }
     const bc = e.target.closest('button[data-cobro]');
