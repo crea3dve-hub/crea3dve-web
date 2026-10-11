@@ -1558,8 +1558,13 @@ details[open] > summary{margin-bottom:4px}
       fila('Falta por comprar (estimado)', fmt(r.porComprar)) +
       fila('Inversión total en Crea3D <span class="chico">(con impresoras)</span>', fmt(datos.gastos.reduce((s, g) => s + (g.miParte || 0), 0))) +
       (porPagar().length ? fila('💸 Me falta pagar', fmt(porPagar().reduce((s, g) => s + g.miParte, 0))) : '');
-    $('#rBazar').innerHTML = fila('Vendido en el bazar', fmt(r.bazarVendido)) + fila('Gastos solo del bazar', fmt(r.bazarGastos)) +
-      fila('<b>Ganancia del bazar</b>', fmt(r.bazarGanancia));
+    // la ganancia = vendido − costo de lo vendido − gastos del bazar (el costo se saca de lo otro para que las cuentas cuadren)
+    const costoBazar = (r.bazarVendido || 0) - (r.bazarGastos || 0) - (r.bazarGanancia || 0);
+    $('#rBazar').innerHTML = fila('Vendido en el bazar', fmt(r.bazarVendido)) +
+      fila('− Costo de lo que vendiste <span class="chico">(material, switches, aros, máquina, tu trabajo, comisión del punto)</span>', fmt(costoBazar)) +
+      fila('− Gastos del bazar <span class="chico">(tu mitad del stand y la mesa, camisas, uso del punto)</span>', fmt(r.bazarGastos)) +
+      fila('<b>= Ganancia del bazar</b>', fmt(r.bazarGanancia)) +
+      '<p class="chico" style="margin:8px 0 0">El stand y la mesa son de los dos días: con lo que vendas hoy domingo esto sube. Tu trabajo ya está pagado dentro del costo.</p>';
   }
 
   $('#btnPago').addEventListener('click', () => { guardar('c3_pago', $('#txtPago').value.trim()); avisar('Datos de pago guardados'); $('#cardPago').open = false; });
