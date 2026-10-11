@@ -127,6 +127,7 @@ nav.tabs button:hover{color:var(--ink)}
 #carrito .linea.sangria:last-child{border-bottom:0}
 .aviso-agregar{position:sticky;top:64px;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--brand);color:var(--brand-ink);border-radius:14px;padding:10px 12px;margin-bottom:10px;font-weight:600}
 .ed-agregar{margin-top:14px;padding:10px 12px;border:1px dashed var(--line);border-radius:12px}
+select.falta{border-color:#D33A2C;box-shadow:0 0 0 3px rgba(211,58,44,.2)}
 .resumen-carrito{margin:6px 0 4px;font-size:16px;font-weight:700;line-height:1.35}
 .resumen-carrito:empty{display:none}
 #carrito .linea{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:16px}
@@ -615,7 +616,7 @@ details[open] > summary{margin-bottom:4px}
     $('#pagoSi').setAttribute('aria-pressed', si); $('#pagoNo').setAttribute('aria-pressed', !si);
     $('#vEstado').value = modo === 'bazar' ? (llevo ? 'Entregado' : 'Pagado') : (si ? 'Pagado' : 'Pedido');
     $('#cajaMetodo').hidden = modo === 'pedido' && !si;
-    if (modo === 'pedido') $('#vMetodo').value = si ? 'Pago móvil' : '';
+    if (modo === 'pedido') $('#vMetodo').value = si ? '' : 'nopaga';
   }
   function ponerDel(q) {
     delQuien = q;
@@ -647,7 +648,7 @@ details[open] > summary{margin-bottom:4px}
     $('#bloqueEncargo').hidden = m === 'bazar';
     $('#bloqueVenta').hidden = m !== 'bazar';
     $('#llevoSi').setAttribute('aria-pressed', llevo); $('#llevoNo').setAttribute('aria-pressed', !llevo);
-    if (m === 'bazar') { $('#vMetodo').value = 'Pago móvil'; }
+    if (m === 'bazar') { $('#vMetodo').value = ''; }
     ponerPago(false);
     pintarCarrito();
     $('#clienteOpcional').textContent = m === 'bazar' ? '(opcional)' : '';
@@ -893,7 +894,9 @@ details[open] > summary{margin-bottom:4px}
     const i = e.target.dataset.p; if (i == null) return;
     const v = parseFloat(e.target.value); carrito[+i].precio = v >= 0 ? v : 0; carrito[+i].manual = true; pintarCarrito();
   });
-  $('#vMetodo').addEventListener('change', () => pintarCarrito());
+  $('#vMetodo').addEventListener('change', () => { $('#vMetodo').classList.remove('falta'); pintarCarrito(); });
+  // "Todavía no paga" se guarda como método vacío
+  const metodoV = () => $('#vMetodo').value === 'nopaga' ? '' : $('#vMetodo').value;
   $('#vExtra').addEventListener('input', () => pintarCarrito());
   $('#btnVaciar').addEventListener('click', () => { carrito = []; grupoActual = null; pintarCarrito(); });
   const numClicker = g => [...new Set(carrito.filter(c => c.grupo).map(c => c.grupo))].indexOf(g) + 1;
@@ -907,13 +910,18 @@ details[open] > summary{margin-bottom:4px}
   $('#btnGuardarVenta').addEventListener('click', async () => {
     if (!carrito.length) return avisar('No hay productos en la venta', true);
     if (agregandoA) return guardarAgregado();
+    // obligatorio escoger cómo pagó (o "Todavía no paga"), para no arrastrar el método de la venta anterior
+    if (descuento !== 1 && !$('#cajaMetodo').hidden && !$('#vMetodo').value) {
+      $('#vMetodo').classList.add('falta'); $('#vMetodo').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return avisar('¿Cómo pagó? Escógelo antes de guardar', true);
+    }
     if (modo === 'pedido' && !$('#vCliente').value.trim()) return avisar('Para un pedido pon el nombre del cliente', true);
     if (esFutura($('#vFecha').value)) { $('#vFecha').value = hoyISO(); return avisar(avisoFecha, true); }
     const cuerpo = {
       accion: 'venta', cliente: $('#vCliente').value.trim(), canal: $('#vCanal').value,
-      metodo: descuento === 1 ? '' : $('#vMetodo').value,
+      metodo: descuento === 1 ? '' : metodoV(),
       // sin método de pago = no ha pagado: si se lo llevó queda "Entregado · debe", si no, "Sin pagar"
-      estado: (descuento === 1 || (modo === 'bazar' && !$('#vMetodo').value)) && $('#vEstado').value === 'Pagado' ? 'Pedido' : $('#vEstado').value,
+      estado: (descuento === 1 || (modo === 'bazar' && !metodoV())) && $('#vEstado').value === 'Pagado' ? 'Pedido' : $('#vEstado').value,
       items: carrito.map(c => ({ producto: c.producto, cantidad: c.cantidad, precio: conDescuento(c.precio), precioManual: c.otro || descuento > 0 || c.precio !== c.base })),
       datosCliente: Object.fromEntries(CAMPOS_CLIENTE.map(([k, sel]) => [k, $(sel).value.trim()])),
       fecha: $('#vFecha').value || hoyISO(),
@@ -934,7 +942,7 @@ details[open] > summary{margin-bottom:4px}
       await accion({ accion: 'gasto', que: 'Delivery – ' + (cuerpo.cliente || 'encargo'), monto: del, pct: 1, tipo: 'Otro',
         para: 'Negocio', metodo: '', nota: delQuien === 'cliente' ? 'Lo pagó el cliente (incluido en su venta)' : 'Envío gratis para el cliente' }, 'Delivery anotado');
     }
-    if (ok) { carrito = []; grupoActual = null; quitarDescuento(); $('#vNota').value = ''; $('#vExtra').value = ''; limpiarCliente(); $('#vFecha').value = hoyISO(); $('#vDelivery').value = ''; $('#bloqueQuienDel').hidden = true; pintarCarrito(); }
+    if (ok) { carrito = []; grupoActual = null; quitarDescuento(); $('#vNota').value = ''; $('#vExtra').value = ''; limpiarCliente(); $('#vMetodo').value = modo === 'pedido' && !pagado ? 'nopaga' : ''; $('#vFecha').value = hoyISO(); $('#vDelivery').value = ''; $('#bloqueQuienDel').hidden = true; pintarCarrito(); }
   });
 
   async function guardarAgregado() {
@@ -1573,8 +1581,9 @@ details[open] > summary{margin-bottom:4px}
     if (!iniciado) {
       const L = datos.listas;
       opciones($('#vCanal'), L.canales, 'Bazar');
-      opciones($('#vMetodo'), L.metodosVenta, 'Pago móvil');
-      $('#vMetodo').insertAdjacentHTML('afterbegin', '<option value="">Todavía no paga</option>');
+      opciones($('#vMetodo'), L.metodosVenta, '');
+      $('#vMetodo').insertAdjacentHTML('afterbegin', '<option value="">👉 Escoge cómo pagó</option><option value="nopaga">Todavía no paga</option>');
+      $('#vMetodo').value = '';
       opciones($('#vEstado'), L.estados, 'Pagado');
       ponerDel('cliente');
       $('#vFecha').value = hoyISO(); $('#vFecha').max = hoyISO();
