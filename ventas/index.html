@@ -267,7 +267,7 @@ details[open] > summary{margin-bottom:4px}
       <div class="total"><span>Total</span><span><span id="txtTotal">$0,00</span><br><small id="txtTotalBs"></small></span></div>
     </div>
 
-    <div class="card">
+    <div class="card" id="cardDatosVenta">
       <div class="dos">
         <div><label for="cCed">Cédula o RIF</label><input id="cCed" inputmode="numeric" autocomplete="off" placeholder="Ej: 12345678"></div>
         <div><label for="cTel">Teléfono</label><input id="cTel" type="tel" inputmode="tel" autocomplete="off"></div>
@@ -289,12 +289,12 @@ details[open] > summary{margin-bottom:4px}
       <label for="vExtra">Pagó de más $ <span class="chico">(si no quiere vuelto)</span></label>
       <input id="vExtra" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0">
       <div id="bloqueVenta">
-        <label>¿Ya se lo llevó?</label>
-        <div class="segmento" role="group" aria-label="¿Ya se lo llevó?">
-          <button id="llevoSi" aria-pressed="true">Sí, ya se lo llevó</button>
-          <button id="llevoNo" aria-pressed="false">No, lo preparo</button>
+        <label>Estado</label>
+        <div class="segmento" role="group" aria-label="Estado">
+          <button id="llevoSi" aria-pressed="true">Entregado</button>
+          <button id="llevoNo" aria-pressed="false">En proceso</button>
         </div>
-        <p class="chico" style="margin:6px 0 0">Si falta imprimir letras o la base, toca <b>No, lo preparo</b>: queda pagado y en Pedidos → Por entregar.</p>
+        <p class="chico" style="margin:6px 0 0">Si falta imprimir letras o la base, toca <b>En proceso</b>: queda en Pedidos → Por entregar.</p>
       </div>
       <div id="bloqueEncargo" hidden>
         <label>¿Ya pagó?</label>
@@ -1007,10 +1007,13 @@ details[open] > summary{margin-bottom:4px}
     agregandoA = num; carrito = []; grupoActual = null; quitarDescuento();
     $('#agrNum').textContent = num; $('#agrCli').textContent = p.cliente || 'Sin nombre';
     $('#avisoAgregar').hidden = false; $('#btnGuardarVenta').textContent = 'Agregar a ' + num;
+    // al agregar a un pedido no hacen falta cliente, pago ni estado (se quedan los del pedido)
+    [...$('#cardDatosVenta').children].forEach(el => { if (el.id !== 'btnGuardarVenta') el.dataset.ocultoAgregar = el.hidden ? '1' : '0', el.hidden = true; });
     irA('vender'); pintarCarrito(); scrollTo({ top: 0 });
   }
   function terminarAgregar(volver) {
     const num = agregandoA; agregandoA = null; $('#avisoAgregar').hidden = true;
+    [...$('#cardDatosVenta').children].forEach(el => { if (el.dataset.ocultoAgregar !== undefined) { el.hidden = el.dataset.ocultoAgregar === '1'; delete el.dataset.ocultoAgregar; } });
     $('#btnGuardarVenta').textContent = modo === 'bazar' ? 'Guardar venta' : 'Guardar encargo';
     if (volver && num) { editando = num; irA('pedidos'); pintarPedidos();
       setTimeout(() => { const ed = document.querySelector('.editor'); if (ed) ed.scrollIntoView({ block: 'start' }); }, 50); }
