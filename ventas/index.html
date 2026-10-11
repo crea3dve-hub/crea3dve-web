@@ -67,13 +67,11 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-o
 .grid-extra{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:6px}
 .grid-extra button{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:9px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:14px;font-weight:600;min-height:52px}
 .grid-extra button span{font-weight:800;white-space:nowrap}
-.grid-extra button.agotado{opacity:.5}
 .grid-prod{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .prod{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px;cursor:pointer;min-height:84px;display:flex;flex-direction:column;justify-content:space-between}
 .prod b{font-size:14px;line-height:1.25}
 .prod .meta{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-top:6px}
 .prod .precio{font-weight:800;color:var(--ink)}
-.prod.agotado{opacity:.55}
 .prod:active{transform:scale(.98)}
 .carrito-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
 .carrito-item:last-child{border-bottom:0}
@@ -700,12 +698,12 @@ details[open] > summary{margin-bottom:4px}
   $('#buscaProd').addEventListener('input', pintarProductos);
   function pintarProductos() {
     $('#gridExtras').innerHTML = datos.productos.filter(p => esExtra(p.nombre)).map(p =>
-      `<button data-x="${esc(p.nombre)}" class="${p.disponibles <= 0 ? 'agotado' : ''}">${esc(nombreCorto(p.nombre))}<span>${fmt(p.precio)}</span></button>`).join('');
+      `<button data-x="${esc(p.nombre)}" >${esc(nombreCorto(p.nombre))}<span>${fmt(p.precio)}</span></button>`).join('');
     const q = ($('#buscaProd').value || '').trim().toLowerCase();
     $('#gridProductos').innerHTML = datos.productos.map((p, i) => ({ p, i }))
       .filter(({ p }) => !esLetra(p.nombre) && !esExtra(p.nombre) && !/incluid[oa] en el precio/i.test(p.nombre) && (!q || p.nombre.toLowerCase().includes(q)))
       .map(({ p, i }) => `
-      <button class="prod${p.disponibles <= 0 ? ' agotado' : ''}" data-i="${i}">
+      <button class="prod" data-i="${i}">
         <b>${esc(p.nombre)}</b>
         <span class="meta"><span class="precio">${fmt(p.precio)}${esObjeto(p.nombre) ? ' · $3 con letras' : ''}</span><span></span></span>
       </button>`).join('') || '<p class="vacio">No hay productos con ese nombre.</p>';
