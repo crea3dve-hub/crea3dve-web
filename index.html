@@ -229,8 +229,8 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
           <span class="label">Color de las letras</span>
           <div class="swatches" id="sw-leg"></div>
         </div>
-        <span class="label">Letra</span>
-        <div class="row" id="fonts"></div>
+        <span class="label" hidden>Letra</span>
+        <div class="row" id="fonts" hidden></div>
         <p class="hint">Los colores dependen del filamento disponible; si alguno se agota, te avisamos por WhatsApp.</p>
       </section>
 
@@ -286,8 +286,8 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
     <div class="swatches" id="sh-tile"></div>
     <span class="label">Color de la letra</span>
     <div class="swatches" id="sh-leg"></div>
-    <span class="label">Tipografía <span class="notice">(todas las teclas)</span></span>
-    <div class="row" id="sh-fonts"></div>
+    <span class="label" hidden>Tipografía <span class="notice">(todas las teclas)</span></span>
+    <div class="row" id="sh-fonts" hidden></div>
     <span class="label">Cambiar por</span>
     <div class="row">
       <input type="text" id="sh-char" maxlength="1" autocomplete="off" spellcheck="false" aria-label="Nueva letra o número">
@@ -394,7 +394,7 @@ const ren = n => RENOMBRE[n] || n;
 
 const SYMS = {"♥":"corazón","★":"estrella","✿":"flor","☺":"carita","♣":"trébol","🐾":"huella","⚽":"balón","✝":"cruz","⚡":"rayo"};
 const EXTRA_SYMS = ["&"];
-const FONTS = [["Redonda","'Nunito', system-ui, sans-serif","Redonda"],["Comic","'Comic Neue', 'Comic Sans MS', cursive","Comic"]];
+const FONTS = [["Redonda","'Nunito', system-ui, sans-serif","Redonda"]];   // por ahora solo letra redonda (antes también: ["Comic","'Comic Neue', 'Comic Sans MS', cursive","Comic"])
 const MIX = ["Amarillo","Azul","Verde claro","Rojo","Fucsia","Celeste","Naranja","Morado metalizado","Verde"];
 const LEGMIX = ["Morado metalizado","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Fucsia"];
 const hex = n => (COLORES.find(c=>c[0]===n)||COLORES[0])[1];
@@ -437,7 +437,7 @@ window.aroSel = aroSel; window.aroList = aroList;
 // ---------- varios clickers en un pedido ----------
 const DKEYS = ["word","base","style","mode","font","tiles","legs","charms","objs","otro","aros","colgar"];
 const snap = () => JSON.parse(JSON.stringify(Object.fromEntries(DKEYS.map(k=>[k, st[k]]))));
-function loadDesign(d){ Object.assign(st, {colgar:"cadena"}, JSON.parse(JSON.stringify(d))); st.sel = 0; st.mixTiles = null; st.mixLegs = null; }
+function loadDesign(d){ Object.assign(st, {colgar:"cadena"}, JSON.parse(JSON.stringify(d))); st.font = Math.min(Math.max(0, st.font|0), FONTS.length-1); st.sel = 0; st.mixTiles = null; st.mixLegs = null; }
 function withDesign(d, fn){ const keep = snap(), ks = st.sel; loadDesign(d); try{ return fn(); } finally{ loadDesign(keep); st.sel = ks; } }
 const hasContent = d => (d.word && d.word.length) || (d.objs && d.objs.length);
 function save(){ try{ localStorage.setItem("clicker-crea3d-v3",JSON.stringify(st)); }catch(e){} }
@@ -863,7 +863,7 @@ function decodeDesign(h){
     let b = h.slice(2).replace(/-/g,"+").replace(/_/g,"/"); while(b.length%4) b+="=";
     const bin = atob(b), o = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, c=>c.charCodeAt(0))));
     const CN = o.v===2 ? CN2 : COLORES_V1.map(ren); if(o.v!==2) o.f = o.f===1 ? 1 : 0;
-    st.word = clean(o.w||"").out; st.base = CN[o.b]||st.base; st.style = o.s?"acanalada":"lisa"; st.font = o.f||0; st.mode = "mix";
+    st.word = clean(o.w||"").out; st.base = CN[o.b]||st.base; st.style = o.s?"acanalada":"lisa"; st.font = Math.min(o.f||0, FONTS.length-1); st.mode = "mix";
     st.tiles = (o.t||[]).map(k=>CN[k]||"Morado metalizado"); st.legs = (o.l||[]).map(k=>CN[k]||"Blanco");
     if(o.a) st.aros = Array.isArray(o.a[0]) ? o.a.map(x=>({t:x[0], c:x[1]})) : (o.a[0] ? [{t:o.a[0], c:o.a[1]}] : []);
     if(Array.isArray(o.c)) st.charms = o.c.filter(x=>charmInfo(x[0])).map(x=>({t:x[0], c:CN[x[1]]||"Blanco"}));
