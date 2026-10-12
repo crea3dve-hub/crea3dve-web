@@ -1013,6 +1013,34 @@ window.__render = render;
   }
 
   /* textura de la letra / símbolo */
+  // dibuja en el canvas, sin esperar, las figuras SVG simples que genera symPath (path, circle, ellipse, rect, g con rotate)
+  function drawSvgSync(x, inner){
+    const doc = new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg">${inner}</svg>`, "image/svg+xml");
+    const num = (el,a)=>parseFloat(el.getAttribute(a)||"0");
+    const paint = (el, path)=>{
+      const f = el.getAttribute("fill"), st = el.getAttribute("stroke"), sw = el.getAttribute("stroke-width");
+      if(f !== "none"){ x.fillStyle = f || "#000"; x.fill(path); }
+      if(st && st !== "none"){ x.strokeStyle = st; x.lineWidth = sw ? parseFloat(sw) : 1; x.lineJoin = el.getAttribute("stroke-linejoin") || "miter"; x.lineCap = el.getAttribute("stroke-linecap") || "butt"; x.stroke(path); }
+    };
+    const rot = el=>{ const m = /rotate\(\s*([-\d.]+)(?:[\s,]+([-\d.]+)[\s,]+([-\d.]+))?\s*\)/.exec(el.getAttribute("transform")||""); if(!m) return;
+      const a = parseFloat(m[1])*Math.PI/180, cx = parseFloat(m[2]||0), cy = parseFloat(m[3]||0); x.translate(cx,cy); x.rotate(a); x.translate(-cx,-cy); };
+    const walk = el=>{
+      for(const c of el.children){
+        x.save(); rot(c);
+        const t = c.tagName.toLowerCase(); let p = null;
+        if(t==="g"){ walk(c); }
+        else if(t==="path"){ p = new Path2D(c.getAttribute("d")); }
+        else if(t==="circle"){ p = new Path2D(); p.arc(num(c,"cx"), num(c,"cy"), num(c,"r"), 0, Math.PI*2); }
+        else if(t==="ellipse"){ p = new Path2D(); p.ellipse(num(c,"cx"), num(c,"cy"), num(c,"rx"), num(c,"ry"), 0, 0, Math.PI*2); }
+        else if(t==="rect"){ p = new Path2D(); const rx = num(c,"rx"); if(p.roundRect) p.roundRect(num(c,"x"), num(c,"y"), num(c,"width"), num(c,"height"), rx); else p.rect(num(c,"x"), num(c,"y"), num(c,"width"), num(c,"height")); }
+        else if(t==="line"){ p = new Path2D(); p.moveTo(num(c,"x1"), num(c,"y1")); p.lineTo(num(c,"x2"), num(c,"y2")); if(!c.getAttribute("fill")) c.setAttribute("fill","none"); }
+        else if(t==="polygon"){ const v = (c.getAttribute("points")||"").trim().split(/[\s,]+/).map(Number); p = new Path2D(); for(let i=0;i<v.length;i+=2) p[i?"lineTo":"moveTo"](v[i],v[i+1]); p.closePath(); }
+        if(p) paint(c, p);
+        x.restore();
+      }
+    };
+    walk(doc.documentElement);
+  }
   function legendTexture(ch, color, font){
     const c = document.createElement("canvas"); c.width = c.height = 256;
     const x = c.getContext("2d"); x.clearRect(0,0,256,256);
@@ -1024,7 +1052,7 @@ window.__render = render;
     else if(ch==="★"){ x.beginPath(); for(let i=0;i<10;i++){ const r=i%2?38:88, a=-Math.PI/2+i*Math.PI/5; x[i?"lineTo":"moveTo"](cx+r*Math.cos(a), cy+6+r*Math.sin(a)); } x.closePath(); x.lineWidth=14; x.stroke(); x.fill(); }
     else if(ch==="✿"){ for(let i=0;i<5;i++){ const a=-Math.PI/2+i*Math.PI*2/5; x.beginPath(); x.arc(cx+46*Math.cos(a), cy+46*Math.sin(a), 36, 0, Math.PI*2); x.fill(); } x.shadowColor="transparent"; x.fillStyle="rgba(255,255,255,.6)"; x.beginPath(); x.arc(cx,cy,22,0,Math.PI*2); x.fill(); }
     else if(ch==="☺"){ x.lineWidth=16; x.beginPath(); x.arc(cx,cy,78,0,Math.PI*2); x.stroke(); x.beginPath(); x.arc(cx-28,cy-20,11,0,Math.PI*2); x.arc(cx+28,cy-20,11,0,Math.PI*2); x.fill(); x.beginPath(); x.arc(cx,cy+6,42,0.25*Math.PI,0.75*Math.PI); x.stroke(); }
-    else if(ch==="♣"||ch==="🐾"||ch==="⚽"||ch==="✝"||ch==="⚡"){ const img=new Image(); const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">${symPath(ch,128,128,210,color)}</svg>`; img.onload=()=>{ x.drawImage(img,0,0,256,256); tex.needsUpdate=true; }; img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg); }
+    else if(ch==="♣"||ch==="🐾"||ch==="⚽"||ch==="✝"||ch==="⚡"){ drawSvgSync(x, symPath(ch,128,128,210,color)); }   // se dibuja al instante (antes era asíncrono y no salía en la foto ni a veces en el 3D)
     else { x.font = `900 205px ${font}`; x.textAlign="center"; x.textBaseline="middle"; x.fillText(ch, cx, cy+12); }
     tex.needsUpdate = true; return tex;
   }
