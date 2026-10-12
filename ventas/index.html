@@ -678,7 +678,7 @@ details[open] > summary{margin-bottom:4px}
   $('#modoPedido').addEventListener('click', () => ponerModo('pedido'));
 
   // Extras de un toque: aros, charms y piezas de metal
-  const esExtra = n => /^(Aro|Charm|Corazón con|Flor con|Clicker de objeto)/.test(n) && !/personalizado/i.test(n);
+  const esExtra = n => /^(Aro|Charm|Corazón con|Flor con|Clicker de objeto|Cadenita)/.test(n) && !/personalizado/i.test(n);
   // grupoActual: el clicker que estás armando; lo que toques después se le agrega a ese
   let grupoActual = null;
   function agregarProducto(nombre, cant, grupo) {
