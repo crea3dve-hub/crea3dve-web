@@ -155,6 +155,8 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
 .aro[aria-pressed=true]{border-color:var(--brand);background:var(--brand-soft)}
 .aro svg{width:44px;height:44px}
 .aro small{color:var(--muted);font-variant-numeric:tabular-nums}
+.aro.agotado{opacity:.45;cursor:not-allowed}
+.aro.agotado small{font-weight:700;color:#B4232C}
 .notice{font-size:12.5px;color:var(--muted)}
 .bar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));z-index:5}
 .bar .in{max-width:1080px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -359,19 +361,20 @@ const objImg = o => { const x = OBJETOS.find(y=>y.id===o.t); return x.var ? `${x
 const objVarName = o => { const x = OBJETOS.find(y=>y.id===o.t); if(!x.var) return ""; const v = x.var.find(k=>k[0]===o.v)||x.var[0]; return v[1]; };
 window.objImg = objImg;
 // Aros / mosquetones de resorte disponibles (cambia precios o agrega/quita colores aquí)
+// agotado:true = se muestra como "Agotado" y no se puede agregar (bórralo cuando vuelva a haber)
 // cada color: [nombre, color, color de los puntitos]
 const AROS = [
-  {id:"peq",  nombre:"Aro redondo pequeño",  desc:"brillante", precio:1.00, colores:[
+  {id:"peq",  nombre:"Aro redondo pequeño",  desc:"brillante", precio:1.00, agotado:true, colores:[
     ["Blanco","#F7F6F2"],["Crema","#F2E8C9"],["Rosado claro","#F8CAD5"],["Rosado","#F59AB8"],["Fucsia","#E0408A"],
     ["Rojo","#D3242E"],["Lila","#C2A6F0"],["Celeste","#86CDF2"],["Menta","#93E0AE"],["Verde","#67D163"],
     ["Lima","#C8E63C"],["Amarillo","#FBE36A"],["Nude","#D9C2B0"],["Marrón","#8A5A3C"],["Negro","#1E1E1E"]]},
-  {id:"gra",  nombre:"Aro redondo grande",   desc:"mate",      precio:1.50, colores:[
+  {id:"gra",  nombre:"Aro redondo grande",   desc:"mate",      precio:1.50, agotado:true, colores:[
     ["Rosado","#F27FAA"],["Fucsia","#C9346F"],["Rojo","#D8333A"],["Naranja","#F27A2B"],
     ["Amarillo","#F7DF4A"],["Verde","#6CD45A"],["Crema","#EBD9B8"],["Marrón","#6E4038"]]},
-  {id:"cor",  nombre:"Corazón con puntitos", desc:"",          precio:1.50, colores:[
+  {id:"cor",  nombre:"Corazón con puntitos", desc:"",          precio:1.50, agotado:true, colores:[
     ["Fucsia","#E0367E","#F7D23A"],["Rojo","#C8202A","#F7D23A"],["Azul","#2347B8","#F7D23A"],["Lila","#B590E6","#F0559A"],
     ["Menta","#8ED9C8","#F7D23A"],["Amarillo","#F8DA2E","#F0559A"],["Blanco","#F7F6F2","#F0559A"],["Negro","#1E1E1E","#FFFFFF"]]},
-  {id:"flor", nombre:"Flor con giratorio",   desc:"",          precio:1.50, colores:[["Celeste","#8CC8EE","#F7B6D2"]]},
+  {id:"flor", nombre:"Flor con giratorio",   desc:"",          precio:1.50, agotado:true, colores:[["Celeste","#8CC8EE","#F7B6D2"]]},
 ];
 const COLORES = [   // filamentos disponibles en el taller  [nombre, color, (fondo del botón)]
   ["Blanco","#F2F1EC"],["Negro","#242424"],["Gris","#8C8F94"],["Beige","#C6A77E"],
@@ -400,7 +403,7 @@ window.SPECIAL = {"#D9342C":"rainbow", "#E7E6E2":"marble"};
 
 const st = {
   word:"LUNA★", base:"Fucsia", style:"lisa", mode:"mix", sel:0, font:0,
-  tiles:[], legs:[], charms:[{t:"carita",c:"Amarillo"}], objs:[], otro:null, aros:[{t:"cor", c:"Fucsia"}], cart:[]
+  tiles:[], legs:[], charms:[{t:"carita",c:"Amarillo"}], objs:[], otro:null, aros:[], cart:[]
 };
 try{ const s=JSON.parse(localStorage.getItem("clicker-crea3d-v3")||"null"); if(s&&s.word!==undefined){ Object.assign(st,s); } }catch(e){}
 if(!Array.isArray(st.charms)){   // diseños guardados con el formato anterior
@@ -422,10 +425,11 @@ const objInfo = t => OBJETOS.find(x=>x.id===t);
 const objPrice = i => keys().length ? objInfo(st.objs[i].t).extra : (i===0 ? objInfo(st.objs[i].t).solo : objInfo(st.objs[i].t).extra);
 const canOrder = () => keys().length>0 || st.objs.length>0 || st.cart.some(hasContent);
 if(!Array.isArray(st.aros)) st.aros = (st.aro && st.aro.t) ? [{t:st.aro.t, c:st.aro.c}] : [];
+st.aros = st.aros.filter(x=>{ const a = AROS.find(y=>y.id===x.t); return a && !a.agotado; });
 delete st.aro;
 if(!Array.isArray(st.cart)) st.cart = [];
 const MAX_AROS = 4;
-function aroInfo(x){ const a = AROS.find(y=>y.id===x.t); if(!a) return null;
+function aroInfo(x){ const a = AROS.find(y=>y.id===x.t); if(!a || a.agotado) return null;
   const c = a.colores.find(k=>k[0]===x.c) || a.colores[0]; return {tipo:a, nombre:c[0], color:c[1], dot:c[2]||null}; }
 function aroList(){ return st.aros.map(aroInfo).filter(Boolean); }
 function aroSel(){ return aroList()[0] || null; }
@@ -566,8 +570,8 @@ function render(){
   };
   const afull = st.aros.length >= MAX_AROS;
   $("aros").innerHTML = AROS.map(a=>{ const col = ({peq:"#C2A6F0",gra:"#F27FAA"}[a.id]||a.colores[0][1]);
-    return `<button class="aro" type="button" data-a="${a.id}" ${afull?"disabled":""}><svg viewBox="0 0 44 44">${ICON[a.id](col)}</svg>${a.nombre}<small>${money(a.precio)} c/u</small></button>`; }).join("");
-  $("aros").querySelectorAll(".aro").forEach(b=>b.onclick=()=>{ if(st.aros.length>=MAX_AROS) return; const a = AROS.find(x=>x.id===b.dataset.a);
+    return `<button class="aro${a.agotado?" agotado":""}" type="button" data-a="${a.id}" ${afull||a.agotado?"disabled":""}><svg viewBox="0 0 44 44">${ICON[a.id](col)}</svg>${a.nombre}<small>${a.agotado?"Agotado":money(a.precio)+" c/u"}</small></button>`; }).join("");
+  $("aros").querySelectorAll(".aro").forEach(b=>b.onclick=()=>{ if(st.aros.length>=MAX_AROS) return; const a = AROS.find(x=>x.id===b.dataset.a); if(!a || a.agotado) return;
     const used = st.aros.filter(x=>x.t===a.id).map(x=>x.c); const c = (a.colores.find(k=>!used.includes(k[0]))||a.colores[0])[0];
     st.aros.push({t:a.id, c}); render(); });
   $("arolist").innerHTML = st.aros.map((x,i)=>{ const r = aroInfo(x); if(!r) return "";
@@ -575,7 +579,7 @@ function render(){
       <div><div class="n">${r.tipo.nombre} · ${r.nombre.toLowerCase()} <span class="notice">${money(r.tipo.precio)}</span></div>
       <div class="swatches">${r.tipo.colores.map(([n,h,d])=>`<button class="sw" style="background:${d?`radial-gradient(circle at 35% 35%, ${d} 0 3px, transparent 3.5px), radial-gradient(circle at 68% 62%, ${d} 0 3px, transparent 3.5px), ${h}`:h}" title="${n}" aria-label="${n}" aria-pressed="${n===r.nombre}" data-ai="${i}" data-n="${n}"></button>`).join("")}</div></div>
       <button class="x" type="button" data-adel="${i}" aria-label="Quitar ${r.tipo.nombre}">✕</button></div>`; }).join("")
-    + (afull ? `<p class="hint">Máximo ${MAX_AROS} aros por llavero.</p>` : (st.aros.length ? "" : `<p class="hint">Sin aro: solo la cadena de bolitas.</p>`));
+    + (afull ? `<p class="hint">Máximo ${MAX_AROS} aros por llavero.</p>` : (st.aros.length ? "" : (AROS.every(a=>a.agotado) ? `<p class="hint">Por ahora no tenemos aros disponibles; tu llavero va con su cadena de bolitas.</p>` : `<p class="hint">Sin aro: solo la cadena de bolitas.</p>`)));
   $("arolist").querySelectorAll("[data-ai]").forEach(b=>b.onclick=()=>{ st.aros[+b.dataset.ai].c = b.dataset.n; render(); });
   $("arolist").querySelectorAll("[data-adel]").forEach(b=>b.onclick=()=>{ st.aros.splice(+b.dataset.adel,1); render(); });
   // pedido con varios clickers
