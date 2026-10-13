@@ -478,8 +478,8 @@ details[open] > summary{margin-bottom:4px}
   }
 
   /* ---------- Conexión ---------- */
-  async function pedirDatos() {
-    const r = await fetch(api + '?pin=' + encodeURIComponent(pin) + '&t=' + Date.now(), { method: 'GET' });
+  async function pedirDatos(fresco) {
+    const r = await fetch(api + '?pin=' + encodeURIComponent(pin) + (fresco ? '&fresco=1' : '') + '&t=' + Date.now(), { method: 'GET' });
     const j = await r.json();
     if (!j.ok) throw new Error(j.error || 'Error');
     return j;
@@ -547,9 +547,9 @@ details[open] > summary{margin-bottom:4px}
       if (huboCambios && datos && puedeRepintar()) pintarTodo();
     }
   }
-  async function recargar(silencioso) {
+  async function recargar(silencioso, fresco) {
     try {
-      datos = await pedirDatos();
+      datos = await pedirDatos(fresco);
       pintarTodo();
       if (!silencioso) avisar('Actualizado');
     } catch (e) {
@@ -1696,7 +1696,7 @@ details[open] > summary{margin-bottom:4px}
     pintarCola(); pintarTodo();
     if (cola.length) vaciarCola();
   }
-  $('#btnRecargar').addEventListener('click', () => { if (cola.length) vaciarCola(); recargar(); });
+  $('#btnRecargar').addEventListener('click', () => { if (cola.length) vaciarCola(); avisar('Actualizando…'); recargar(false, true); });
   $('#btnReintentar').addEventListener('click', vaciarCola);
 
   // Arranque
