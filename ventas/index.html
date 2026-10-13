@@ -410,6 +410,7 @@ details[open] > summary{margin-bottom:4px}
       <div class="chico" style="margin-top:6px"><span id="rPct">0%</span> recuperado</div>
     </div>
     <div class="card" id="rStats"></div>
+    <p class="chico" style="margin:8px 4px"><a id="probarPuente" href="#" target="_blank" rel="noopener">🔧 Probar el puente</a> (abre la conexión con la hoja; si sale un error, mándale captura a Claude)</p>
     <h3>Bazar</h3>
     <div class="card" id="rBazar"></div>
     <details class="card" id="cardPago">
@@ -539,7 +540,7 @@ details[open] > summary{margin-bottom:4px}
     } catch (e) {
       if (e.delServidor) { avisar(e.message, true); return false; }
       cola.push(cuerpo); guardarCola();
-      avisar(e.puente ? e.message + ' Quedó guardado en el teléfono.' : 'Sin señal: quedó guardado en el teléfono y se envía apenas haya conexión.', true);
+      avisar(e.puente ? e.message + ' Quedó guardado en el teléfono.' : (navigator.onLine ? 'No pude conectar con el puente de Google (tu internet sí funciona). Quedó guardado en el teléfono. Abre «Probar el puente» en Resumen para ver el error.' : 'Sin señal: quedó guardado en el teléfono y se envía apenas haya conexión.'), true);
       return true;
     } finally {
       document.body.classList.remove('cargando');
@@ -1748,6 +1749,7 @@ details[open] > summary{margin-bottom:4px}
     pintarCola(); pintarTodo();
     if (cola.length) vaciarCola();
   }
+  $('#probarPuente').addEventListener('click', ev => { ev.currentTarget.href = api + '?pin=' + encodeURIComponent(pin) + '&fresco=1'; });
   $('#btnRecargar').addEventListener('click', () => { if (cola.length) vaciarCola(); avisar('Actualizando…'); recargar(false, true); });
   $('#btnReintentar').addEventListener('click', vaciarCola);
 
