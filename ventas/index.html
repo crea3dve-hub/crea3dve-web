@@ -534,7 +534,7 @@ details[open] > summary{margin-bottom:4px}
     document.body.classList.add('cargando');
     try {
       const j = await enviar(cuerpo);
-      datos = j; pintarTodo();
+      if (j.rapido) refrescarLuego(); else { datos = j; pintarTodo(); }
       avisar(j.mensaje || okTexto || 'Listo');
       return true;
     } catch (e) {
@@ -549,12 +549,13 @@ details[open] > summary{margin-bottom:4px}
   async function vaciarCola() {
     if (!cola.length || enviandoCola) return;
     enviandoCola = true; pintarCola();
-    let huboCambios = false;
+    let huboCambios = false, rapido = false;
     try {
       while (cola.length) {
         const c = cola[0];
         try {
-          datos = await enviar(c); huboCambios = true;
+          const j = await enviar(c); huboCambios = true;
+          if (j.rapido) rapido = true; else datos = j;
           cola = cola.filter(x => x.id !== c.id); guardarCola();
         } catch (e) {
           if (e.delServidor) { cola = cola.filter(x => x.id !== c.id); guardarCola(); avisar('No se pudo guardar: ' + e.message, true); }
@@ -563,9 +564,30 @@ details[open] > summary{margin-bottom:4px}
       }
     } finally {
       enviandoCola = false; pintarCola();
-      if (huboCambios && datos && puedeRepintar()) pintarTodo();
+      if (rapido) refrescarLuego();
+      else if (huboCambios && datos && puedeRepintar()) pintarTodo();
     }
   }
+  // Después de guardar: trae los datos nuevos de la hoja por detrás, sin bloquear la pantalla
+  let refrescando = false, otraVez = false;
+  async function refrescarLuego() {
+    if (refrescando) { otraVez = true; return; }
+    refrescando = true; $('#txtTasa').textContent = 'Actualizando…';
+    try {
+      do {
+        otraVez = false;
+        const j = await pedirDatos(true);
+        datos = j;
+      } while (otraVez);
+      if (puedeRepintar()) pintarTodo(); else pendienteRepintar = true;
+    } catch (e) {
+      if (e.puente) avisar(e.message, true);
+    } finally {
+      refrescando = false;
+      if (datos && datos.tasa) $('#txtTasa').textContent = 'BCV ' + datos.tasa.valor.toLocaleString('es-VE', { maximumFractionDigits: 2 });
+    }
+  }
+  let pendienteRepintar = false;
   async function recargar(silencioso, fresco) {
     try {
       datos = await pedirDatos(fresco);
