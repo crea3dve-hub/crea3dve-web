@@ -1126,7 +1126,18 @@ details[open] > summary{margin-bottom:4px}
   const SIMBOLO = { 'corazón':'♥','estrella':'★','flor':'✿','carita':'☺','trébol':'♣','huella':'🐾','balón':'⚽','cruz':'✝','rayo':'⚡' };
   const hexDe = n => COLOR_HEX[String(n || '').trim().toLowerCase()] || '#DDDDDD';
   const sinAst = t => String(t || '').replace(/\*/g, '');
-  function detalleWeb(texto) {
+  // items: si el pedido ya es venta, solo se muestran los extras que siguen en la venta (si quitaste uno, no sale)
+  const palabras = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\([^)]*\)/g, ' ').match(/[a-zñ]{3,}/g) || [];
+  function detalleWeb(texto, items) {
+    let quedan = null;
+    if (items) quedan = items.map(i => ({ w: palabras(i.producto), n: i.cantidad || 1 })).filter(x => x.w.length);
+    const sigue = x => {
+      if (!quedan) return true;
+      const t = ' ' + palabras(x).join(' ') + ' ';
+      const m = quedan.find(q => q.n > 0 && q.w.every(w => t.includes(' ' + w + ' ')));
+      if (!m) return false;
+      m.n--; return true;
+    };
     try {
       const partes = texto.split(/\*?━━━ Clicker \d+ ━━━\*?/);
       const bloques = partes.length > 1 ? partes.slice(1) : [texto];
@@ -1145,7 +1156,7 @@ details[open] > summary{margin-bottom:4px}
           ${tira}
           <ul class="web-lin">${base ? `<li>🧱 Base <b>${esc(base[1])}</b> · ${esc(sinAst(base[2]))}</li>` : ''}
             ${teclas.map((m, i) => `<li>${i + 1}. <b>${esc(m[1])}</b> → tecla ${esc(m[2])} · letra ${esc(m[3])}</li>`).join('')}
-            ${extras.concat(otras).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+            ${extras.concat(otras).filter(sigue).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
           ${link ? `<a class="btn chico" style="text-decoration:none;justify-self:start" target="_blank" rel="noopener" href="${esc(link)}">🔍 Ver el diseño en 3D</a>` : ''}
         </div>`;
       }).join('');
@@ -1272,7 +1283,7 @@ details[open] > summary{margin-bottom:4px}
         <div class="pedido-cab"><div><span class="num">${esc(p.numero)}</span> · ${esc(p.cliente || 'Sin nombre')}<div class="chico">${esc(p.fecha)} · ${esc(p.canal)}${p.metodo ? ' · ' + esc(p.metodo) : ''}</div></div>
         <div style="text-align:right"><span class="pill ${esc(p.estado)}">${esc(debe(p) ? 'Entregado · debe' : PILL_TXT[p.estado] || p.estado || '—')}</span><div style="font-weight:800;margin-top:4px">${regalo ? '🎁 Regalo' : fmt(p.total)}</div></div></div>
         <ul class="lista-items">${p.items.map(i => `<li>${i.cantidad} × ${esc(i.producto)}</li>`).join('')}</ul>
-        ${p.diseno ? detalleWeb(p.diseno) : ''}
+        ${p.diseno ? detalleWeb(p.diseno, p.items) : ''}
         ${p.nota ? `<p class="chico" style="margin:4px 0 8px">📝 ${esc(p.nota)}</p>` : ''}
         ${botones.length ? `<div class="acciones">${botones.join('')}</div>` : ''}
       </div>`;
