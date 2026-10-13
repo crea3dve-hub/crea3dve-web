@@ -497,10 +497,13 @@ details[open] > summary{margin-bottom:4px}
     const e = new Error('El puente de Google respondió con un error' + (r.status && r.status !== 200 ? ' (' + r.status + ')' : '') + (m ? ': ' + m : '') + '. No es la señal: revisa el código en Apps Script.');
     e.puente = true; throw e;
   }
+  // ¿Trae todo lo que la página necesita? (una confirmación rápida del puente no trae los datos)
+  function completos(d) { return !!(d && Array.isArray(d.ventas) && Array.isArray(d.productos) && d.listas && d.resumen); }
   async function pedirDatos(fresco) {
     const r = await fetch(api + '?pin=' + encodeURIComponent(pin) + (fresco ? '&fresco=1' : '') + '&t=' + Date.now(), { method: 'GET' });
     const j = await leerRespuesta(r);
     if (!j.ok) throw new Error(j.error || 'Error');
+    if (!completos(j)) throw new Error('La hoja respondió incompleto, intenta de nuevo');
     return j;
   }
   async function enviar(cuerpo) {
@@ -1741,6 +1744,7 @@ details[open] > summary{margin-bottom:4px}
 
   function pintarTodo() {
     if (!datos) return;
+    if (!completos(datos)) return;   // nunca guardar ni pintar una respuesta incompleta
     try { guardar('c3_datos', JSON.stringify(datos)); } catch (e) {}
     $('#txtTasa').textContent = datos.tasa ? 'BCV ' + datos.tasa.valor.toLocaleString('es-VE', { maximumFractionDigits: 2 }) : '';
     const nWeb = (datos.pedidosWeb || []).length, bt = document.querySelector('nav.tabs button[data-ir="pedidos"]');
@@ -1787,6 +1791,7 @@ details[open] > summary{margin-bottom:4px}
 
   // Arranque
   let copiaInicial = null; try { copiaInicial = JSON.parse(leer('c3_datos') || 'null'); } catch (x) {}
+  if (!completos(copiaInicial)) copiaInicial = null;   // copia dañada: se ignora y se pide todo de nuevo
   if (api && pin && copiaInicial) {
     // abre al instante con lo último que se vio y actualiza por detrás
     datos = copiaInicial; iniciarApp();
@@ -1797,6 +1802,7 @@ details[open] > summary{margin-bottom:4px}
       .catch(e => {
         if (e.message === 'Clave incorrecta') return mostrarLogin('Clave incorrecta');
         let copia = null; try { copia = JSON.parse(leer('c3_datos') || 'null'); } catch (x) {}
+        if (!completos(copia)) copia = null;
         if (copia) { datos = copia; iniciarApp(); avisar('Sin señal: trabajando con los últimos datos. Lo que registres se envía luego.', true); }
         else mostrarLogin('Sin conexión con la hoja. Intenta de nuevo.');
       });
