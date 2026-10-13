@@ -1171,7 +1171,7 @@ details[open] > summary{margin-bottom:4px}
       const html = bloques.map((b, n) => {
         const base = /🧱 Base:\s*(?:\S+\s+)?\*([^*]+)\*\s*·\s*([^\n]+)/.exec(b);
         const teclas = [...b.matchAll(/^\s*\d+\.\s*\*([^*]+)\*\s*→\s*tecla\s*(?:\S+\s+)?\*([^*]+)\*\s*·\s*letra\s*(?:\S+\s+)?\*([^*]+)\*/gm)];
-        const link = (/https:\/\/crea3dve\.com\/#c_[\w-]+/.exec(b) || [])[0];
+        const link = (/https:\/\/crea3dve\.com\/(?:d\/)?#c_[\w-]+/.exec(b) || [])[0];
         const lineas = b.split('\n'), extras = [];
         let enExtras = false;
         lineas.forEach(l => { if (/^Extras:/.test(l.trim())) { enExtras = true; return; } if (enExtras) { if (!l.trim() || /^(Subtotal|🔗|💰|📸)/.test(l.trim())) enExtras = false; else extras.push(sinAst(l.trim())); } });

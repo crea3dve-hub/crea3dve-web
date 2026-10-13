@@ -686,8 +686,7 @@ function pricing(){
     txt = `✨ ¡Hola Crea3d! Quiero estos ${all.length} clickers ✨` + all.map((c,i)=>`\n\n*━━━ Clicker ${i+1} ━━━*\n${c.body}\nSubtotal: ${money(c.tot)}\n🔗 Diseño en 3D: ${c.link}`).join("")
       + `\n\n💰 *Total: ${money(tot)}* (tasa BCV)\n\n📸 A continuación te envío la foto de mis diseños 💚`;
   }
-  window.__pedidoCompleto = txt;   // con los links al 3D: solo va a la hoja de ventas
-  txt = txt.replace(/\n\n🔗 Mi diseño en 3D: \S+/g, "").replace(/\n🔗 Diseño en 3D: \S+/g, "");   // sin links en WhatsApp (si no, sale una vista previa que confunde)
+  window.__pedidoCompleto = txt;
   $("summary").textContent = txt;
   waURL = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(txt)}`;
   const ok = canOrder();
@@ -900,7 +899,7 @@ function decodeDesign(h){
   }catch(err){ return false; }
 }
 const fromLink = decodeDesign((location.hash||"").slice(1));
-function designLink(){ return `${LINK_PAGINA}#${encodeDesign()}`; }
+function designLink(){ return `${LINK_PAGINA}d/#${encodeDesign()}`; }   // /d/ no tiene imagen de vista previa: WhatsApp no pone la tarjeta de LUNA encima
 
 /* ---------- pestaña para editar una tecla ---------- */
 let sheetOpen = false;
