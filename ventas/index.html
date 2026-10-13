@@ -310,9 +310,14 @@ details[open] > summary{margin-bottom:4px}
           <button id="pagoSi" aria-pressed="false">Ya pagó</button>
           <button id="pagoNo" aria-pressed="true">Todavía no</button>
         </div>
-        <label for="vDelivery">Delivery $ <span class="chico">(déjalo vacío si lo retira)</span></label>
-        <input id="vDelivery" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0">
+        <label>¿Cómo se entrega?</label>
+        <div class="segmento" role="group" aria-label="Cómo se entrega">
+          <button id="entRetira" aria-pressed="true">Lo retira</button>
+          <button id="entDelivery" aria-pressed="false">🛵 Delivery $3</button>
+        </div>
         <div id="bloqueQuienDel" hidden>
+          <label for="vDelivery">Delivery $ <span class="chico">(siempre $3; cámbialo solo si fue distinto)</span></label>
+          <input id="vDelivery" type="number" inputmode="decimal" step="0.01" min="0" placeholder="3">
           <label>¿Quién paga el delivery?</label>
           <div class="segmento" role="group" aria-label="Quién paga el delivery">
             <button id="delCliente" aria-pressed="true">El cliente</button>
@@ -703,7 +708,17 @@ details[open] > summary{margin-bottom:4px}
   $('#pagoNo').addEventListener('click', () => ponerPago(false));
   $('#delCliente').addEventListener('click', () => ponerDel('cliente'));
   $('#delYo').addEventListener('click', () => ponerDel('yo'));
-  $('#vDelivery').addEventListener('input', () => { $('#bloqueQuienDel').hidden = !(parseFloat($('#vDelivery').value) > 0); pintarCarrito(); });
+  $('#vDelivery').addEventListener('input', () => pintarCarrito());
+  // Delivery: siempre $3 (se puede cambiar el monto si un día fue distinto)
+  const PRECIO_DELIVERY = 3;
+  function ponerEntrega(conDelivery) {
+    $('#entRetira').setAttribute('aria-pressed', !conDelivery); $('#entDelivery').setAttribute('aria-pressed', conDelivery);
+    $('#bloqueQuienDel').hidden = !conDelivery;
+    $('#vDelivery').value = conDelivery ? PRECIO_DELIVERY : '';
+    pintarCarrito();
+  }
+  $('#entRetira').addEventListener('click', () => ponerEntrega(false));
+  $('#entDelivery').addEventListener('click', () => ponerEntrega(true));
   function ponerModo(m) {
     modo = m;
     $('#modoBazar').setAttribute('aria-pressed', m === 'bazar');
@@ -1006,7 +1021,7 @@ details[open] > summary{margin-bottom:4px}
       accionFondo({ accion: 'gasto', que: 'Delivery – ' + (cuerpo.cliente || 'encargo'), monto: del, pct: 1, tipo: 'Otro',
         para: 'Negocio', metodo: '', nota: delQuien === 'cliente' ? 'Lo pagó el cliente (incluido en su venta)' : 'Envío gratis para el cliente' }, 'Delivery anotado');
     }
-    if (ok) { carrito = []; grupoActual = null; quitarDescuento(); $('#vNota').value = ''; $('#vExtra').value = ''; limpiarCliente(); $('#vMetodo').value = modo === 'pedido' && !pagado ? 'nopaga' : ''; $('#vFecha').value = hoyISO(); $('#vDelivery').value = ''; $('#bloqueQuienDel').hidden = true; pintarCarrito(); }
+    if (ok) { carrito = []; grupoActual = null; quitarDescuento(); $('#vNota').value = ''; $('#vExtra').value = ''; limpiarCliente(); $('#vMetodo').value = modo === 'pedido' && !pagado ? 'nopaga' : ''; $('#vFecha').value = hoyISO(); ponerEntrega(false); }
   });
 
   async function guardarAgregado() {
@@ -1054,6 +1069,7 @@ details[open] > summary{margin-bottom:4px}
         <button class="btn chico peligro" data-quitar aria-label="Quitar">✕</button>
       </div>`).join('')}
       <p class="chico" style="margin:6px 0 0">Cantidad y precio por unidad. ✕ quita el producto (vuelve al inventario).</p>
+      ${p.items.some(i => i.producto === 'Delivery') ? '' : `<button class="btn ancho" data-add-delivery style="margin-top:10px">🛵 Agregar delivery ($3)</button>`}
       <div class="ed-agregar">
         <button class="btn ancho" data-add-vender>➕ Agregar productos a este pedido</button>
         <p class="chico" style="margin:6px 0 0">Te lleva a Vender para escoger lo que sea: clickers, charms, aros, llaveros u "Otro producto" con el nombre y precio que quieras. Todo se suma a este mismo pedido.</p>
@@ -1083,6 +1099,17 @@ details[open] > summary{margin-bottom:4px}
       setTimeout(() => { const ed = document.querySelector('.editor'); if (ed) ed.scrollIntoView({ block: 'start' }); }, 50); }
   }
   $('#agrCancelar').addEventListener('click', () => { carrito = []; pintarCarrito(); terminarAgregar(true); });
+  // Suma el delivery ($3) a un pedido ya guardado: se le cobra al cliente y queda como gasto (lo pagas al motorizado)
+  function agregarDelivery(num) {
+    const p = datos.ventas.find(v => v.numero === num); if (!p) return;
+    if (!confirm('¿Sumar delivery de $3 a ' + num + ' (' + (p.cliente || 'sin nombre') + ')?')) return;
+    accionFondo({ accion: 'venta', numero: p.numero, cliente: p.cliente, canal: p.canal, metodo: p.metodo, estado: p.estado,
+      fecha: aISO(p.fecha), nota: p.nota || undefined, items: [{ producto: 'Delivery', cantidad: 1, precio: 3, precioManual: true }] }, 'Delivery sumado a ' + num);
+    accionFondo({ accion: 'gasto', que: 'Delivery – ' + (p.cliente || num), monto: 3, pct: 1, tipo: 'Otro', para: 'Negocio', metodo: '',
+      nota: 'Lo pagó el cliente (incluido en ' + num + ')' }, 'Delivery sumado a ' + num);
+    p.items.push({ producto: 'Delivery', cantidad: 1, precio: 3, total: 3 }); p.total += 3;
+    editando = null; pintarTodo();
+  }
   async function guardarEdicion(card) {
     const num = card.dataset.ed, p = datos.ventas.find(v => v.numero === num); if (!p) return;
     const f = k => card.querySelector(`[data-f="${k}"]`).value;
@@ -1405,6 +1432,7 @@ details[open] > summary{margin-bottom:4px}
       else if (e.target.closest('[data-quitar]')) { const row = e.target.closest('.ed-item'); row.classList.toggle('quitado'); }
       else if (e.target.closest('[data-guardar]')) guardarEdicion(card);
       else if (e.target.closest('[data-add-vender]')) empezarAgregar(card.dataset.ed);
+      else if (e.target.closest('[data-add-delivery]')) agregarDelivery(card.dataset.ed);
       return;
     }
     const bc = e.target.closest('button[data-cobro]');
