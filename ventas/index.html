@@ -544,7 +544,7 @@ details[open] > summary{margin-bottom:4px}
       const j = await enviar(cuerpo);
       if (j.rapido) refrescarLuego(); else { datos = j; pintarTodo(); }
       avisar(j.mensaje || okTexto || 'Listo');
-      return true;
+      return j;
     } catch (e) {
       if (e.delServidor) { avisar(e.message, true); return false; }
       cola.push(cuerpo); guardarCola();
@@ -1225,7 +1225,25 @@ details[open] > summary{margin-bottom:4px}
     }
     if (e.target.closest('[data-w-ok]')) {
       const v = k => card.querySelector(`[data-wk="${k}"]`).value.trim();
-      if (await accion({ accion: 'convertirWeb', fila, idWeb: w.id, cliente: v('cliente'), datosCliente: { cedula: v('cedula'), telefono: v('telefono') } })) webAbierto = null;
+      const cliW = v('cliente');
+      const res = await accion({ accion: 'convertirWeb', fila, idWeb: w.id, cliente: cliW, datosCliente: { cedula: v('cedula'), telefono: v('telefono') } });
+      if (res) {
+        webAbierto = null;
+        // la web solo manda las letras: se suman la base de cada clicker y sus switches (para el inventario, sin costo para el cliente)
+        const num = ((res.mensaje || '').match(/V-\d+/) || [])[0];
+        if (num) {
+          const extra = [];
+          let sw = 0;
+          w.items.forEach(i => {
+            if (esLetra(i.producto)) { const b = baseDe(i.cantidad); if (b) extra.push({ producto: b.nombre, cantidad: 1, precio: 0, precioManual: true }); sw += i.cantidad; }
+            else if (esObjeto(i.producto)) sw += i.cantidad;
+          });
+          const SW = 'Switch para clicker (sueltos, incluido en el precio)';
+          if (sw && datos.productos.some(x => x.nombre === SW)) extra.push({ producto: SW, cantidad: sw, precio: 0, precioManual: true });
+          if (extra.length) accionFondo({ accion: 'venta', numero: num, cliente: cliW || ('Web ' + (w.palabras || '')), canal: 'Página web',
+            metodo: '', estado: 'Pedido', items: extra }, 'Base y switches anotados en ' + num);
+        }
+      }
     }
   });
   const esIncluido = i => /incluid[oa] en el precio/i.test(i.producto);
