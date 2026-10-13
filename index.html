@@ -666,7 +666,7 @@ function designCalc(){   // usa el diseño cargado en st
   st.objs.forEach((o,i)=>{ const x = objInfo(o.t); extras.push(`${x.emo} Clicker *${x.nombre.toLowerCase()}*${o.v?` *${objVarName(o).toLowerCase()}*`:""}${!ks.length&&i===0?" (con cadena)":""} — ${money(objPrice(i))}`); });
   if(otro!==null) extras.push(`Charm personalizado: *${otro}* — ${money(PRECIO_OTRO)}`);
   if(extras.length) body += (body ? `\n\nExtras:\n` : "") + extras.join("\n");
-  return {lines, tot, otro, body, word: ks.length};
+  return {lines, tot, otro, body, word: ks.length, link: designLink()};
 }
 function pricing(){
   const cur = designCalc();
@@ -681,9 +681,9 @@ function pricing(){
   if(all.length<=1){
     const c = all[0] || cur;
     txt = (c.word ? `✨ ¡Hola Crea3d! Quiero este clicker ✨` : `✨ ¡Hola Crea3d! Quiero este clicker de objeto ✨`) + (c.body ? `\n\n${c.body}` : "")
-      + `\n\n💰 *Total: ${money(tot)}* (tasa BCV)\n\n📸 A continuación te envío la foto de mi diseño 💚`;
+      + `\n\n💰 *Total: ${money(tot)}* (tasa BCV)\n\n🔗 Mi diseño en 3D: ${c.link}\n\n📸 A continuación te envío la foto de mi diseño 💚`;
   } else {
-    txt = `✨ ¡Hola Crea3d! Quiero estos ${all.length} clickers ✨` + all.map((c,i)=>`\n\n*━━━ Clicker ${i+1} ━━━*\n${c.body}\nSubtotal: ${money(c.tot)}`).join("")
+    txt = `✨ ¡Hola Crea3d! Quiero estos ${all.length} clickers ✨` + all.map((c,i)=>`\n\n*━━━ Clicker ${i+1} ━━━*\n${c.body}\nSubtotal: ${money(c.tot)}\n🔗 Diseño en 3D: ${c.link}`).join("")
       + `\n\n💰 *Total: ${money(tot)}* (tasa BCV)\n\n📸 A continuación te envío la foto de mis diseños 💚`;
   }
   $("summary").textContent = txt;
