@@ -1097,14 +1097,23 @@ details[open] > summary{margin-bottom:4px}
     if (f('fecha') && f('fecha') !== aISO(p.fecha)) cuerpo.fecha = f('fecha');
     document.body.classList.add('cargando');
     try {
-      datos = await enviar(cuerpo); editando = null; pintarTodo(); avisar(datos.mensaje || 'Venta corregida');
+      const j = await enviar(cuerpo);
+      // se ve el cambio al instante; los datos completos llegan por detrás
+      if (j.rapido) {
+        if (cuerpo.cliente !== undefined) p.cliente = cuerpo.cliente;
+        if (cuerpo.estado) p.estado = cuerpo.estado;
+        if (cuerpo.metodo !== undefined) p.metodo = cuerpo.metodo;
+        if (cuerpo.nota !== undefined) p.nota = cuerpo.nota;
+        editando = null; pintarTodo(); refrescarLuego();
+      } else { datos = j; editando = null; pintarTodo(); }
+      avisar(j.mensaje || 'Venta corregida');
     } catch (e) {
       if (String(e.message).includes('Acción desconocida')) {
         // puente viejo: al menos se puede cambiar el estado
-        try { datos = await enviar({ accion: 'estado', numero: num, estado: f('estado'), metodo: f('metodo'), id: idNuevo() }); editando = null; pintarTodo();
+        try { const j2 = await enviar({ accion: 'estado', numero: num, estado: f('estado'), metodo: f('metodo'), id: idNuevo() }); editando = null; if (j2.rapido) refrescarLuego(); else { datos = j2; pintarTodo(); }
           avisar(items.length ? 'Se cambió el estado. Para corregir productos actualiza el puente (Apps Script).' : 'Estado corregido', !!items.length); }
         catch (e2) { avisar(e2.message, true); }
-      } else avisar(e.delServidor ? e.message : 'Sin señal: intenta de nuevo cuando haya conexión', true);
+      } else avisar(e.delServidor || e.puente ? e.message : 'Sin señal: intenta de nuevo cuando haya conexión', true);
     } finally { document.body.classList.remove('cargando'); }
   }
   /* ---------- Detalle de los pedidos que llegan de la página (colores de cada tecla, extras y link 3D) ---------- */
