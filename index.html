@@ -81,7 +81,7 @@ h1{font-family:var(--display);font-weight:900;font-size:clamp(26px,6vw,40px);let
 #view3d canvas{position:absolute;inset:0;display:block;width:100%!important;height:100%!important}
 .colgar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:0 0 14px}
 .colgar button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);font:600 14px var(--body);color:var(--ink);cursor:pointer;text-align:left}
-.coloresCad{margin:-6px 0 14px}.coloresCad .cadsw{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}.coloresCad .cadsw i{display:block;flex:0 0 auto;position:static;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line)}
+.coloresCad{margin:-6px 0 14px}.coloresCad .cadsw{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}.coloresCad .cadsw button{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:2px solid var(--line);padding:0;cursor:pointer}.coloresCad .cadsw button[aria-pressed="true"]{box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--ink)}
 .colgar button small{font-weight:500;color:var(--muted)}
 .colgar button[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
 .incl{font-size:13px;color:var(--muted);margin:0 0 8px}
@@ -244,10 +244,11 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
           <button type="button" data-c="llavero" aria-pressed="false"><b>🔑 Aro de llavero</b><small>+$0,50</small></button>
         </div>
         <div class="coloresCad" id="coloresCad" hidden>
-          <div class="cadsw">
-            <i style="background:#F4F4F2" title="Blanco"></i><i style="background:#9CC7E8" title="Celeste"></i><i style="background:#1F4FB8" title="Azul"></i><i style="background:#2E8B3E" title="Verde"></i><i style="background:#A6D84A" title="Verde limón"></i><i style="background:#7FC4A4" title="Verde menta"></i><i style="background:#F2D33A" title="Amarillo"></i><i style="background:#F07A2A" title="Naranja"></i><i style="background:#D9262E" title="Rojo"></i><i style="background:#E0306F" title="Fucsia"></i><i style="background:#F49AC1" title="Rosado"></i>
+          <span class="label">Color de la cadenita: <b id="cadName">Azul</b></span>
+          <div class="cadsw" id="cadsw">
+            <button type="button" data-cc="Blanco" style="background:#F4F4F2" title="Blanco" aria-label="Blanco" aria-pressed="false"></button><button type="button" data-cc="Celeste" style="background:#9CC7E8" title="Celeste" aria-label="Celeste" aria-pressed="false"></button><button type="button" data-cc="Azul" style="background:#1F4FB8" title="Azul" aria-label="Azul" aria-pressed="false"></button><button type="button" data-cc="Verde" style="background:#2E8B3E" title="Verde" aria-label="Verde" aria-pressed="false"></button><button type="button" data-cc="Verde limón" style="background:#A6D84A" title="Verde limón" aria-label="Verde limón" aria-pressed="false"></button><button type="button" data-cc="Verde menta" style="background:#7FC4A4" title="Verde menta" aria-label="Verde menta" aria-pressed="false"></button><button type="button" data-cc="Amarillo" style="background:#F2D33A" title="Amarillo" aria-label="Amarillo" aria-pressed="false"></button><button type="button" data-cc="Naranja" style="background:#F07A2A" title="Naranja" aria-label="Naranja" aria-pressed="false"></button><button type="button" data-cc="Rojo" style="background:#D9262E" title="Rojo" aria-label="Rojo" aria-pressed="false"></button><button type="button" data-cc="Fucsia" style="background:#E0306F" title="Fucsia" aria-label="Fucsia" aria-pressed="false"></button><button type="button" data-cc="Rosado" style="background:#F49AC1" title="Rosado" aria-label="Rosado" aria-pressed="false"></button>
           </div>
-          <p class="hint">Colores: blanco, celeste, azul, verde, verde limón, verde menta, amarillo, naranja, rojo, fucsia y rosado. <b>Pregúntanos por WhatsApp qué colores hay disponibles</b> — en el 3D la mostramos en azul.</p>
+          <p class="hint">Escoge el color que quieres. <b>Te confirmamos por WhatsApp si está disponible</b>; si se agotó, te ofrecemos otro.</p>
         </div>
         <span class="label">Aros para colgar <span class="notice">(toca uno para agregarlo; puedes poner varios)</span></span>
         <div class="aros" id="aros"></div>
@@ -346,7 +347,9 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
 const WHATSAPP = "584242674222";
 const LINK_PAGINA = "https://crea3dve.com/";   // link público de esta página
 const PRECIO_LETRA = 1.50;           // cada letra: tecla + switch + su parte de la base (base y cadena incluidas)
-const PRECIO_LLAVERO = 0.50, PRECIO_COLORES = 0.50;   // cadenita de colores en vez de la plateada
+const PRECIO_LLAVERO = 0.50, PRECIO_COLORES = 0.50;
+const CADC = {"Blanco":"#F4F4F2", "Celeste":"#9CC7E8", "Azul":"#1F4FB8", "Verde":"#2E8B3E", "Verde limón":"#A6D84A", "Verde menta":"#7FC4A4", "Amarillo":"#F2D33A", "Naranja":"#F07A2A", "Rojo":"#D9262E", "Fucsia":"#E0306F", "Rosado":"#F49AC1"};   // colores de la cadenita
+   // cadenita de colores en vez de la plateada
    // aro de llavero en vez de la cadena de bolitas
 const PRECIO_OTRO = 1.00;   // charm personalizado ("Otro charm"), precio fijo
 const CHARMS = [   // charms impresos en 3D (cada uno del color que el cliente escoja)
@@ -444,9 +447,9 @@ function aroList(){ return st.aros.map(aroInfo).filter(Boolean); }
 function aroSel(){ return aroList()[0] || null; }
 window.aroSel = aroSel; window.aroList = aroList;
 // ---------- varios clickers en un pedido ----------
-const DKEYS = ["word","base","style","mode","font","tiles","legs","charms","objs","otro","aros","colgar"];
+const DKEYS = ["word","base","style","mode","font","tiles","legs","charms","objs","otro","aros","colgar","cadColor"];
 const snap = () => JSON.parse(JSON.stringify(Object.fromEntries(DKEYS.map(k=>[k, st[k]]))));
-function loadDesign(d){ Object.assign(st, {colgar:"cadena"}, JSON.parse(JSON.stringify(d))); st.font = Math.min(Math.max(0, st.font|0), FONTS.length-1); st.sel = 0; st.mixTiles = null; st.mixLegs = null; }
+function loadDesign(d){ Object.assign(st, {colgar:"cadena", cadColor:"Azul"}, JSON.parse(JSON.stringify(d))); st.font = Math.min(Math.max(0, st.font|0), FONTS.length-1); st.sel = 0; st.mixTiles = null; st.mixLegs = null; }
 function withDesign(d, fn){ const keep = snap(), ks = st.sel; loadDesign(d); try{ return fn(); } finally{ loadDesign(keep); st.sel = ks; } }
 const hasContent = d => (d.word && d.word.length) || (d.objs && d.objs.length);
 function save(){ try{ localStorage.setItem("clicker-crea3d-v3",JSON.stringify(st)); }catch(e){} }
@@ -626,6 +629,9 @@ function render(){
   window.__onlyObj = !keys().length && st.objs.length>0;
   document.querySelectorAll("#colgar button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.c === (st.colgar||"cadena")));
   document.getElementById("coloresCad").hidden = st.colgar !== "colores";
+  if(!CADC[st.cadColor]) st.cadColor = "Azul";
+  document.querySelectorAll("#cadsw button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.cc === st.cadColor));
+  document.getElementById("cadName").textContent = st.cadColor;
   $("otrobox").hidden = st.otro===null;
   if(st.otro!==null && document.activeElement!==$("otro")) $("otro").value = st.otro;
   if(window.__3d) window.__3d.update(); else drawPreview(); pricing(); save(); renderSheet();
@@ -640,7 +646,7 @@ function designCalc(){   // usa el diseño cargado en st
   if(n){ const l = n*PRECIO_LETRA; lines.push([`${n} ${n===1?"letra":"letras"} × ${money(PRECIO_LETRA)} (base${llavero?"":" y cadena"} incluida${llavero?"":"s"})`, l]); tot += l; }
   if(llavero){ lines.push(["Aro de llavero (en vez de cadena)", PRECIO_LLAVERO]); tot += PRECIO_LLAVERO; }
   const colores = st.colgar === "colores" && (n || st.objs.length);
-  if(colores){ lines.push(["Cadenita de colores (en vez de la plateada)", PRECIO_COLORES]); tot += PRECIO_COLORES; }
+  if(colores){ lines.push([`Cadenita de colores: ${st.cadColor.toLowerCase()} (en vez de la plateada)`, PRECIO_COLORES]); tot += PRECIO_COLORES; }
   aroList().forEach(ar=>{ lines.push([`${ar.tipo.nombre} (${ar.nombre.toLowerCase()})`, ar.tipo.precio]); tot+=ar.tipo.precio; });
   st.charms.forEach(ch=>{ const x = charmInfo(ch.t); lines.push([`Charm ${x.nombre.toLowerCase()} (${ch.c.toLowerCase()})`, x.precio]); tot+=x.precio; });
   st.objs.forEach((o,i)=>{ const x = objInfo(o.t), p = objPrice(i); lines.push([`Clicker de objeto: ${x.nombre.toLowerCase()}${o.v?` (${objVarName(o).toLowerCase()})`:''}${!n&&i===0?' (con cadena)':''}`, p]); tot+=p; });
@@ -654,7 +660,7 @@ function designCalc(){   // usa el diseño cargado en st
   }
   const extras = [];
   if(llavero) extras.push(`🔑 *Aro de llavero* en vez de cadena — ${money(PRECIO_LLAVERO)}`);
-  if(colores) extras.push(`🎨 *Cadenita de colores* en vez de la plateada — ${money(PRECIO_COLORES)} (¿qué colores tienen disponibles?)`);
+  if(colores) extras.push(`🎨 *Cadenita de colores* color *${st.cadColor.toLowerCase()}* en vez de la plateada — ${money(PRECIO_COLORES)} (¿está disponible ese color?)`);
   aroList().forEach(ar=>extras.push(`*${ar.tipo.nombre}* color *${ar.nombre.toLowerCase()}* — ${money(ar.tipo.precio)}`));
   st.charms.forEach(ch=>{ const x = charmInfo(ch.t); extras.push(`${charmEmo[ch.t] ? charmEmo[ch.t]+" " : ""}Charm ${x.nombre.toLowerCase()} ${colTxt(ch.c)} — ${money(x.precio)}`); });
   st.objs.forEach((o,i)=>{ const x = objInfo(o.t); extras.push(`${x.emo} Clicker *${x.nombre.toLowerCase()}*${o.v?` *${objVarName(o).toLowerCase()}*`:""}${!ks.length&&i===0?" (con cadena)":""} — ${money(objPrice(i))}`); });
@@ -853,6 +859,7 @@ function avisarCaja(){
 }
 $("ord-wa").addEventListener("click", avisarCaja);
 document.querySelectorAll("#colgar button").forEach(b=>b.onclick=()=>{ st.colgar = b.dataset.c; render(); });
+document.querySelectorAll("#cadsw button").forEach(b=>b.onclick=()=>{ st.cadColor = b.dataset.cc; render(); });
 $("ord-copy").onclick = copyPhoto;
 $("ord-skip").onclick = photoCopied;
 $("ord-close").onclick = ()=>{ $("order").hidden = true; document.body.classList.remove("sheet-open"); };
@@ -868,6 +875,7 @@ function encodeDesign(){
   const o = {v:2, w:st.word, b:CN.indexOf(st.base), s:st.style==="acanalada"?1:0, f:st.font,
     t:st.tiles.map(c=>CN.indexOf(c)), l:st.legs.map(c=>CN.indexOf(c)),
     c:st.charms.map(x=>[x.t, CN.indexOf(x.c)]), j:st.objs.map(o=>o.v?[o.t,o.v]:o.t), o:st.otro, a:st.aros.map(x=>[x.t, x.c])};
+  if(st.colgar && st.colgar !== "cadena"){ o.k = st.colgar; if(st.colgar === "colores") o.kc = st.cadColor; }
   const bytes = new TextEncoder().encode(JSON.stringify(o)); let bin = ""; bytes.forEach(b=>bin+=String.fromCharCode(b));
   return "c_" + btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 }
@@ -884,6 +892,7 @@ function decodeDesign(h){
     else if(o.e){ const oe = o.e.length===3 ? o.e.slice(1) : o.e; st.charms = [];
       ["carita","flor"].forEach((t,i)=>{ const e = oe[i]; if(e) for(let k=0;k<Math.min(e[0],3);k++) st.charms.push({t, c:CN[e[1]]||"Blanco"}); }); }
     st.otro = typeof o.o==="string" ? o.o : null;
+    st.colgar = ["llavero","colores"].includes(o.k) ? o.k : "cadena"; st.cadColor = CADC[o.kc] ? o.kc : "Azul";
     st.objs = Array.isArray(o.j) ? o.j.map(e=>Array.isArray(e)?{t:e[0],v:e[1]}:{t:e}).filter(e=>objInfo(e.t)) : [];
     return true;
   }catch(err){ return false; }
@@ -1299,7 +1308,7 @@ window.__render = render;
     const m4 = new THREE.Matrix4();
     for(let i=0;i<beads.length-1;i++){ m4.makeTranslation(beads[i].x, beads[i].y, beads[i].z); bim.setMatrixAt(i,m4); }
     // cadenita de colores: en el 3D siempre se muestra azul (el color real se confirma por WhatsApp)
-    if(st.colgar === "colores") bim.material = new THREE.MeshStandardMaterial({color:toLin("#1F4FB8"), roughness:.4, metalness:.25});
+    if(st.colgar === "colores") bim.material = new THREE.MeshStandardMaterial({color:toLin(CADC[st.cadColor] || CADC.Azul), roughness:.4, metalness:.25});
     bim.castShadow = true; group.add(bim);
     // conector de la cadena
     const cpt = curve.getPointAt(.83), ctan = curve.getTangentAt(.83);
