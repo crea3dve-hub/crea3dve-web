@@ -81,6 +81,7 @@ h1{font-family:var(--display);font-weight:900;font-size:clamp(26px,6vw,40px);let
 #view3d canvas{position:absolute;inset:0;display:block;width:100%!important;height:100%!important}
 .colgar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:0 0 14px}
 .colgar button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);font:600 14px var(--body);color:var(--ink);cursor:pointer;text-align:left}
+.coloresCad{margin:-6px 0 14px}.coloresCad .cadsw{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}.coloresCad .cadsw i{display:block;flex:0 0 auto;position:static;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line)}
 .colgar button small{font-weight:500;color:var(--muted)}
 .colgar button[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
 .incl{font-size:13px;color:var(--muted);margin:0 0 8px}
@@ -239,8 +240,14 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
         <span class="label">¿Cómo lo quieres colgar?</span>
         <div class="colgar" id="colgar">
           <button type="button" data-c="cadena" aria-pressed="true"><b>⛓️ Cadena plateada</b><small>De bolitas · incluida</small></button>
-          <button type="button" data-c="colores" aria-pressed="false"><b>🌈 Cadenita de colores</b><small>+$0,50</small></button>
+          <button type="button" data-c="colores" aria-pressed="false"><b>🎨 Cadenita de colores</b><small>+$0,50</small></button>
           <button type="button" data-c="llavero" aria-pressed="false"><b>🔑 Aro de llavero</b><small>+$0,50</small></button>
+        </div>
+        <div class="coloresCad" id="coloresCad" hidden>
+          <div class="cadsw">
+            <i style="background:#F4F4F2" title="Blanco"></i><i style="background:#9CC7E8" title="Celeste"></i><i style="background:#1F4FB8" title="Azul"></i><i style="background:#2E8B3E" title="Verde"></i><i style="background:#A6D84A" title="Verde limón"></i><i style="background:#7FC4A4" title="Verde menta"></i><i style="background:#F2D33A" title="Amarillo"></i><i style="background:#F07A2A" title="Naranja"></i><i style="background:#D9262E" title="Rojo"></i><i style="background:#E0306F" title="Fucsia"></i><i style="background:#F49AC1" title="Rosado"></i>
+          </div>
+          <p class="hint">Colores: blanco, celeste, azul, verde, verde limón, verde menta, amarillo, naranja, rojo, fucsia y rosado. <b>Pregúntanos por WhatsApp qué colores hay disponibles</b> — en el 3D la mostramos en azul.</p>
         </div>
         <span class="label">Aros para colgar <span class="notice">(toca uno para agregarlo; puedes poner varios)</span></span>
         <div class="aros" id="aros"></div>
@@ -579,7 +586,7 @@ function render(){
   $("arolist").innerHTML = st.aros.map((x,i)=>{ const r = aroInfo(x); if(!r) return "";
     return `<div class="crow"><svg viewBox="0 0 44 44">${ICON[r.tipo.id](r.color)}</svg>
       <div><div class="n">${r.tipo.nombre} · ${r.nombre.toLowerCase()} <span class="notice">${money(r.tipo.precio)}</span></div>
-      <div class="swatches">${r.tipo.colores.map(([n,h,d])=>`<button class="sw" style="background:${d?`radial-gradient(circle at 35% 35%, ${d} 0 3px, transparent 3.5px), radial-gradient(circle at 68% 62%, ${d} 0 3px, transparent 3.5px), ${h}`:h}" title="${n}" aria-label="${n}" aria-pressed="${n===r.nombre}" data-ai="${i}" data-n="${n}"></button>`).join("")}</div></div>
+      <div class="swatches">${r.tipo.colores.map(([n,h,d])=>`<button class="cadsw" style="background:${d?`radial-gradient(circle at 35% 35%, ${d} 0 3px, transparent 3.5px), radial-gradient(circle at 68% 62%, ${d} 0 3px, transparent 3.5px), ${h}`:h}" title="${n}" aria-label="${n}" aria-pressed="${n===r.nombre}" data-ai="${i}" data-n="${n}"></button>`).join("")}</div></div>
       <button class="x" type="button" data-adel="${i}" aria-label="Quitar ${r.tipo.nombre}">✕</button></div>`; }).join("")
     + (afull ? `<p class="hint">Máximo ${MAX_AROS} aros por llavero.</p>` : (st.aros.length ? "" : (AROS.every(a=>a.agotado) ? `<p class="hint">Por ahora no tenemos aros disponibles; tu llavero va con su cadena de bolitas.</p>` : `<p class="hint">Sin aro: solo la cadena de bolitas.</p>`)));
   $("arolist").querySelectorAll("[data-ai]").forEach(b=>b.onclick=()=>{ st.aros[+b.dataset.ai].c = b.dataset.n; render(); });
@@ -618,6 +625,7 @@ function render(){
   $("objvars").querySelectorAll(".vchip").forEach(b=>b.onclick=()=>{ st.objs[+b.dataset.i].v = b.dataset.v; render(); });
   window.__onlyObj = !keys().length && st.objs.length>0;
   document.querySelectorAll("#colgar button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.c === (st.colgar||"cadena")));
+  document.getElementById("coloresCad").hidden = st.colgar !== "colores";
   $("otrobox").hidden = st.otro===null;
   if(st.otro!==null && document.activeElement!==$("otro")) $("otro").value = st.otro;
   if(window.__3d) window.__3d.update(); else drawPreview(); pricing(); save(); renderSheet();
@@ -646,7 +654,7 @@ function designCalc(){   // usa el diseño cargado en st
   }
   const extras = [];
   if(llavero) extras.push(`🔑 *Aro de llavero* en vez de cadena — ${money(PRECIO_LLAVERO)}`);
-  if(colores) extras.push(`🌈 *Cadenita de colores* en vez de la plateada — ${money(PRECIO_COLORES)}`);
+  if(colores) extras.push(`🎨 *Cadenita de colores* en vez de la plateada — ${money(PRECIO_COLORES)} (¿qué colores tienen disponibles?)`);
   aroList().forEach(ar=>extras.push(`*${ar.tipo.nombre}* color *${ar.nombre.toLowerCase()}* — ${money(ar.tipo.precio)}`));
   st.charms.forEach(ch=>{ const x = charmInfo(ch.t); extras.push(`${charmEmo[ch.t] ? charmEmo[ch.t]+" " : ""}Charm ${x.nombre.toLowerCase()} ${colTxt(ch.c)} — ${money(x.precio)}`); });
   st.objs.forEach((o,i)=>{ const x = objInfo(o.t); extras.push(`${x.emo} Clicker *${x.nombre.toLowerCase()}*${o.v?` *${objVarName(o).toLowerCase()}*`:""}${!ks.length&&i===0?" (con cadena)":""} — ${money(objPrice(i))}`); });
@@ -1289,14 +1297,13 @@ window.__render = render;
     beads = curve.getSpacedPoints(Math.round(curve.getLength()/2.0));
     const bim = new THREE.InstancedMesh(new THREE.SphereGeometry(.9, 12, 10), metal, beads.length-1);
     const m4 = new THREE.Matrix4();
-    const ARCO = ["#E8463C","#F28C28","#F2C94C","#4CAF50","#2D9CDB","#9B51E0","#EF6FAE"], cc = new THREE.Color();
-    for(let i=0;i<beads.length-1;i++){ m4.makeTranslation(beads[i].x, beads[i].y, beads[i].z); bim.setMatrixAt(i,m4);
-      if(st.colgar === "colores") bim.setColorAt(i, cc.set(toLin(ARCO[Math.floor(i/3)%ARCO.length]))); }
-    if(st.colgar === "colores"){ bim.material = new THREE.MeshStandardMaterial({color:0xffffff, roughness:.45, metalness:.1}); bim.instanceColor.needsUpdate = true; }
+    for(let i=0;i<beads.length-1;i++){ m4.makeTranslation(beads[i].x, beads[i].y, beads[i].z); bim.setMatrixAt(i,m4); }
+    // cadenita de colores: en el 3D siempre se muestra azul (el color real se confirma por WhatsApp)
+    if(st.colgar === "colores") bim.material = new THREE.MeshStandardMaterial({color:toLin("#1F4FB8"), roughness:.4, metalness:.25});
     bim.castShadow = true; group.add(bim);
     // conector de la cadena
     const cpt = curve.getPointAt(.83), ctan = curve.getTangentAt(.83);
-    const clasp = new THREE.Mesh(new THREE.CylinderGeometry(1.25,1.25,6,16), metal);
+    const clasp = new THREE.Mesh(new THREE.CylinderGeometry(1.25,1.25,6,16), bim.material);
     clasp.position.copy(cpt); clasp.quaternion.setFromUnitVectors(V(0,1,0), ctan.normalize()); clasp.castShadow = true; group.add(clasp);
     } else {
       // aro de llavero de 2,5 cm (anillo partido de dos vueltas) unido al clicker con cadenita y triángulo
