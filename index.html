@@ -686,6 +686,8 @@ function pricing(){
     txt = `✨ ¡Hola Crea3d! Quiero estos ${all.length} clickers ✨` + all.map((c,i)=>`\n\n*━━━ Clicker ${i+1} ━━━*\n${c.body}\nSubtotal: ${money(c.tot)}\n🔗 Diseño en 3D: ${c.link}`).join("")
       + `\n\n💰 *Total: ${money(tot)}* (tasa BCV)\n\n📸 A continuación te envío la foto de mis diseños 💚`;
   }
+  window.__pedidoCompleto = txt;   // con los links al 3D: solo va a la hoja de ventas
+  txt = txt.replace(/\n\n🔗 Mi diseño en 3D: \S+/g, "").replace(/\n🔗 Diseño en 3D: \S+/g, "");   // sin links en WhatsApp (si no, sale una vista previa que confunde)
   $("summary").textContent = txt;
   waURL = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(txt)}`;
   const ok = canOrder();
@@ -853,7 +855,7 @@ function avisarCaja(){
     if(firma === pedidoEnviado) return;   // no mandar el mismo pedido dos veces
     pedidoEnviado = firma;
     const body = JSON.stringify({accion:"pedidoWeb", id: Date.now().toString(36) + Math.random().toString(36).slice(2,8),
-      palabras: palabras.join(", "), texto: $("summary").textContent, items});
+      palabras: palabras.join(", "), texto: window.__pedidoCompleto || $("summary").textContent, items});
     fetch(CAJA_API, {method:"POST", mode:"no-cors", keepalive:true, body}).catch(()=>{});
   }catch(e){}
 }
