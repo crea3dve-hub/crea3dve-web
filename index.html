@@ -248,7 +248,7 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
           <div class="cadsw" id="cadsw">
             <button type="button" data-cc="Blanco" style="background:#F4F4F2" title="Blanco" aria-label="Blanco" aria-pressed="false"></button><button type="button" data-cc="Celeste" style="background:#9CC7E8" title="Celeste" aria-label="Celeste" aria-pressed="false"></button><button type="button" data-cc="Azul" style="background:#1F4FB8" title="Azul" aria-label="Azul" aria-pressed="false"></button><button type="button" data-cc="Verde" style="background:#2E8B3E" title="Verde" aria-label="Verde" aria-pressed="false"></button><button type="button" data-cc="Verde limón" style="background:#A6D84A" title="Verde limón" aria-label="Verde limón" aria-pressed="false"></button><button type="button" data-cc="Verde menta" style="background:#7FC4A4" title="Verde menta" aria-label="Verde menta" aria-pressed="false"></button><button type="button" data-cc="Amarillo" style="background:#F2D33A" title="Amarillo" aria-label="Amarillo" aria-pressed="false"></button><button type="button" data-cc="Naranja" style="background:#F07A2A" title="Naranja" aria-label="Naranja" aria-pressed="false"></button><button type="button" data-cc="Rojo" style="background:#D9262E" title="Rojo" aria-label="Rojo" aria-pressed="false"></button><button type="button" data-cc="Fucsia" style="background:#E0306F" title="Fucsia" aria-label="Fucsia" aria-pressed="false"></button><button type="button" data-cc="Rosado" style="background:#F49AC1" title="Rosado" aria-label="Rosado" aria-pressed="false"></button>
           </div>
-          <p class="hint">Escoge el color que quieres. <b>Te confirmamos por WhatsApp si está disponible</b>; si se agotó, te ofrecemos otro.</p>
+          <p class="hint">Sujeto a disponibilidad del color seleccionado, te confirmamos al recibir el pedido.</p>
         </div>
         <span class="label">Aros para colgar <span class="notice">(toca uno para agregarlo; puedes poner varios)</span></span>
         <div class="aros" id="aros"></div>
@@ -660,7 +660,7 @@ function designCalc(){   // usa el diseño cargado en st
   }
   const extras = [];
   if(llavero) extras.push(`🔑 *Aro de llavero* en vez de cadena — ${money(PRECIO_LLAVERO)}`);
-  if(colores) extras.push(`🎨 *Cadenita de colores* color *${st.cadColor.toLowerCase()}* en vez de la plateada — ${money(PRECIO_COLORES)} (¿está disponible ese color?)`);
+  if(colores) extras.push(`🎨 *Cadenita de colores* color *${st.cadColor.toLowerCase()}* en vez de la plateada — ${money(PRECIO_COLORES)} (sujeto a disponibilidad)`);
   aroList().forEach(ar=>extras.push(`*${ar.tipo.nombre}* color *${ar.nombre.toLowerCase()}* — ${money(ar.tipo.precio)}`));
   st.charms.forEach(ch=>{ const x = charmInfo(ch.t); extras.push(`${charmEmo[ch.t] ? charmEmo[ch.t]+" " : ""}Charm ${x.nombre.toLowerCase()} ${colTxt(ch.c)} — ${money(x.precio)}`); });
   st.objs.forEach((o,i)=>{ const x = objInfo(o.t); extras.push(`${x.emo} Clicker *${x.nombre.toLowerCase()}*${o.v?` *${objVarName(o).toLowerCase()}*`:""}${!ks.length&&i===0?" (con cadena)":""} — ${money(objPrice(i))}`); });
