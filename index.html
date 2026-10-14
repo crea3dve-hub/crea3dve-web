@@ -383,9 +383,9 @@ const AROS = [
   {id:"gra",  nombre:"Aro redondo grande",   desc:"mate",      precio:1.50, agotado:true, colores:[
     ["Rosado","#F27FAA"],["Fucsia","#C9346F"],["Rojo","#D8333A"],["Naranja","#F27A2B"],
     ["Amarillo","#F7DF4A"],["Verde","#6CD45A"],["Crema","#EBD9B8"],["Marrón","#6E4038"]]},
-  {id:"cor",  nombre:"Corazón con puntitos", desc:"",          precio:1.50, agotado:true, colores:[
-    ["Fucsia","#E0367E","#F7D23A"],["Rojo","#C8202A","#F7D23A"],["Azul","#2347B8","#F7D23A"],["Lila","#B590E6","#F0559A"],
-    ["Menta","#8ED9C8","#F7D23A"],["Amarillo","#F8DA2E","#F0559A"],["Blanco","#F7F6F2","#F0559A"],["Negro","#1E1E1E","#FFFFFF"]]},
+  {id:"cor",  nombre:"Corazón con puntitos", desc:"",          precio:1.50, colores:[   // los que hay en stock (oct 2026)
+    ["Verde menta","#8CC98E","#E5603A"],["Verde lima","#94C83C","#F0D24C"],["Naranja","#DE7F3C","#EC4C8E"],
+    ["Amarillo","#F2E24C","#E2B0E6"],["Blanco","#F3F2EE","#A6CDEE"]]},
   {id:"flor", nombre:"Flor con giratorio",   desc:"",          precio:1.50, agotado:true, colores:[["Celeste","#8CC8EE","#F7B6D2"]]},
 ];
 const COLORES = [   // filamentos disponibles en el taller  [nombre, color, (fondo del botón)]
@@ -589,7 +589,7 @@ function render(){
   $("arolist").innerHTML = st.aros.map((x,i)=>{ const r = aroInfo(x); if(!r) return "";
     return `<div class="crow"><svg viewBox="0 0 44 44">${ICON[r.tipo.id](r.color)}</svg>
       <div><div class="n">${r.tipo.nombre} · ${r.nombre.toLowerCase()} <span class="notice">${money(r.tipo.precio)}</span></div>
-      <div class="swatches">${r.tipo.colores.map(([n,h,d])=>`<button class="cadsw" style="background:${d?`radial-gradient(circle at 35% 35%, ${d} 0 3px, transparent 3.5px), radial-gradient(circle at 68% 62%, ${d} 0 3px, transparent 3.5px), ${h}`:h}" title="${n}" aria-label="${n}" aria-pressed="${n===r.nombre}" data-ai="${i}" data-n="${n}"></button>`).join("")}</div></div>
+      <div class="swatches">${r.tipo.colores.map(([n,h,d])=>`<button class="sw" style="background:${d?`radial-gradient(circle at 35% 35%, ${d} 0 3px, transparent 3.5px), radial-gradient(circle at 68% 62%, ${d} 0 3px, transparent 3.5px), ${h}`:h}" title="${n}" aria-label="${n}" aria-pressed="${n===r.nombre}" data-ai="${i}" data-n="${n}"></button>`).join("")}</div></div>
       <button class="x" type="button" data-adel="${i}" aria-label="Quitar ${r.tipo.nombre}">✕</button></div>`; }).join("")
     + (afull ? `<p class="hint">Máximo ${MAX_AROS} aros por llavero.</p>` : (st.aros.length ? "" : (AROS.every(a=>a.agotado) ? `<p class="hint">Por ahora no tenemos aros disponibles; tu llavero va con su cadena de bolitas.</p>` : `<p class="hint">Sin aro: solo la cadena de bolitas.</p>`)));
   $("arolist").querySelectorAll("[data-ai]").forEach(b=>b.onclick=()=>{ st.aros[+b.dataset.ai].c = b.dataset.n; render(); });
