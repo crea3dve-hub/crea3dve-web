@@ -391,7 +391,7 @@ const AROS = [
 // Inventario de aros (contado de las fotos del 14/10/2026). Cuando un color llega a 0 deja de aparecer;
 // si todos los colores de un aro llegan a 0, el aro sale como "Agotado".
 const STOCK_AROS = {
-  peq: {"Blanco":3,"Crema":4,"Nude":3,"Rosado claro":7,"Rosado":3,"Fucsia":1,"Rojo":2,"Naranja":3,"Amarillo":3,"Lima":2,"Celeste":1,"Lila":1,"Marrón":3,"Negro":2},
+  peq: {"Blanco":3,"Crema":4,"Nude":3,"Rosado claro":7,"Rosado":3,"Fucsia":0,"Rojo":2,"Naranja":3,"Amarillo":3,"Lima":2,"Celeste":1,"Lila":1,"Marrón":3,"Negro":2},
   cor: {"Verde menta":3,"Verde lima":3,"Naranja":2,"Amarillo":1,"Blanco":1},
 };
 AROS.forEach(a=>{ const inv = STOCK_AROS[a.id]; if(!inv) return;
