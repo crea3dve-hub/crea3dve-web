@@ -74,7 +74,10 @@ h1{font-family:var(--display);font-weight:900;font-size:clamp(26px,6vw,40px);let
 .crow .n{font-weight:700;font-size:14px;margin-bottom:6px}
 .crow .sw{width:26px;height:26px}
 .crow .x{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:800 15px var(--body);cursor:pointer}
-#otro{font:600 15px/1.3 var(--body);letter-spacing:0;text-transform:none;padding:10px 12px}
+.otro-row{display:flex;gap:8px;align-items:center;margin:0 0 8px}
+#otrolist .otro-row input{flex:1;min-width:0;font:600 15px/1.3 var(--body);letter-spacing:0;text-transform:none;padding:10px 12px}
+.otro-row .x{flex:0 0 auto}
+.addotro{width:100%;margin:2px 0 6px}
 #preview{width:100%;height:auto;display:block;max-height:340px}
 #view3d{width:100%;height:clamp(250px,64vw,440px);border-radius:12px;overflow:hidden;touch-action:none;cursor:grab;position:relative;contain:size}
 #view3d:active{cursor:grabbing}
@@ -259,9 +262,10 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
         <div class="aros" id="charmcards"></div>
         <div id="charmlist"></div>
         <div id="otrobox" hidden>
-          <label class="label" for="otro">¿Qué charm te gustaría?</label>
-          <input type="text" id="otro" maxlength="80" autocomplete="off" placeholder="Ej.: balón de fútbol, una inicial, una estrella…">
-          <p class="hint">Te lo diseñamos y te confirmamos el precio por WhatsApp.</p>
+          <span class="label">Charms personalizados <span class="notice">(uno por casilla · $1,00 c/u)</span></span>
+          <div id="otrolist"></div>
+          <button class="btn addotro" id="addotro" type="button">＋ Agregar otro charm personalizado</button>
+          <p class="hint">Te los diseñamos y te confirmamos el precio por WhatsApp.</p>
         </div>
         <span class="label" style="margin-top:16px">Clicker de objeto <span class="notice">(también hace clic; toca para agregarlo)</span></span>
         <div class="aros" id="objcards"></div>
@@ -427,7 +431,7 @@ window.SPECIAL = {"#D9342C":"rainbow", "#E7E6E2":"marble"};
 
 const st = {
   word:"LUNA★", base:"Fucsia", style:"lisa", mode:"mix", sel:0, font:0,
-  tiles:[], legs:[], charms:[{t:"carita",c:"Amarillo"}], objs:[], otro:null, aros:[], cart:[]
+  tiles:[], legs:[], charms:[{t:"carita",c:"Amarillo"}], objs:[], otro:[], aros:[], cart:[]
 };
 try{ const s=JSON.parse(localStorage.getItem("clicker-crea3d-v3")||"null"); if(s&&s.word!==undefined){ Object.assign(st,s); } }catch(e){}
 if(!Array.isArray(st.charms)){   // diseños guardados con el formato anterior
@@ -445,6 +449,9 @@ if(st.mixTiles) st.mixTiles = st.mixTiles.map(ren); if(st.mixLegs) st.mixLegs = 
 st.charms.forEach(c=>{ c.c = ren(c.c); });
 function sinAgotados(){ const f = c => FIL_AGOTADO.has(c) ? "Rojo" : c;   // un filamento agotado se cambia por uno disponible
   st.base = f(st.base); st.tiles = st.tiles.map(f); st.legs = st.legs.map(f); st.charms.forEach(c=>{ c.c = f(c.c); }); }
+// charms personalizados: una lista (antes era uno solo como texto)
+const listaOtros = v => Array.isArray(v) ? v.map(x=>String(x==null?"":x)) : (typeof v==="string" ? [v] : []);
+st.otro = listaOtros(st.otro);
 sinAgotados();
 const charmInfo = t => CHARMS.find(x=>x.id===t);
 window.charmList = ()=> st.charms.map(x=>({t:x.t, c:hex(x.c)})).concat(st.objs.map(o=>({t:'obj', c:null, img:objImg(o)})));
@@ -464,7 +471,7 @@ window.aroSel = aroSel; window.aroList = aroList;
 // ---------- varios clickers en un pedido ----------
 const DKEYS = ["word","base","style","mode","font","tiles","legs","charms","objs","otro","aros","colgar","cadColor"];
 const snap = () => JSON.parse(JSON.stringify(Object.fromEntries(DKEYS.map(k=>[k, st[k]]))));
-function loadDesign(d){ Object.assign(st, {colgar:"cadena", cadColor:"Azul"}, JSON.parse(JSON.stringify(d))); st.font = Math.min(Math.max(0, st.font|0), FONTS.length-1); st.sel = 0; st.mixTiles = null; st.mixLegs = null; }
+function loadDesign(d){ Object.assign(st, {colgar:"cadena", cadColor:"Azul"}, JSON.parse(JSON.stringify(d))); st.otro = listaOtros(st.otro); st.font = Math.min(Math.max(0, st.font|0), FONTS.length-1); st.sel = 0; st.mixTiles = null; st.mixLegs = null; }
 function withDesign(d, fn){ const keep = snap(), ks = st.sel; loadDesign(d); try{ return fn(); } finally{ loadDesign(keep); st.sel = ks; } }
 const hasContent = d => (d.word && d.word.length) || (d.objs && d.objs.length);
 function save(){ try{ localStorage.setItem("clicker-crea3d-v3",JSON.stringify(st)); }catch(e){} }
@@ -624,10 +631,10 @@ function render(){
   // charms
   const full = st.charms.length >= MAX_CHARMS;
   $("charmcards").innerHTML = CHARMS.map(x=>`<button class="aro" type="button" data-c="${x.id}" ${full?"disabled":""}><svg viewBox="0 0 44 44">${charmIcon(x.id, hex(x.color))}</svg>${x.nombre}<small>${money(x.precio)} c/u</small></button>`).join("")
-    + `<button class="aro" type="button" data-c="otro" aria-pressed="${st.otro!==null}"><svg viewBox="0 0 44 44">${charmIcon("otro")}</svg>Otro charm<small>$1,00 · dinos cuál</small></button>`;
+    + `<button class="aro" type="button" data-c="otro" aria-pressed="${st.otro.length>0}"><svg viewBox="0 0 44 44">${charmIcon("otro")}</svg>Otro charm${st.otro.length>1?` ×${st.otro.length}`:""}<small>$1,00 c/u · dinos cuál</small></button>`;
   $("charmcards").querySelectorAll(".aro").forEach(b=>b.onclick=()=>{
     const t = b.dataset.c;
-    if(t==="otro"){ st.otro = st.otro===null ? "" : null; render(); if(st.otro!==null) $("otro").focus(); return; }
+    if(t==="otro"){ agregarOtro(); return; }
     if(st.charms.length < MAX_CHARMS){ const used = st.charms.filter(c=>c.t===t).map(c=>c.c);
       const pal = ["Amarillo","Celeste","Fucsia","Verde claro","Morado metalizado","Blanco","Naranja","Rojo"]; const c = t==="pelota" ? charmInfo(t).color : (pal.find(p=>!used.includes(p)) || charmInfo(t).color);
       st.charms.push({t, c}); render(); } });
@@ -652,8 +659,8 @@ function render(){
   if(!CADC[st.cadColor]) st.cadColor = "Azul";
   document.querySelectorAll("#cadsw button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.cc === st.cadColor));
   document.getElementById("cadName").textContent = st.cadColor;
-  $("otrobox").hidden = st.otro===null;
-  if(st.otro!==null && document.activeElement!==$("otro")) $("otro").value = st.otro;
+  $("otrobox").hidden = !st.otro.length;
+  pintarOtros();
   if(window.__3d) window.__3d.update(); else drawPreview(); pricing(); save(); renderSheet();
 }
 
@@ -670,8 +677,8 @@ function designCalc(){   // usa el diseño cargado en st
   aroList().forEach(ar=>{ lines.push([`${ar.tipo.nombre} (${ar.nombre.toLowerCase()})`, ar.tipo.precio]); tot+=ar.tipo.precio; });
   st.charms.forEach(ch=>{ const x = charmInfo(ch.t); lines.push([`Charm ${x.nombre.toLowerCase()} (${ch.c.toLowerCase()})`, x.precio]); tot+=x.precio; });
   st.objs.forEach((o,i)=>{ const x = objInfo(o.t), p = objPrice(i); lines.push([`Clicker de objeto: ${x.nombre.toLowerCase()}${o.v?` (${objVarName(o).toLowerCase()})`:''}${!n&&i===0?' (con cadena)':''}`, p]); tot+=p; });
-  const otro = st.otro!==null ? (st.otro.trim() || "(te cuento cuál)") : null;
-  if(otro!==null){ lines.push([`Charm personalizado: ${otro}`, PRECIO_OTRO]); tot += PRECIO_OTRO; }
+  const otros = st.otro.map(x=>x.trim() || "(te cuento cuál)"), otro = otros.length ? otros.join(", ") : null;
+  otros.forEach(x=>{ lines.push([`Charm personalizado: ${x}`, PRECIO_OTRO]); tot += PRECIO_OTRO; });
   const charmEmo = {carita:"😊", flor:"🌼", pelota:"⚽"};
   let body = "";
   if(ks.length){
@@ -684,7 +691,7 @@ function designCalc(){   // usa el diseño cargado en st
   aroList().forEach(ar=>extras.push(`*${ar.tipo.nombre}* color *${ar.nombre.toLowerCase()}* — ${money(ar.tipo.precio)}`));
   st.charms.forEach(ch=>{ const x = charmInfo(ch.t); extras.push(`${charmEmo[ch.t] ? charmEmo[ch.t]+" " : ""}Charm ${x.nombre.toLowerCase()} ${colTxt(ch.c)} — ${money(x.precio)}`); });
   st.objs.forEach((o,i)=>{ const x = objInfo(o.t); extras.push(`${x.emo} Clicker *${x.nombre.toLowerCase()}*${o.v?` *${objVarName(o).toLowerCase()}*`:""}${!ks.length&&i===0?" (con cadena)":""} — ${money(objPrice(i))}`); });
-  if(otro!==null) extras.push(`Charm personalizado: *${otro}* — ${money(PRECIO_OTRO)}`);
+  otros.forEach(x=>extras.push(`Charm personalizado: *${x}* — ${money(PRECIO_OTRO)}`));
   if(extras.length) body += (body ? `\n\nExtras:\n` : "") + extras.join("\n");
   return {lines, tot, otro, body, word: ks.length, link: designLink()};
 }
@@ -724,7 +731,20 @@ $("word").addEventListener("input", e=>{
 });
 $("symrow").innerHTML = Object.keys(SYMS).map(ch=>`<button class="btn sym" data-s="${ch}" aria-label="Agregar ${SYMS[ch]}"><svg viewBox="0 0 40 40">${symPath(ch,20,20,34,"currentColor")}</svg></button>`).join("") + EXTRA_SYMS.map(ch=>`<button class="btn sym" data-s="${ch}" aria-label="Agregar ${ch}">${ch.replace("&","&amp;")}</button>`).join("");
 $("symrow").querySelectorAll("button").forEach(b=>b.onclick=()=>{ if([...st.word].length<10){ st.word+=b.dataset.s; st.sel=[...st.word].length-1; render(); } else { $("warn").hidden=false; $("warn").textContent="Máximo 10 teclas."; } });
-$("otro").addEventListener("input", e=>{ st.otro = e.target.value; pricing(); save(); });
+// cada charm personalizado en su casilla: se pueden agregar varios (cada uno cuesta lo mismo)
+function pintarOtros(){
+  const box = $("otrolist");
+  if(box.contains(document.activeElement) && box.children.length === st.otro.length) return;   // no borrar lo que estás escribiendo
+  box.innerHTML = st.otro.map((v,i)=>`<div class="otro-row"><input type="text" data-oi="${i}" maxlength="80" autocomplete="off" aria-label="Charm personalizado ${i+1}" placeholder="${i===0?"Ej.: un Lego, una inicial, una estrella…":"Ej.: un control de Play"}" value="${v.replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;")}"><button class="x" type="button" data-od="${i}" aria-label="Quitar charm personalizado ${i+1}">✕</button></div>`).join("");
+}
+function agregarOtro(){
+  if(st.otro.length >= MAX_CHARMS) return;
+  st.otro.push(""); render();
+  const ins = $("otrolist").querySelectorAll("input"); if(ins.length) ins[ins.length-1].focus();
+}
+$("otrolist").addEventListener("input", e=>{ const i = e.target.dataset.oi; if(i===undefined) return; st.otro[+i] = e.target.value; pricing(); save(); });
+$("otrolist").addEventListener("click", e=>{ const b = e.target.closest("[data-od]"); if(!b) return; st.otro.splice(+b.dataset.od,1); render(); });
+$("addotro").onclick = agregarOtro;
 /* ---------- colores al azar ---------- */
 const pick = a => { const ok = a.filter(x=>!(typeof x==="string" && FIL_AGOTADO.has(x))), b = ok.length ? ok : a; return b[Math.floor(Math.random()*b.length)]; };
 const shuffle = a => { a=[...a]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
@@ -795,7 +815,7 @@ $("mode-mix").onclick=()=>{
 $("addclk").onclick = ()=>{
   if(!hasContent(snap())){ $("word").focus(); return; }
   st.cart.push(snap());
-  loadDesign({word:"", base:st.base, style:"lisa", mode:"mix", font:st.font, tiles:[], legs:[], charms:[], objs:[], otro:null, aros:[]});
+  loadDesign({word:"", base:st.base, style:"lisa", mode:"mix", font:st.font, tiles:[], legs:[], charms:[], objs:[], otro:[], aros:[]});
   render(); window.scrollTo({top:0, behavior:"smooth"}); setTimeout(()=>$("word").focus(), 400);
 };
 $("wa").addEventListener("click", e=>{
@@ -861,7 +881,7 @@ function itemsDiseno(){   // productos del diseño cargado en st, con los nombre
   aroList().forEach(ar=>out.push({producto:NOMBRE_AROS[ar.tipo.id] || ar.tipo.nombre, cantidad:1, precio:ar.tipo.precio}));
   st.charms.forEach(ch=>{ const x = charmInfo(ch.t); out.push({producto:NOMBRE_CHARMS[ch.t] || ("Charm " + x.nombre), cantidad:1, precio:x.precio}); });
   st.objs.forEach((o,i)=>out.push({producto:"Clicker de objeto – " + (NOMBRE_OBJ[o.t] || objInfo(o.t).nombre), cantidad:1, precio:objPrice(i)}));
-  if(st.otro!==null) out.push({producto:"Charm personalizado (otro)", cantidad:1, precio:PRECIO_OTRO});
+  if(st.otro.length) out.push({producto:"Charm personalizado (otro)", cantidad:st.otro.length, precio:PRECIO_OTRO});
   return out;
 }
 let pedidoEnviado = "";
@@ -896,7 +916,7 @@ const CN = COLORES.map(c=>c[0]), CN2 = CN;
 function encodeDesign(){
   const o = {v:2, w:st.word, b:CN.indexOf(st.base), s:st.style==="acanalada"?1:0, f:st.font,
     t:st.tiles.map(c=>CN.indexOf(c)), l:st.legs.map(c=>CN.indexOf(c)),
-    c:st.charms.map(x=>[x.t, CN.indexOf(x.c)]), j:st.objs.map(o=>o.v?[o.t,o.v]:o.t), o:st.otro, a:st.aros.map(x=>[x.t, x.c])};
+    c:st.charms.map(x=>[x.t, CN.indexOf(x.c)]), j:st.objs.map(o=>o.v?[o.t,o.v]:o.t), o:st.otro.length ? st.otro : null, a:st.aros.map(x=>[x.t, x.c])};
   if(st.colgar && st.colgar !== "cadena"){ o.k = st.colgar; if(st.colgar === "colores") o.kc = st.cadColor; }
   const bytes = new TextEncoder().encode(JSON.stringify(o)); let bin = ""; bytes.forEach(b=>bin+=String.fromCharCode(b));
   return "c_" + btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
@@ -913,7 +933,7 @@ function decodeDesign(h){
     if(Array.isArray(o.c)) st.charms = o.c.filter(x=>charmInfo(x[0])).map(x=>({t:x[0], c:CN[x[1]]||"Blanco"}));
     else if(o.e){ const oe = o.e.length===3 ? o.e.slice(1) : o.e; st.charms = [];
       ["carita","flor"].forEach((t,i)=>{ const e = oe[i]; if(e) for(let k=0;k<Math.min(e[0],3);k++) st.charms.push({t, c:CN[e[1]]||"Blanco"}); }); }
-    st.otro = typeof o.o==="string" ? o.o : null;
+    st.otro = listaOtros(o.o);
     st.colgar = ["llavero","colores"].includes(o.k) ? o.k : "cadena"; st.cadColor = CADC[o.kc] ? o.kc : "Azul";
     st.objs = Array.isArray(o.j) ? o.j.map(e=>Array.isArray(e)?{t:e[0],v:e[1]}:{t:e}).filter(e=>objInfo(e.t)) : [];
     return true;
