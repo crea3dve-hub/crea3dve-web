@@ -128,6 +128,8 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
 .sym{font-size:18px;min-width:44px;padding:4px 10px}
 .sym svg{width:20px;height:20px;display:block;margin:auto}
 .swatches{display:flex;flex-wrap:wrap;gap:8px}
+.sw.sw-agotado{opacity:.35;cursor:not-allowed}
+.sw.sw-agotado::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:2px;background:#B4232C;transform:translateX(-50%) rotate(45deg);border-radius:2px}
 .sw{width:34px;height:34px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0;position:relative}
 .sw[aria-pressed=true]{box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--ink)}
 .label{font-size:13px;font-weight:700;margin:10px 0 6px;display:block}
@@ -348,6 +350,8 @@ const WHATSAPP = "584242674222";
 const LINK_PAGINA = "https://crea3dve.com/";   // link público de esta página
 const PRECIO_LETRA = 1.50;           // cada letra: tecla + switch + su parte de la base (base y cadena incluidas)
 const PRECIO_LLAVERO = 0.50, PRECIO_COLORES = 0.50;
+// Filamentos que se acabaron: se ven tachados y no se pueden escoger (bórralos de aquí cuando vuelvan)
+const FIL_AGOTADO = new Set(["Fucsia"]);
 const CADC = {"Blanco":"#F4F4F2", "Celeste":"#9CC7E8", "Azul":"#1F4FB8", "Verde":"#2E8B3E", "Verde limón":"#A6D84A", "Verde menta":"#7FC4A4", "Amarillo":"#F2D33A", "Naranja":"#F07A2A", "Rojo":"#D9262E", "Fucsia":"#E0306F", "Rosado":"#F49AC1"};   // colores de la cadenita
    // cadenita de colores en vez de la plateada
    // aro de llavero en vez de la cadena de bolitas
@@ -391,7 +395,7 @@ const AROS = [
 // Inventario de aros (contado de las fotos del 14/10/2026). Cuando un color llega a 0 deja de aparecer;
 // si todos los colores de un aro llegan a 0, el aro sale como "Agotado".
 const STOCK_AROS = {
-  peq: {"Blanco":3,"Crema":4,"Nude":3,"Rosado claro":7,"Rosado":3,"Fucsia":0,"Rojo":2,"Naranja":3,"Amarillo":3,"Lima":2,"Celeste":1,"Lila":1,"Marrón":3,"Negro":2},
+  peq: {"Blanco":3,"Crema":4,"Nude":3,"Rosado claro":7,"Rosado":3,"Fucsia":1,"Rojo":2,"Naranja":3,"Amarillo":3,"Lima":2,"Celeste":1,"Lila":1,"Marrón":3,"Negro":2},
   cor: {"Verde menta":3,"Verde lima":3,"Naranja":2,"Amarillo":1,"Blanco":1},
 };
 AROS.forEach(a=>{ const inv = STOCK_AROS[a.id]; if(!inv) return;
@@ -415,8 +419,8 @@ const ren = n => RENOMBRE[n] || n;
 const SYMS = {"♥":"corazón","★":"estrella","✿":"flor","☺":"carita","♣":"trébol","🐾":"huella","⚽":"balón","✝":"cruz","⚡":"rayo"};
 const EXTRA_SYMS = ["&"];
 const FONTS = [["Redonda","'Nunito', system-ui, sans-serif","Redonda"]];   // por ahora solo letra redonda (antes también: ["Comic","'Comic Neue', 'Comic Sans MS', cursive","Comic"])
-const MIX = ["Amarillo","Azul","Verde claro","Rojo","Fucsia","Celeste","Naranja","Morado metalizado","Verde"];
-const LEGMIX = ["Morado metalizado","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Fucsia"];
+const MIX = ["Amarillo","Azul","Verde claro","Rojo","Fucsia","Celeste","Naranja","Morado metalizado","Verde"].filter(c=>!FIL_AGOTADO.has(c));
+const LEGMIX = ["Morado metalizado","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Fucsia"].filter(c=>!FIL_AGOTADO.has(c));
 const hex = n => (COLORES.find(c=>c[0]===n)||COLORES[0])[1];
 const bg = n => { const c = COLORES.find(c=>c[0]===n)||COLORES[0]; return c[2]||c[1]; };   // fondo para botones (degradados)
 window.SPECIAL = {"#D9342C":"rainbow", "#E7E6E2":"marble"};
@@ -439,6 +443,9 @@ st.font = Math.min(Math.max(0, st.font|0), FONTS.length-1);
 st.base = ren(st.base); st.tiles = (st.tiles||[]).map(ren); st.legs = (st.legs||[]).map(ren);
 if(st.mixTiles) st.mixTiles = st.mixTiles.map(ren); if(st.mixLegs) st.mixLegs = st.mixLegs.map(ren);
 st.charms.forEach(c=>{ c.c = ren(c.c); });
+function sinAgotados(){ const f = c => FIL_AGOTADO.has(c) ? "Rojo" : c;   // un filamento agotado se cambia por uno disponible
+  st.base = f(st.base); st.tiles = st.tiles.map(f); st.legs = st.legs.map(f); st.charms.forEach(c=>{ c.c = f(c.c); }); }
+sinAgotados();
 const charmInfo = t => CHARMS.find(x=>x.id===t);
 window.charmList = ()=> st.charms.map(x=>({t:x.t, c:hex(x.c)})).concat(st.objs.map(o=>({t:'obj', c:null, img:objImg(o)})));
 const objInfo = t => OBJETOS.find(x=>x.id===t);
@@ -559,7 +566,8 @@ function charmIcon(t, c){
   return `<circle cx="22" cy="22" r="15" fill="none" stroke="#9AA394" stroke-width="2.5" stroke-dasharray="4 4"/><text x="22" y="22" dy=".36em" text-anchor="middle" font-family="Figtree, sans-serif" font-weight="800" font-size="18" fill="#7A8474">?</text>`;
 }
 function swatches(el, current, onPick){
-  el.innerHTML = COLORES.map(([n,h,css])=>`<button class="sw" style="background:${css||h}" title="${n}" aria-label="${n}" aria-pressed="${n===current}" data-n="${n}"></button>`).join("");
+  el.innerHTML = COLORES.map(([n,h,css])=>{ const ag = FIL_AGOTADO.has(n);
+    return `<button class="sw${ag?" sw-agotado":""}" style="background:${css||h}" title="${n}${ag?" (agotado)":""}" aria-label="${n}${ag?" agotado":""}" aria-pressed="${n===current}" data-n="${n}" ${ag?"disabled":""}></button>`; }).join("");
   el.querySelectorAll(".sw").forEach(b=>b.onclick=()=>onPick(b.dataset.n));
 }
 function render(){
@@ -718,7 +726,7 @@ $("symrow").innerHTML = Object.keys(SYMS).map(ch=>`<button class="btn sym" data-
 $("symrow").querySelectorAll("button").forEach(b=>b.onclick=()=>{ if([...st.word].length<10){ st.word+=b.dataset.s; st.sel=[...st.word].length-1; render(); } else { $("warn").hidden=false; $("warn").textContent="Máximo 10 teclas."; } });
 $("otro").addEventListener("input", e=>{ st.otro = e.target.value; pricing(); save(); });
 /* ---------- colores al azar ---------- */
-const pick = a => a[Math.floor(Math.random()*a.length)];
+const pick = a => { const ok = a.filter(x=>!(typeof x==="string" && FIL_AGOTADO.has(x))), b = ok.length ? ok : a; return b[Math.floor(Math.random()*b.length)]; };
 const shuffle = a => { a=[...a]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
 function lumOf(n){ const h=hex(n).slice(1); const [r,g,b]=[0,2,4].map(i=>parseInt(h.substr(i,2),16)/255).map(c=>c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)); return .2126*r+.7152*g+.0722*b; }
 function contrast(a,b){ const x=lumOf(a), y=lumOf(b); return (Math.max(x,y)+.05)/(Math.min(x,y)+.05); }
@@ -735,6 +743,7 @@ const TEMAS = [
   {n:"elegante",  bases:["Negro","Blanco","Plateado","Beige"],          tiles:["Blanco","Negro","Gris","Dorado","Plateado","Mármol","Beige","Morado metalizado"], acc:["Dorado","Negro","Blanco"], one:true},
   {n:"un color",  bases:["Blanco","Negro","Plateado"],                  tiles:["Fucsia","Morado metalizado","Celeste","Verde claro","Rojo","Azul","Amarillo","Naranja","Verde"], acc:["Blanco","Negro","Amarillo","Morado metalizado","Fucsia"], one:true},
 ];
+TEMAS.forEach(t=>["bases","tiles","seq","acc"].forEach(k=>{ if(t[k]) t[k] = t[k].filter(c=>!FIL_AGOTADO.has(c)); }));   // sin filamentos agotados
 let lastRand = "";
 function randomize(){
   const n = keys().length; let sig="", tries=0;
