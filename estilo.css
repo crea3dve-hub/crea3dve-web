@@ -190,12 +190,8 @@ header.top{position:sticky}
 .col-btn[aria-expanded="true"] .chev{transform:rotate(180deg)}
 .col-pop{position:absolute;left:0;right:0;bottom:calc(100% + 6px);z-index:15;background:var(--surface);border-radius:14px;box-shadow:0 10px 30px rgba(14,26,8,.22);padding:12px}
 .col-pop[hidden]{display:none}
-/* fotos que se pueden girar */
-.ph.mover{cursor:grab;touch-action:pan-y;position:relative;user-select:none;-webkit-user-select:none}
-.ph.mover.moviendo{cursor:grabbing}
-.ph.mover img{transition:transform .25s ease-out}
-.ph.mover.moviendo img{transition:none}
-.mover-tip{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);font-size:12px;font-weight:700;color:var(--muted);background:rgba(255,255,255,.85);padding:4px 10px;border-radius:999px;pointer-events:none;transition:opacity .3s;white-space:nowrap}
-.ph.mover.movido .mover-tip{opacity:0}
 .card{overflow:visible}
 .card .ph{border-radius:22px 22px 0 0}
+.col-btn .dot + .dot{margin-left:-16px}
+.col-pop .col-lbl{margin:2px 0 6px}
+.col-pop .sws + .col-lbl{margin-top:12px}

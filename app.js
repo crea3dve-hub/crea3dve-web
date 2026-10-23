@@ -88,6 +88,14 @@ function swatches(p, parte, donde){
     <div class="col-pop" hidden>${lista}</div></div>`;
   return `<div class="col-blq"><div class="col-lbl">${esc(parte.nombre)}: <span data-colname>${esc(sel)}</span></div>${lista}</div>`;
 }
+// tarjeta: una sola rayita aunque el producto tenga dos colores (ej. lámpara); al abrirla salen los dos
+function selectorCard(p){
+  const pts = partesDe(p); if(!pts.length) return "";
+  if(pts.length === 1) return swatches(p, pts[0], "card");
+  return `<div class="col-blq picker">
+    <button type="button" class="col-btn" aria-expanded="false">${pts.map(pt => `<span class="dot" data-dot="${pt.k}" style="background:${fondoDe(elegido[p.id][pt.k])}"></span>`).join("")}<span class="col-txt">Elegir colores</span>${FLECHA}</button>
+    <div class="col-pop">${pts.map(pt => `<div class="col-lbl">${esc(pt.nombre)}: <span data-colname="${pt.k}">${esc(elegido[p.id][pt.k])}</span></div>${sws(p, pt, "card", elegido[p.id][pt.k])}`).join("")}</div></div>`.replace('<div class="col-pop">', '<div class="col-pop" hidden>');
+}
 function sws(p, parte, donde, sel){
   return `<div class="sws" role="radiogroup" aria-label="${esc(parte.nombre)}" data-prod="${p.id}" data-parte="${parte.k}" data-donde="${donde}">` + COLORES.map(([n,c,bg])=>{
     const ag = FIL_AGOTADO.has(n);
@@ -108,10 +116,11 @@ document.addEventListener("click", e => {
   // marca el color en la tarjeta y en la ventanita a la vez
   document.querySelectorAll(`.sws[data-prod="${id}"][data-parte="${k}"]`).forEach(gr => {
     gr.querySelectorAll(".sw").forEach(x => x.setAttribute("aria-checked", x.dataset.color === b.dataset.color));
-    const blq = gr.closest(".col-blq"), l = blq.querySelector("[data-colname]"), dot = blq.querySelector("[data-dot]");
+    const blq = gr.closest(".col-blq"), multi = !!blq.querySelector(`[data-colname="${k}"]`) && k !== "";
+    const l = multi ? blq.querySelector(`[data-colname="${k}"]`) : blq.querySelector("[data-colname]"), dot = multi ? blq.querySelector(`[data-dot="${k}"]`) : blq.querySelector("[data-dot]");
     if(l) l.textContent = b.dataset.color; if(dot) dot.style.background = fondoDe(b.dataset.color);
   });
-  const pk = b.closest(".picker"); if(pk) setTimeout(() => cerrarPops(), 120);
+  const pk = b.closest(".picker"); if(pk && pk.querySelectorAll(".sws").length === 1) setTimeout(() => cerrarPops(), 120);   // con dos colores se queda abierto
   pintarFoto(p);
 });
 
@@ -184,12 +193,12 @@ function pintarProductos(){
   if(!GRID) return;
   GRID.innerHTML = PRODUCTOS.filter(p => SOLO_DESTACADOS ? p.destacado : (filtro === "Todo" || p.cat === filtro)).map(p => `
     <article class="card" data-p="${p.id}">
-      ${p.img ? `<div class="ph${p.recorte ? " recorte" : " foto"}${p.sinColor ? "" : " mover"}"><img src="${p.img}" alt="${esc(p.nombre)}" loading="lazy" data-img="${p.id}" draggable="false">${p.sinColor ? "" : `<span class="mover-tip" aria-hidden="true">↔ Arrastra para girar</span>`}</div>` : `<div class="ph vacio">${ICONO}<span>Foto pronto</span></div>`}
+      ${p.img ? `<div class="ph${p.recorte ? " recorte" : " foto"}"><img src="${p.img}" alt="${esc(p.nombre)}" loading="lazy" data-img="${p.id}"></div>` : `<div class="ph vacio">${ICONO}<span>Foto pronto</span></div>`}
       <div class="bd">
         <span class="cat">${esc(p.cat)}</span>
         <h3>${esc(p.nombre)}</h3>
         <p class="desc">${esc(p.desc)}</p>
-        ${partesDe(p).map(pt => swatches(p, pt, "card")).join("")}
+        ${selectorCard(p)}
         <div class="pie">
           ${p.precio != null ? `<span class="precio">${money(p.precio)}<small>tasa BCV</small></span>` : `<span class="precio cotiza">Precio por cotizar</span>`}
           <button class="btn sm" type="button" data-quiero="${p.id}">${p.cotizar ? "Cotizar" : "Lo quiero"}</button>
@@ -335,23 +344,3 @@ if(menuBtn && menu){
   document.addEventListener("click", e => { if(!menu.hidden && !menu.contains(e.target)) cerrarMenu(); });
   document.addEventListener("keydown", e => { if(e.key === "Escape" && !menu.hidden){ cerrarMenu(); menuBtn.focus(); } });
 }
-
-/* ---------- arrastrar la foto para girarla un poco (como mover el clicker en 3D) ---------- */
-(function(){
-  let act = null;
-  document.addEventListener("pointerdown", e => {
-    const ph = e.target.closest(".ph.mover"); if(!ph) return;
-    const im = ph.querySelector("img"); act = {ph, im, x: e.clientX, y: e.clientY, rx: +(im.dataset.rx || 0), ry: +(im.dataset.ry || 0)};
-    ph.classList.add("moviendo"); ph.setPointerCapture && ph.setPointerCapture(e.pointerId);
-  });
-  document.addEventListener("pointermove", e => {
-    if(!act) return;
-    const ry = Math.max(-40, Math.min(40, act.ry + (e.clientX - act.x) * .35)), rx = Math.max(-25, Math.min(25, act.rx - (e.clientY - act.y) * .25));
-    act.im.dataset.ry = ry; act.im.dataset.rx = rx;
-    act.im.style.transform = `perspective(700px) rotateY(${ry}deg) rotateX(${rx}deg) scale(1.04)`;
-  });
-  const fin = () => { if(!act) return; act.ph.classList.remove("moviendo"); act.ph.classList.add("movido"); act = null; };
-  document.addEventListener("pointerup", fin); document.addEventListener("pointercancel", fin);
-  // doble toque: vuelve a su lugar
-  document.addEventListener("dblclick", e => { const ph = e.target.closest(".ph.mover"); if(!ph) return; const im = ph.querySelector("img"); im.dataset.rx = im.dataset.ry = 0; im.style.transform = ""; });
-})();
