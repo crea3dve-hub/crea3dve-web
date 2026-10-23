@@ -12,8 +12,10 @@ const COLORES = [
   ["Mármol","#E7E6E2"]
 ];
 const FIL_AGOTADO = new Set(["Fucsia"]);
-const CATEGORIAS = ["Casa", "Oficina", "Llaveros y charms", "Fidgets", "Para negocios"];
+const CATEGORIAS = ["Casa", "Oficina", "Llaveros", "Fidgets", "Para negocios"];
 // hoja: nombre exacto del producto en la hoja de ventas (para que se anote solo). precio: null = se cotiza.
+// sinColor: true = no se escoge color (se hace como en la foto o a pedido).
+// color: el color del producto en la foto (al escoger otro, la foto se pinta de ese color).
 // destacado: true = sale en la página de inicio ("Los más vendidos"). El resto, en crea3dve.com/productos/
 const PRODUCTOS = [
   {id:"florero",   cat:"Casa", nombre:"Florero Japandi", hoja:"Florero Japandi (M)", precio:6.50, img:"/img/florero.webp", recorte:true,
@@ -24,14 +26,14 @@ const PRODUCTOS = [
    desc:"Pantalla ondulada con luz LED cálida, para la mesa de noche o la sala.", color:"Blanco"},
   {id:"soporte",   cat:"Oficina", destacado:true, nombre:"Soporte de teléfono", hoja:"Soporte de teléfono ondulado", precio:7.50, img:"/img/soporte-telefono.webp",
    desc:"Para el escritorio o la mesa de noche. Varios colores.", color:"Blanco"},
-  {id:"nfc-ig",    cat:"Llaveros y charms", destacado:true, nombre:"Llavero NFC de Instagram", hoja:"Llavero NFC Instagram", precio:5.00, img:"/img/llavero-nfc.webp",
-   desc:"Acercas el teléfono y se abre tu Instagram.", color:"Blanco"},
+  {id:"nfc-ig",    cat:"Llaveros", destacado:true, nombre:"Llavero NFC de Instagram", hoja:"Llavero NFC Instagram", precio:5.00, img:"/img/llavero-nfc.webp",
+   desc:"Acercas el teléfono y se abre tu Instagram.", color:"Blanco", sinColor:true},
   {id:"fidget",    cat:"Fidgets", nombre:"Fidget espiral", hoja:"Fidget espiral", precio:null, img:"/img/deco.webp", recorte:true,
    desc:"Para tener en las manos y no parar de jugar. Varios colores.", color:"Blanco"},
   {id:"exhibidor", cat:"Para negocios", nombre:"Exhibidor de pago móvil con NFC", hoja:"Exhibidor pago móvil + NFC (a pedido)", precio:24.50, img:"/img/exhibidor-nfc.webp",
-   desc:"Tu QR del banco y botones que abren tu WhatsApp, Instagram y web con solo acercar el teléfono.", color:"Negro"},
+   desc:"Tu QR del banco y botones que abren tu WhatsApp, Instagram y web con solo acercar el teléfono.", color:"Negro", sinColor:true},
   {id:"llav-logo", cat:"Para negocios", nombre:"Llaveros con tu logo", hoja:"Llaveros con logo (por cotizar)", precio:null, img:"/img/llaveros-logo.webp",
-   desc:"Para regalar a tus clientes o a tu equipo. Precio especial por cantidad.", color:"Gris", cotizar:true},
+   desc:"Para regalar a tus clientes o a tu equipo. Precio especial por cantidad.", color:"Gris", cotizar:true, sinColor:true},
   {id:"letrero",   cat:"Para negocios", nombre:"Letrero con tu logo", hoja:"Letrero con logo (por cotizar)", precio:null, img:null,
    desc:"Para el mostrador, la vitrina o tu puesto en el bazar.", color:"Negro", cotizar:true},
 ];
@@ -84,8 +86,43 @@ document.addEventListener("click", e => {
   const g = b.parentElement, box = g.parentElement;
   g.querySelectorAll(".sw").forEach(x => x.setAttribute("aria-checked", x === b));
   const lbl = box.querySelector("[data-colname]"); if(lbl) lbl.textContent = b.dataset.color;
-  const card = b.closest("[data-p]"); if(card) elegido[card.dataset.p] = b.dataset.color;
+  const card = b.closest("[data-p]"), id = card ? card.dataset.p : (g.dataset.grupo === "dlg" && modo && modo.p ? modo.p.id : null);
+  if(id){ elegido[id] = b.dataset.color; const p = PRODUCTOS.find(x => x.id === id); if(p) pintarFoto(p);
+    // si se cambió en la ventanita, la tarjeta también queda con ese color
+    if(!card) document.querySelectorAll(`[data-p="${id}"] .sws`).forEach(gr => { gr.querySelectorAll(".sw").forEach(x => x.setAttribute("aria-checked", x.dataset.color === b.dataset.color)); const l = gr.parentElement.querySelector("[data-colname]"); if(l) l.textContent = b.dataset.color; }); }
 });
+
+/* ---------- la foto del producto toma el color escogido (como en el configurador) ---------- */
+const BASE = {"Plateado":"#C9CCD1", "Morado metalizado":"#7E4FC0", "Dorado":"#E2C233"};
+const hexDe = n => BASE[n] || (COLORES.find(c => c[0] === n) || ["","#F2F1EC"])[1];
+const fotoCache = {}, fotoOrig = {};
+function cargarImg(src){ return new Promise((ok, mal) => { const im = new Image(); im.onload = () => ok(im); im.onerror = mal; im.src = src; }); }
+async function fotoEnColor(p, nombre){
+  const clave = p.id + "|" + nombre; if(fotoCache[clave]) return fotoCache[clave];
+  if(!fotoOrig[p.id]) fotoOrig[p.id] = cargarImg(p.img);
+  const im = await fotoOrig[p.id], W = Math.min(700, im.naturalWidth), H = Math.round(im.naturalHeight * W / im.naturalWidth);
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = H; const x = cv.getContext("2d");
+  x.drawImage(im, 0, 0, W, H); const d = x.getImageData(0, 0, W, H), a = d.data;
+  // brillo promedio del objeto (para conservar luces y sombras)
+  let suma = 0, n = 0;
+  for(let i = 0; i < a.length; i += 4) if(a[i+3] > 200){ suma += (.299*a[i] + .587*a[i+1] + .114*a[i+2]); n++; }
+  const ref = Math.max(1, suma / Math.max(1, n));
+  const h = hexDe(nombre), t = [1,3,5].map(k => parseInt(h.substr(k, 2), 16));
+  for(let i = 0; i < a.length; i += 4){
+    if(a[i+3] < 90) continue;   // la sombrita del piso se queda igual
+    const k = (.299*a[i] + .587*a[i+1] + .114*a[i+2]) / ref;
+    for(let c = 0; c < 3; c++) a[i+c] = Math.max(0, Math.min(255, k <= 1 ? t[c]*k : t[c] + (255 - t[c]) * (k - 1) * .6));
+  }
+  x.putImageData(d, 0, 0);
+  return fotoCache[clave] = cv.toDataURL("image/webp", .9);
+}
+async function pintarFoto(p){
+  if(!p.img || p.sinColor) return;
+  const nombre = elegido[p.id];
+  const src = nombre === p.color ? p.img : await fotoEnColor(p, nombre).catch(() => p.img);
+  if(elegido[p.id] !== nombre) return;   // cambió mientras se pintaba
+  document.querySelectorAll(`[data-img="${p.id}"]`).forEach(im => { im.src = src; });
+}
 
 /* ---------- catálogo ---------- */
 const elegido = {};   // color escogido en cada tarjeta
@@ -101,18 +138,19 @@ function pintarProductos(){
   if(!GRID) return;
   GRID.innerHTML = PRODUCTOS.filter(p => SOLO_DESTACADOS ? p.destacado : (filtro === "Todo" || p.cat === filtro)).map(p => `
     <article class="card" data-p="${p.id}">
-      ${p.img ? `<div class="ph${p.recorte ? " recorte" : " foto"}"><img src="${p.img}" alt="${esc(p.nombre)}" loading="lazy"></div>` : `<div class="ph vacio">${ICONO}<span>Foto pronto</span></div>`}
+      ${p.img ? `<div class="ph${p.recorte ? " recorte" : " foto"}"><img src="${p.img}" alt="${esc(p.nombre)}" loading="lazy" data-img="${p.id}"></div>` : `<div class="ph vacio">${ICONO}<span>Foto pronto</span></div>`}
       <div class="bd">
         <span class="cat">${esc(p.cat)}</span>
         <h3>${esc(p.nombre)}</h3>
         <p class="desc">${esc(p.desc)}</p>
-        <div>${swatches(elegido[p.id], p.id)}</div>
+        ${p.sinColor ? "" : `<div>${swatches(elegido[p.id], p.id)}</div>`}
         <div class="pie">
           ${p.precio != null ? `<span class="precio">${money(p.precio)}<small>tasa BCV</small></span>` : `<span class="precio cotiza">Precio por cotizar</span>`}
           <button class="btn sm" type="button" data-quiero="${p.id}">${p.cotizar ? "Cotizar" : "Lo quiero"}</button>
         </div>
       </div>
     </article>`).join("");
+  PRODUCTOS.forEach(p => { if(!p.sinColor && elegido[p.id] !== p.color) pintarFoto(p); });
 }
 if(TABS) TABS.addEventListener("click", e => { const b = e.target.closest(".tab"); if(!b) return; filtro = b.dataset.cat; pintarTabs(); pintarProductos(); });
 if(GRID) GRID.addEventListener("click", e => { const b = e.target.closest("[data-quiero]"); if(b) abrirProducto(PRODUCTOS.find(p => p.id === b.dataset.quiero)); });
@@ -139,12 +177,14 @@ function abrirProducto(p){
   $("#dlg-t").textContent = p.nombre;
   $("#dlg-s").textContent = p.precio != null ? money(p.precio) + " c/u · tasa BCV" : "Te pasamos el precio por WhatsApp";
   $("#dlg-btn").textContent = p.cotizar || p.precio == null ? "Pedir precio por WhatsApp" : "Pedir por WhatsApp";
-  $("#dlg-cuerpo").innerHTML = `<div style="display:flex;flex-direction:column;gap:8px">${swatches(elegido[p.id], "dlg")}</div>
+  $("#dlg-cuerpo").innerHTML = (p.img ? `<div class="dlg-foto"><img src="${p.img}" alt="" data-img="${p.id}"></div>` : "")
+    + (p.sinColor ? "" : `<div style="display:flex;flex-direction:column;gap:8px">${swatches(elegido[p.id], "dlg")}</div>`) + `
     <div class="fld" style="margin-top:14px">Cantidad
       <div class="cant"><button type="button" data-c="-1" aria-label="Uno menos">−</button><output id="cant-n" aria-live="polite">${cantidad}</output><button type="button" data-c="1" aria-label="Uno más">+</button></div>
     </div>
     ${p.cotizar ? `<label class="fld" style="margin-top:14px">¿Qué te gustaría? <small>(opcional)</small><textarea name="detalle" maxlength="500" placeholder="Ej.: con el logo de mi tienda, para el 15 de diciembre"></textarea></label>` : ""}
     ${p.precio != null ? `<div class="total" style="margin-top:14px"><span>Total</span><span id="dlg-total">${money(p.precio)}</span></div>` : ""}`;
+  pintarFoto(p);
   abrirDlg();
 }
 $("#dlg-cuerpo").addEventListener("click", e => {
@@ -174,12 +214,12 @@ fd.addEventListener("submit", e => {
   const c = leerCliente(fd); if(!c) return;
   let texto, datos;
   if(modo.tipo === "Producto"){
-    const p = modo.p, col = elegido[p.id] = (fd.querySelector('[data-grupo="dlg"] [aria-checked="true"]') || {}).dataset?.color || elegido[p.id];
+    const p = modo.p, col = p.sinColor ? "" : (elegido[p.id] = (fd.querySelector('[data-grupo="dlg"] [aria-checked="true"]') || {}).dataset?.color || elegido[p.id]);
     const det = fd.detalle ? fd.detalle.value.trim() : "";
-    texto = `✨ ¡Hola Crea3d! ${p.precio != null && !p.cotizar ? "Quiero" : "Quiero cotizar"} este producto ✨\n\n👤 Soy *${c.nombre}*\n\n🛍️ *${p.nombre}*\n🎨 Color: *${col.toLowerCase()}*\n🔢 Cantidad: *${cantidad}*`
+    texto = `✨ ¡Hola Crea3d! ${p.precio != null && !p.cotizar ? "Quiero" : "Quiero cotizar"} este producto ✨\n\n👤 Soy *${c.nombre}*\n\n🛍️ *${p.nombre}*` + (col ? `\n🎨 Color: *${col.toLowerCase()}*` : "") + `\n🔢 Cantidad: *${cantidad}*`
       + (det ? `\n📝 ${det}` : "")
       + (p.precio != null ? `\n\n💰 *Total: ${money(p.precio * cantidad)}* (tasa BCV)` : "");
-    datos = {tipo:"Producto", palabras: p.nombre + " · " + col, texto, nombre:c.nombre, telefono:c.telefono,
+    datos = {tipo:"Producto", palabras: p.nombre + (col ? " · " + col : ""), texto, nombre:c.nombre, telefono:c.telefono,
       items:[{producto:p.hoja, cantidad, precio:p.precio || 0}]};
     pintarProductos();
   } else {
