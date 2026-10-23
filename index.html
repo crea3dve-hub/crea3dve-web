@@ -21,168 +21,32 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Figtree:wght@400;500;600;700;800&display=swap">
-<style>
-:root{
-  --bg:#F2F4EE; --surface:#FFFFFF; --ink:#141712; --muted:#5E6659; --line:#DDE3D6;
-  --brand:#5CBA2E; --brand-ink:#0E1A08; --brand-soft:#E6F4DD; --dark:#141712; --dark-2:#232821; --on-dark:#F2F4EE; --on-dark-muted:#C9D1C2;
-  --accent:#2F7A12; --focus:#2F7D12; --err:#C0262D;
-  color-scheme:light;
-}
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{transition:none!important} }
-body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 "Figtree",system-ui,sans-serif;-webkit-text-size-adjust:100%}
-img{max-width:100%}
-a{color:var(--accent)}
-:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
-.in{max-width:1200px;margin:0 auto}
-.disp{font-family:"Orbitron",sans-serif;font-weight:900;text-transform:uppercase;line-height:1.08;margin:0}
-.eyebrow{margin:0 0 10px;font-family:"Orbitron",sans-serif;font-weight:700;font-size:13px;letter-spacing:3px;color:var(--accent)}
-h2.disp{font-size:clamp(28px,4vw,44px);margin-bottom:14px}
-section{padding:56px 16px;scroll-margin-top:72px}
-@media (min-width:700px){ section{padding:64px 24px} }
-.lead{margin:0 0 20px;font-size:18px;color:#3E463A;max-width:640px}
-
-/* botones */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:12px 24px;border-radius:999px;border:0;
-  font:800 16px "Figtree",sans-serif;text-decoration:none;cursor:pointer;background:var(--brand);color:var(--brand-ink)}
-.btn.dark{background:var(--dark);color:var(--on-dark)}
-.btn.sm{min-height:44px;padding:10px 18px;font-size:15px}
-.btn:disabled{opacity:.6;cursor:wait}
-.btn svg{width:18px;height:18px;flex:none}
-
-/* barra */
-header.top{position:sticky;top:0;z-index:30;background:var(--brand);padding:10px 16px;padding-top:max(10px,env(safe-area-inset-top))}
-header.top nav{display:flex;align-items:center;justify-content:space-between;gap:10px 20px;flex-wrap:wrap}
-header.top .logo img{height:26px;display:block}
-.links{display:flex;align-items:center;flex-wrap:wrap;gap:4px 18px;font-weight:700;font-size:15px}
-.links a{color:var(--brand-ink);text-decoration:none;padding:8px 0}
-.links .btn{padding:8px 16px;min-height:40px;font-size:15px}
-@media (max-width:640px){ .links .txt{display:none} }
-
-/* portada */
-.hero{padding:64px 16px 56px;text-align:center}
-.hero h1{font-size:clamp(34px,6vw,64px)}
-
-/* cómo comprar */
-.pasos{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
-.paso{background:var(--surface);border:1.5px solid var(--line);border-radius:18px;padding:20px}
-.paso b{font-size:18px}
-.paso p{margin:6px 0 0;color:var(--muted)}
-#comprar{background:var(--surface)}
-#comprar .paso{background:var(--bg);border-color:transparent}
-
-/* clickers */
-#clickers{background:var(--dark);color:var(--on-dark)}
-#clickers .eyebrow{color:#8FDB63}
-.cl-top{display:flex;flex-wrap:wrap;align-items:center;gap:32px}
-.cl-top > *{flex:1 1 360px;min-width:0}
-.cl-top p{color:var(--on-dark-muted);font-size:18px;margin:0 0 20px}
-.cl-foto{background:var(--bg);border-radius:28px;padding:32px 28px;display:flex;align-items:center;justify-content:center}
-.cl-foto img{width:100%;height:auto;display:block}
-.objs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:16px}
-.obj{background:var(--dark-2);border-radius:18px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--on-dark);text-decoration:none;text-align:center}
-.obj img{height:96px;width:auto;object-fit:contain}
-.obj span{font-size:14px;color:var(--on-dark-muted)}
-
-/* productos */
-.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 22px}
-.tab{background:var(--surface);color:var(--ink);border:1.5px solid var(--line);border-radius:999px;padding:9px 18px;font:700 15px "Figtree",sans-serif;min-height:44px;cursor:pointer}
-.tab[aria-pressed="true"]{background:var(--dark);color:var(--on-dark);border-color:var(--dark)}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
-.card{background:var(--surface);border-radius:22px;overflow:hidden;display:flex;flex-direction:column}
-.card .ph{height:230px;display:flex;align-items:center;justify-content:center;background:#EEF1EA}
-.card .ph img{max-height:200px;max-width:88%;object-fit:contain}
-.card .ph.vacio{color:#8A8F84;flex-direction:column;gap:8px;font-weight:600;font-size:14px}
-.card .ph.vacio svg{width:44px;height:44px}
-.card .bd{padding:16px 18px 18px;display:flex;flex-direction:column;gap:6px;flex-grow:1}
-.card .cat{font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase}
-.card h3{margin:0;font-size:19px}
-.card .desc{margin:0;font-size:14px;color:var(--muted);flex-grow:1}
-.card .pie{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}
-.card .precio{font-size:18px;font-weight:800}
-.card .pie .btn{white-space:nowrap}
-.card .precio.cotiza{font-size:15px;font-weight:700;color:var(--muted)}
-.card .precio small{display:block;font-size:12px;font-weight:600;color:var(--muted)}
-
-/* colores */
-.col-lbl{font-size:13px;font-weight:700;color:#3E463A}
-.col-lbl span{font-weight:500}
-.sws{display:flex;flex-wrap:wrap;gap:6px}
-.sw{width:28px;height:28px;border-radius:50%;border:1.5px solid #D5DACE;padding:0;cursor:pointer;position:relative}
-.sw[aria-checked="true"]{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--ink)}
-.sw:disabled{opacity:.3;cursor:not-allowed}
-.sw:disabled::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:2px;background:#B4232C;transform:translateX(-50%) rotate(45deg)}
-.sw::before{content:"";position:absolute;inset:-8px}
-
-/* fiestas */
-#fiestas{background:var(--brand-soft)}
-.ideas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 24px}
-@media (min-width:900px){ .ideas{grid-template-columns:repeat(4,minmax(0,1fr))} }
-.ideas div{background:var(--surface);border-radius:14px;padding:14px 16px;font-weight:700;display:flex;align-items:center}
-.nota{margin:12px 0 0;font-size:14px;color:var(--muted)}
-
-/* formularios */
-.form{background:var(--surface);border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:14px}
-.fld{display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:15px}
-.fld small{font-weight:500;color:var(--muted)}
-.fld input,.fld textarea,.fld select{font:400 16px "Figtree",sans-serif;padding:11px 12px;border:1.5px solid var(--line);border-radius:12px;min-height:46px;background:#fff;color:var(--ink);width:100%}
-.fld textarea{resize:vertical;min-height:84px}
-.dos{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media (max-width:480px){ .dos{grid-template-columns:1fr} }
-.foto{position:relative}
-.foto .zona{display:flex;align-items:center;justify-content:center;gap:12px;min-height:96px;padding:14px;border:2px dashed #C5D6B8;border-radius:14px;background:#F6F9F2;color:#3E463A;font-weight:600;cursor:pointer;text-align:center}
-.foto input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.foto:focus-within .zona{outline:3px solid var(--focus);outline-offset:2px}
-.foto .prev{display:none;max-height:120px;border-radius:10px}
-.foto.lista .prev{display:block}
-.err{color:var(--err);font-weight:700;font-size:14px;margin:0}
-.err:empty{display:none}
-.ok-msg{background:var(--brand-soft);border-radius:14px;padding:12px 14px;font-weight:700}
-.medida{display:flex;flex-wrap:wrap;gap:32px}
-.medida > *{flex:1 1 380px;min-width:0}
-.medida ol{margin:0;padding:0;list-style:none;display:grid;gap:14px}
-.medida li{display:flex;gap:14px;align-items:flex-start}
-.medida li .n{flex:none;width:34px;height:34px;border-radius:50%;background:var(--brand);color:var(--brand-ink);font-weight:800;display:flex;align-items:center;justify-content:center}
-.medida li p{margin:0;color:var(--muted)}
-
-/* ventanita */
-dialog{border:0;padding:0;border-radius:22px;width:min(460px,calc(100vw - 24px));max-height:calc(100dvh - 24px);background:var(--surface);color:var(--ink)}
-dialog::backdrop{background:rgba(14,26,8,.55)}
-dialog form{padding:22px;display:flex;flex-direction:column;gap:14px}
-.dlg-cab{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-.dlg-cab h3{margin:0;font-size:21px}
-.dlg-cab p{margin:2px 0 0;color:var(--muted);font-size:14px}
-.cerrar{flex:none;width:44px;height:44px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);font-size:20px;cursor:pointer;color:var(--ink)}
-.cant{display:flex;align-items:center;gap:10px}
-.cant button{width:44px;height:44px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);font:800 20px "Figtree",sans-serif;cursor:pointer;color:var(--ink)}
-.cant output{min-width:32px;text-align:center;font-weight:800;font-size:18px}
-.total{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:18px;border-top:1.5px solid var(--line);padding-top:12px}
-
-footer{background:var(--dark);color:var(--on-dark-muted);padding:40px 16px;padding-bottom:max(40px,env(safe-area-inset-bottom))}
-footer .in{display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:center}
-footer .marca{font-family:"Orbitron",sans-serif;font-weight:900;font-size:26px;color:var(--brand);letter-spacing:1px}
-footer .ls{display:flex;flex-wrap:wrap;gap:6px 24px;font-weight:700}
-footer a{color:var(--on-dark);padding:6px 0;display:inline-block}
-.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-</style>
+<link rel="stylesheet" href="/estilo.css">
 </head>
 <body>
 
 <header class="top">
   <nav class="in" aria-label="Principal">
-    <a class="logo" href="#inicio"><img src="/img/logo.png" alt="Crea3d" width="170" height="26"></a>
+    <a class="logo" href="/"><img src="/img/logo.png" alt="Crea3d, ir al inicio" width="170" height="26"></a>
     <div class="links">
       <a class="txt" href="/clicker/">Clickers</a>
-      <a class="txt" href="#productos">Productos</a>
-      <a class="txt" href="#fiestas">Fiestas</a>
-      <a class="txt" href="#medida">A la medida</a>
-      <a class="btn dark" href="https://wa.me/584242674222" target="_blank" rel="noopener">
-        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg>
-        WhatsApp
-      </a>
+      <a class="txt" href="/productos/">Productos</a>
+      <a class="txt" href="/#fiestas">Fiestas</a>
+      <a class="txt" href="/#medida">A la medida</a>
+      <a class="btn dark" href="https://wa.me/584242674222" target="_blank" rel="noopener" aria-label="WhatsApp"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg><span class="wa-txt">WhatsApp</span></a>
+      <button class="menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="menu" aria-label="Menú">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
     </div>
   </nav>
+  <div class="menu" id="menu" hidden>
+    <a href="/clicker/"><b>Arma tu clicker</b><span>Diseña el tuyo y míralo en 3D</span></a>
+    <a href="/productos/"><b>Productos</b><span>Casa, oficina, fidgets y más</span></a>
+    <a href="/#fiestas"><b>Fiestas y eventos</b><span>Recuerdos y detalles para tu celebración</span></a>
+    <a href="/#medida"><b>A la medida</b><span>Repuestos y piezas especiales</span></a>
+    <a href="/#comprar"><b>Cómo comprar</b><span>Pagos y delivery</span></a>
+    <a href="https://instagram.com/crea3d.ve" target="_blank" rel="noopener"><b>Instagram</b><span>@crea3d.ve</span></a>
+  </div>
 </header>
 
 <main>
@@ -227,9 +91,11 @@ footer a{color:var(--on-dark);padding:6px 0;display:inline-block}
 <section id="productos">
   <div class="in">
     <p class="eyebrow">Catálogo</p>
-    <h2 class="disp">Productos</h2>
-    <div class="tabs" id="tabs" role="group" aria-label="Categorías"></div>
-    <div class="grid" id="grid"></div>
+    <div class="sec-cab">
+      <h2 class="disp">Los más vendidos</h2>
+      <a class="ver-todo" href="/productos/">Ver todo <span aria-hidden="true">→</span></a>
+    </div>
+    <div class="grid dos-col" id="grid" data-modo="destacados"></div>
   </div>
 </section>
 
@@ -327,237 +193,6 @@ footer a{color:var(--on-dark);padding:6px 0;display:inline-block}
   </form>
 </dialog>
 
-<script>
-/* ====== CONFIGURACIÓN: productos, precios y colores (cambia aquí) ====== */
-const WHATSAPP = "584242674222";
-const CAJA_API = "https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec";
-// Colores de filamento (los mismos del configurador). Los agotados salen tachados.
-const COLORES = [
-  ["Blanco","#F2F1EC"],["Negro","#242424"],["Gris","#8C8F94"],["Beige","#C6A77E"],
-  ["Plateado","linear-gradient(135deg,#F4F5F7 0%,#C9CCD1 38%,#8E939A 62%,#F4F5F7 100%)"],
-  ["Rojo","#D52A2F"],["Fucsia","#E0457F"],["Naranja","#F27B30"],["Amarillo","#F8D62A"],["Marrón","#7B4A2D"],
-  ["Verde claro","#A3E3A0"],["Verde","#3DA857"],["Celeste","#8FCBF0"],["Azul","#2A5BC9"],
-  ["Morado metalizado","linear-gradient(135deg,#C7A6F2 0%,#7E4FC0 38%,#4B2A80 62%,#C7A6F2 100%)"],
-  ["Dorado","linear-gradient(135deg,#FFF6A6 0%,#E2C233 38%,#9E8212 62%,#FFF6A6 100%)"],
-  ["Mármol","#E7E6E2"]
-];
-const FIL_AGOTADO = new Set(["Fucsia"]);
-const CATEGORIAS = ["Casa", "Oficina", "Llaveros y charms", "Fidgets", "Para negocios"];
-// hoja: nombre exacto del producto en la hoja de ventas (para que se anote solo). precio: null = se cotiza.
-const PRODUCTOS = [
-  {id:"florero",   cat:"Casa", nombre:"Florero Japandi", hoja:"Florero Japandi (M)", precio:6.50, img:"/img/florero.webp",
-   desc:"Acanalado, para flores secas o de decoración.", color:"Beige"},
-  {id:"joyas",     cat:"Casa", nombre:"Organizador de joyas", hoja:"Organizador de joyas con soporte para reloj", precio:15.00, img:null,
-   desc:"Con soporte para reloj. Aprox. 23 × 11 × 24 cm.", color:"Blanco"},
-  {id:"soporte",   cat:"Oficina", nombre:"Soporte de teléfono", hoja:"Soporte de teléfono ondulado", precio:7.50, img:"/img/soportes.webp",
-   desc:"Para el escritorio o la mesa de noche. Varios colores.", color:"Blanco"},
-  {id:"nfc-ig",    cat:"Llaveros y charms", nombre:"Llavero NFC de Instagram", hoja:"Llavero NFC Instagram", precio:5.00, img:null,
-   desc:"Acercas el teléfono y se abre tu Instagram.", color:"Negro"},
-  {id:"fidget",    cat:"Fidgets", nombre:"Fidget espiral", hoja:"Fidget espiral", precio:null, img:"/img/deco.webp",
-   desc:"Para tener en las manos y no parar de jugar. Varios colores.", color:"Blanco"},
-  {id:"exhibidor", cat:"Para negocios", nombre:"Exhibidor de pago móvil con NFC", hoja:"Exhibidor pago móvil + NFC (a pedido)", precio:24.50, img:null,
-   desc:"Tu QR del banco y botones que abren tu WhatsApp, Instagram y web con solo acercar el teléfono.", color:"Negro"},
-  {id:"llav-logo", cat:"Para negocios", nombre:"Llaveros con tu logo", hoja:"Llaveros con logo (por cotizar)", precio:null, img:null,
-   desc:"Para regalar a tus clientes o a tu equipo. Precio especial por cantidad.", color:"Blanco", cotizar:true},
-  {id:"letrero",   cat:"Para negocios", nombre:"Letrero con tu logo", hoja:"Letrero con logo (por cotizar)", precio:null, img:null,
-   desc:"Para el mostrador, la vitrina o tu puesto en el bazar.", color:"Negro", cotizar:true},
-];
-/* ====================================================================== */
-
-const $ = s => document.querySelector(s);
-const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const money = n => "$" + n.toFixed(2).replace(".", ",");
-const colorDe = n => (COLORES.find(c => c[0] === n) || COLORES[0])[1];
-const ICONO = `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 7.5v9L12 21l9-4.5v-9z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/></svg>`;
-const WA_ICON = `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg>`;
-
-/* ---------- datos del cliente (se recuerdan en este teléfono, igual que en el configurador) ---------- */
-const CLI_KEY = "crea3d-cliente";
-function cliente(){ try{ return JSON.parse(localStorage.getItem(CLI_KEY)) || {}; }catch(e){ return {}; } }
-function guardarCliente(c){ try{ localStorage.setItem(CLI_KEY, JSON.stringify(c)); }catch(e){} }
-const telOK = t => { const d = String(t||"").replace(/\D/g,""); return d.length >= 10 && d.length <= 15; };
-function llenarCliente(form){ const c = cliente(); if(c.nombre && !form.nombre.value) form.nombre.value = c.nombre; if(c.telefono && !form.telefono.value) form.telefono.value = c.telefono; }
-// revisa nombre y teléfono; devuelve {nombre, telefono} o null (y muestra el error)
-function leerCliente(form){
-  const err = form.querySelector(".err"), nombre = form.nombre.value.trim().replace(/\s+/g," "), telefono = form.telefono.value.trim();
-  err.textContent = "";
-  if(nombre.length < 2){ err.textContent = "Escribe tu nombre."; form.nombre.focus(); return null; }
-  if(!telOK(telefono)){ err.textContent = "Revisa el teléfono: escríbelo completo, ej. 0414-1234567."; form.telefono.focus(); return null; }
-  const c = {nombre, telefono}; guardarCliente(c); return c;
-}
-const nuevoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
-// anota el pedido en la hoja (aunque la persona no termine de enviar el WhatsApp)
-function avisarCaja(datos, esperar){
-  const body = JSON.stringify(Object.assign({accion:"pedidoWeb", id:nuevoId()}, datos));
-  const p = fetch(CAJA_API, {method:"POST", mode:"no-cors", keepalive: body.length < 60000, body}).catch(()=>{});
-  return esperar ? p : null;
-}
-function abrirWhatsApp(texto){
-  const url = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(texto)}`;
-  const w = window.open(url, "_blank");
-  if(w) { try{ w.opener = null; }catch(e){} } else location.href = url;
-}
-
-/* ---------- selector de colores ---------- */
-function swatches(nombreSel, grupo){
-  return `<div class="col-lbl">Color: <span data-colname>${esc(nombreSel)}</span></div>
-  <div class="sws" role="radiogroup" aria-label="Color" data-grupo="${grupo}">` + COLORES.map(([n,c])=>{
-    const ag = FIL_AGOTADO.has(n);
-    return `<button type="button" class="sw" role="radio" aria-checked="${n===nombreSel}" aria-label="${esc(n)}${ag?" (agotado)":""}" data-color="${esc(n)}" style="background:${c}" ${ag?"disabled":""}></button>`;
-  }).join("") + `</div>`;
-}
-document.addEventListener("click", e => {
-  const b = e.target.closest(".sw"); if(!b || b.disabled) return;
-  const g = b.parentElement, box = g.parentElement;
-  g.querySelectorAll(".sw").forEach(x => x.setAttribute("aria-checked", x === b));
-  const lbl = box.querySelector("[data-colname]"); if(lbl) lbl.textContent = b.dataset.color;
-  const card = b.closest("[data-p]"); if(card) elegido[card.dataset.p] = b.dataset.color;
-});
-
-/* ---------- catálogo ---------- */
-const elegido = {};   // color escogido en cada tarjeta
-PRODUCTOS.forEach(p => { if(FIL_AGOTADO.has(p.color)) p.color = "Blanco"; elegido[p.id] = p.color; });
-let filtro = "Todo";
-function pintarTabs(){
-  const cats = ["Todo"].concat(CATEGORIAS.filter(c => PRODUCTOS.some(p => p.cat === c)));
-  $("#tabs").innerHTML = cats.map(c => `<button class="tab" type="button" aria-pressed="${c===filtro}" data-cat="${esc(c)}">${esc(c)}</button>`).join("");
-}
-function pintarProductos(){
-  $("#grid").innerHTML = PRODUCTOS.filter(p => filtro === "Todo" || p.cat === filtro).map(p => `
-    <article class="card" data-p="${p.id}">
-      ${p.img ? `<div class="ph"><img src="${p.img}" alt="${esc(p.nombre)}" loading="lazy"></div>` : `<div class="ph vacio">${ICONO}<span>Foto pronto</span></div>`}
-      <div class="bd">
-        <span class="cat">${esc(p.cat)}</span>
-        <h3>${esc(p.nombre)}</h3>
-        <p class="desc">${esc(p.desc)}</p>
-        <div>${swatches(elegido[p.id], p.id)}</div>
-        <div class="pie">
-          ${p.precio != null ? `<span class="precio">${money(p.precio)}<small>tasa BCV</small></span>` : `<span class="precio cotiza">Precio por cotizar</span>`}
-          <button class="btn sm" type="button" data-quiero="${p.id}">${p.cotizar ? "Cotizar" : "Lo quiero"}</button>
-        </div>
-      </div>
-    </article>`).join("");
-}
-$("#tabs").addEventListener("click", e => { const b = e.target.closest(".tab"); if(!b) return; filtro = b.dataset.cat; pintarTabs(); pintarProductos(); });
-$("#grid").addEventListener("click", e => { const b = e.target.closest("[data-quiero]"); if(b) abrirProducto(PRODUCTOS.find(p => p.id === b.dataset.quiero)); });
-pintarTabs(); pintarProductos();
-
-/* ---------- ventanita ---------- */
-const dlg = $("#dlg"), fd = $("#f-dlg");
-let modo = null;   // {tipo:"Producto", p} o {tipo:"Evento"}
-function abrirDlg(){
-  fd.querySelector(".err").textContent = ""; llenarCliente(fd);
-  if(typeof dlg.showModal === "function") dlg.showModal(); else dlg.setAttribute("open","");
-}
-function cerrarDlg(){ if(dlg.open) dlg.close(); }
-$("#dlg-x").onclick = cerrarDlg;
-dlg.addEventListener("click", e => { if(e.target === dlg) cerrarDlg(); });
-
-let cantidad = 1;
-function pintarTotal(){
-  const p = modo && modo.p; $("#cant-n").textContent = cantidad;
-  const t = $("#dlg-total"); if(t && p && p.precio != null) t.textContent = money(p.precio * cantidad);
-}
-function abrirProducto(p){
-  modo = {tipo:"Producto", p}; cantidad = p.cotizar ? 10 : 1;
-  $("#dlg-t").textContent = p.nombre;
-  $("#dlg-s").textContent = p.precio != null ? money(p.precio) + " c/u · tasa BCV" : "Te pasamos el precio por WhatsApp";
-  $("#dlg-btn").textContent = p.cotizar || p.precio == null ? "Pedir precio por WhatsApp" : "Pedir por WhatsApp";
-  $("#dlg-cuerpo").innerHTML = `<div style="display:flex;flex-direction:column;gap:8px">${swatches(elegido[p.id], "dlg")}</div>
-    <div class="fld" style="margin-top:14px">Cantidad
-      <div class="cant"><button type="button" data-c="-1" aria-label="Uno menos">−</button><output id="cant-n" aria-live="polite">${cantidad}</output><button type="button" data-c="1" aria-label="Uno más">+</button></div>
-    </div>
-    ${p.cotizar ? `<label class="fld" style="margin-top:14px">¿Qué te gustaría? <small>(opcional)</small><textarea name="detalle" maxlength="500" placeholder="Ej.: con el logo de mi tienda, para el 15 de diciembre"></textarea></label>` : ""}
-    ${p.precio != null ? `<div class="total" style="margin-top:14px"><span>Total</span><span id="dlg-total">${money(p.precio)}</span></div>` : ""}`;
-  abrirDlg();
-}
-$("#dlg-cuerpo").addEventListener("click", e => {
-  const b = e.target.closest("[data-c]"); if(!b) return;
-  cantidad = Math.max(1, Math.min(999, cantidad + Number(b.dataset.c))); pintarTotal();
-});
-$("#btn-evento").onclick = () => {
-  modo = {tipo:"Evento"};
-  $("#dlg-t").textContent = "Cotizar mi evento";
-  $("#dlg-s").textContent = "Cuéntanos de tu fiesta y te pasamos ideas y precio.";
-  $("#dlg-btn").textContent = "Pedir cotización por WhatsApp";
-  $("#dlg-cuerpo").innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">
-    <div class="dos">
-      <label class="fld">Tipo de evento<select name="evento">
-        <option>Cumpleaños</option><option>Baby shower</option><option>Boda</option><option>Graduación</option><option>Evento de empresa</option><option>Otro</option>
-      </select></label>
-      <label class="fld">Fecha<input name="fecha" type="date"></label>
-    </div>
-    <label class="fld">¿Cuántos invitados o recuerdos?<input name="invitados" inputmode="numeric" maxlength="20" placeholder="Ej.: 30"></label>
-    <label class="fld">¿Qué te gustaría?<textarea name="detalle" maxlength="600" placeholder="Ej.: llaveros con el nombre de cada invitado y un topper para la torta"></textarea></label>
-    <label class="fld">Colores de la fiesta <small>(opcional)</small><input name="colores" maxlength="120" placeholder="Ej.: rosado y dorado"></label>
-  </div>`;
-  abrirDlg();
-};
-fd.addEventListener("submit", e => {
-  e.preventDefault();
-  const c = leerCliente(fd); if(!c) return;
-  let texto, datos;
-  if(modo.tipo === "Producto"){
-    const p = modo.p, col = elegido[p.id] = (fd.querySelector('[data-grupo="dlg"] [aria-checked="true"]') || {}).dataset?.color || elegido[p.id];
-    const det = fd.detalle ? fd.detalle.value.trim() : "";
-    texto = `✨ ¡Hola Crea3d! ${p.precio != null && !p.cotizar ? "Quiero" : "Quiero cotizar"} este producto ✨\n\n👤 Soy *${c.nombre}*\n\n🛍️ *${p.nombre}*\n🎨 Color: *${col.toLowerCase()}*\n🔢 Cantidad: *${cantidad}*`
-      + (det ? `\n📝 ${det}` : "")
-      + (p.precio != null ? `\n\n💰 *Total: ${money(p.precio * cantidad)}* (tasa BCV)` : "");
-    datos = {tipo:"Producto", palabras: p.nombre + " · " + col, texto, nombre:c.nombre, telefono:c.telefono,
-      items:[{producto:p.hoja, cantidad, precio:p.precio || 0}]};
-    pintarProductos();
-  } else {
-    const v = k => (fd[k] && fd[k].value || "").trim();
-    const f = v("fecha") ? v("fecha").split("-").reverse().join("/") : "";
-    texto = `✨ ¡Hola Crea3d! Quiero cotizar un evento ✨\n\n👤 Soy *${c.nombre}*\n\n🎉 Evento: *${v("evento")}*` + (f ? `\n📅 Fecha: *${f}*` : "")
-      + (v("invitados") ? `\n👥 Invitados / recuerdos: *${v("invitados")}*` : "") + (v("detalle") ? `\n📝 ${v("detalle")}` : "") + (v("colores") ? `\n🎨 Colores: ${v("colores")}` : "");
-    datos = {tipo:"Evento", palabras: "Evento · " + v("evento") + (f ? " · " + f : ""), texto, nombre:c.nombre, telefono:c.telefono,
-      items:[{producto:"Evento – " + v("evento") + " (por cotizar)", cantidad:1, precio:0}]};
-  }
-  avisarCaja(datos);
-  abrirWhatsApp(texto);
-  cerrarDlg();
-});
-
-/* ---------- a la medida (con foto) ---------- */
-const fm = $("#f-medida");
-llenarCliente(fm); fm.addEventListener("focusin", () => llenarCliente(fm));
-let fotoData = null;
-// achica la foto (máx. 1280 px, JPG) para que suba rápido
-function achicar(file){
-  return new Promise((ok, mal) => {
-    const url = URL.createObjectURL(file), im = new Image();
-    im.onload = () => { const k = Math.min(1, 1280 / Math.max(im.width, im.height)), cv = document.createElement("canvas");
-      cv.width = Math.round(im.width * k); cv.height = Math.round(im.height * k);
-      const x = cv.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0,0,cv.width,cv.height); x.drawImage(im, 0, 0, cv.width, cv.height);
-      URL.revokeObjectURL(url); ok(cv.toDataURL("image/jpeg", 0.82)); };
-    im.onerror = () => { URL.revokeObjectURL(url); mal(new Error("foto")); };
-    im.src = url;
-  });
-}
-$("#foto-in").addEventListener("change", async e => {
-  const f = e.target.files && e.target.files[0]; if(!f) return;
-  $("#foto-txt").textContent = "Preparando la foto…";
-  try{ fotoData = await achicar(f); $("#foto-prev").src = fotoData; $("#foto-box").classList.add("lista"); $("#foto-txt").textContent = "Foto lista · toca para cambiarla"; }
-  catch(err){ fotoData = null; $("#foto-box").classList.remove("lista"); $("#foto-txt").textContent = "No se pudo leer esa foto. Prueba con otra."; }
-});
-fm.addEventListener("submit", async e => {
-  e.preventDefault();
-  const err = fm.querySelector(".err"), que = fm.que.value.trim(), medidas = fm.medidas.value.trim();
-  if(que.length < 3){ err.textContent = "Cuéntanos qué necesitas."; fm.que.focus(); return; }
-  const c = leerCliente(fm); if(!c) return;
-  const texto = `✨ ¡Hola Crea3d! Quiero un presupuesto ✨\n\n👤 Soy *${c.nombre}*\n\n🔧 ${que}` + (medidas ? `\n📏 Medidas: ${medidas}` : "")
-    + (fotoData ? `\n📸 Les mandé la foto por la página.` : "");
-  const btn = fm.querySelector("button[type=submit]"); btn.disabled = true;
-  const lbl = btn.lastChild, antes = lbl.textContent; lbl.textContent = fotoData ? " Enviando la foto…" : " Abriendo WhatsApp…";
-  const datos = {tipo:"A la medida", palabras: "A la medida · " + que.slice(0, 60), texto, nombre:c.nombre, telefono:c.telefono,
-    items:[{producto:"Pieza a la medida (por cotizar)", cantidad:1, precio:0}], foto: fotoData || ""};
-  if(fotoData){
-    await Promise.race([avisarCaja(datos, true), new Promise(r => setTimeout(r, 20000))]);   // espera a que suba la foto
-    location.href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(texto)}`;
-  } else { avisarCaja(datos); abrirWhatsApp(texto); }
-  btn.disabled = false; lbl.textContent = antes;
-});
-</script>
+<script src="/app.js"></script>
 </body>
 </html>

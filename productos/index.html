@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<title>Productos · Crea3d</title>
+<meta name="description" content="Clickers personalizados, productos para la casa y la oficina, detalles para fiestas y piezas a la medida. Impresión 3D en Caracas, con delivery.">
+<meta property="og:title" content="Productos · Crea3d">
+<meta property="og:description" content="Clickers personalizados, productos, fiestas y piezas a la medida. Impresión 3D en Caracas.">
+<meta property="og:image" content="https://crea3dve.com/og.jpg">
+<meta property="og:url" content="https://crea3dve.com/productos/">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#5CBA2E">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Figtree:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="/estilo.css">
+</head>
+<body>
+
+<header class="top">
+  <nav class="in" aria-label="Principal">
+    <a class="logo" href="/"><img src="/img/logo.png" alt="Crea3d, ir al inicio" width="170" height="26"></a>
+    <div class="links">
+      <a class="txt" href="/clicker/">Clickers</a>
+      <a class="txt" href="/productos/">Productos</a>
+      <a class="txt" href="/#fiestas">Fiestas</a>
+      <a class="txt" href="/#medida">A la medida</a>
+      <a class="btn dark" href="https://wa.me/584242674222" target="_blank" rel="noopener" aria-label="WhatsApp"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg><span class="wa-txt">WhatsApp</span></a>
+      <button class="menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="menu" aria-label="Menú">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </nav>
+  <div class="menu" id="menu" hidden>
+    <a href="/clicker/"><b>Arma tu clicker</b><span>Diseña el tuyo y míralo en 3D</span></a>
+    <a href="/productos/"><b>Productos</b><span>Casa, oficina, fidgets y más</span></a>
+    <a href="/#fiestas"><b>Fiestas y eventos</b><span>Recuerdos y detalles para tu celebración</span></a>
+    <a href="/#medida"><b>A la medida</b><span>Repuestos y piezas especiales</span></a>
+    <a href="/#comprar"><b>Cómo comprar</b><span>Pagos y delivery</span></a>
+    <a href="https://instagram.com/crea3d.ve" target="_blank" rel="noopener"><b>Instagram</b><span>@crea3d.ve</span></a>
+  </div>
+</header>
+
+<main>
+<section id="productos" style="padding-top:40px">
+  <div class="in">
+    <a class="volver" href="/"><span aria-hidden="true">←</span> Inicio</a>
+    <h1 class="disp" style="font-size:clamp(30px,5vw,48px);margin:8px 0 8px">Productos</h1>
+    <p class="lead">Escoge el color, toca <b>Lo quiero</b> y te abrimos WhatsApp con tu pedido listo.</p>
+    <div class="tabs" id="tabs" role="group" aria-label="Categorías"></div>
+    <div class="grid" id="grid"></div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="in">
+    <div>
+      <div class="marca">CREA3D</div>
+      <div style="font-size:14px">Impresión 3D personalizada · Caracas, Venezuela</div>
+    </div>
+    <div class="ls">
+      <a href="https://instagram.com/crea3d.ve" target="_blank" rel="noopener">@crea3d.ve</a>
+      <a href="https://wa.me/584242674222" target="_blank" rel="noopener">WhatsApp 0424-2674222</a>
+      <a href="/clicker/">Arma tu clicker</a>
+    </div>
+  </div>
+</footer>
+
+<!-- Ventanita: Lo quiero / Cotizar -->
+<dialog id="dlg" aria-labelledby="dlg-t">
+  <form id="f-dlg" method="dialog" novalidate>
+    <div class="dlg-cab">
+      <div><h3 id="dlg-t"></h3><p id="dlg-s"></p></div>
+      <button class="cerrar" type="button" id="dlg-x" aria-label="Cerrar">✕</button>
+    </div>
+    <div id="dlg-cuerpo"></div>
+    <div class="dos">
+      <label class="fld">Tu nombre<input name="nombre" autocomplete="name" maxlength="60" required></label>
+      <label class="fld">Tu teléfono<input name="telefono" type="tel" inputmode="tel" autocomplete="tel" placeholder="0414-1234567" maxlength="20" required></label>
+    </div>
+    <p class="err" role="alert"></p>
+    <button class="btn" type="submit">
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg>
+      <span id="dlg-btn">Pedir por WhatsApp</span>
+    </button>
+  </form>
+</dialog>
+
+<script src="/app.js"></script>
+</body>
+</html>
