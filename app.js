@@ -78,14 +78,29 @@ function abrirWhatsApp(texto){
 /* ---------- selector de colores ---------- */
 // partes de color de un producto (la mayoría tiene una sola)
 const partesDe = p => p.sinColor ? [] : (p.partes || [{k:"", nombre:"Color", color:p.color}]);
+const fondoDe = n => { const c = COLORES.find(x => x[0] === n) || COLORES[0]; return c[2] || c[1]; };
+const FLECHA = `<svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`;
 function swatches(p, parte, donde){
-  const sel = elegido[p.id][parte.k];
-  return `<div class="col-blq"><div class="col-lbl">${esc(parte.nombre)}: <span data-colname>${esc(sel)}</span></div>
-  <div class="sws" role="radiogroup" aria-label="${esc(parte.nombre)}" data-prod="${p.id}" data-parte="${parte.k}" data-donde="${donde}">` + COLORES.map(([n,c,bg])=>{
+  const sel = elegido[p.id][parte.k], lista = sws(p, parte, donde, sel);
+  // en las tarjetas: una sola rayita "Elegir color" que abre las opciones (así todas miden lo mismo)
+  if(donde === "card") return `<div class="col-blq picker">
+    <button type="button" class="col-btn" aria-expanded="false"><span class="dot" data-dot style="background:${fondoDe(sel)}"></span><span class="col-txt">${parte.k ? esc(parte.nombre) : "Elegir color"}: <b data-colname>${esc(sel)}</b></span>${FLECHA}</button>
+    <div class="col-pop" hidden>${lista}</div></div>`;
+  return `<div class="col-blq"><div class="col-lbl">${esc(parte.nombre)}: <span data-colname>${esc(sel)}</span></div>${lista}</div>`;
+}
+function sws(p, parte, donde, sel){
+  return `<div class="sws" role="radiogroup" aria-label="${esc(parte.nombre)}" data-prod="${p.id}" data-parte="${parte.k}" data-donde="${donde}">` + COLORES.map(([n,c,bg])=>{
     const ag = FIL_AGOTADO.has(n);
     return `<button type="button" class="sw" role="radio" aria-checked="${n===sel}" aria-label="${esc(n)}${ag?" (agotado)":""}" data-color="${esc(n)}" style="background:${bg||c}" ${ag?"disabled":""}></button>`;
-  }).join("") + `</div></div>`;
+  }).join("") + `</div>`;
 }
+const cerrarPops = (menos) => document.querySelectorAll(".picker").forEach(pk => { if(pk === menos) return; pk.querySelector(".col-pop").hidden = true; pk.querySelector(".col-btn").setAttribute("aria-expanded", "false"); });
+document.addEventListener("click", e => {
+  const btn = e.target.closest(".col-btn");
+  if(btn){ const pk = btn.parentElement, pop = pk.querySelector(".col-pop"), abrir = pop.hidden; cerrarPops(pk); pop.hidden = !abrir; btn.setAttribute("aria-expanded", String(abrir)); return; }
+  if(!e.target.closest(".col-pop")) cerrarPops();
+});
+document.addEventListener("keydown", e => { if(e.key === "Escape") cerrarPops(); });
 document.addEventListener("click", e => {
   const b = e.target.closest(".sw"); if(!b || b.disabled) return;
   const g = b.parentElement, id = g.dataset.prod, k = g.dataset.parte, p = PRODUCTOS.find(x => x.id === id); if(!p) return;
@@ -93,8 +108,10 @@ document.addEventListener("click", e => {
   // marca el color en la tarjeta y en la ventanita a la vez
   document.querySelectorAll(`.sws[data-prod="${id}"][data-parte="${k}"]`).forEach(gr => {
     gr.querySelectorAll(".sw").forEach(x => x.setAttribute("aria-checked", x.dataset.color === b.dataset.color));
-    const l = gr.parentElement.querySelector("[data-colname]"); if(l) l.textContent = b.dataset.color;
+    const blq = gr.closest(".col-blq"), l = blq.querySelector("[data-colname]"), dot = blq.querySelector("[data-dot]");
+    if(l) l.textContent = b.dataset.color; if(dot) dot.style.background = fondoDe(b.dataset.color);
   });
+  const pk = b.closest(".picker"); if(pk) setTimeout(() => cerrarPops(), 120);
   pintarFoto(p);
 });
 
@@ -137,7 +154,7 @@ async function fotoEnColor(p){
       const t = tn.t; out = [0,1,2].map(c => k <= 1 ? t[c]*k : t[c] + (255 - t[c]) * (k - 1) * .6);
       if(tn.marmol){   // puntitos del mármol (siempre en el mismo sitio)
         const cx = px >> 2, cy = py >> 2, h = Math.sin(cx * 127.1 + cy * 311.7) * 43758.5453, r = h - Math.floor(h);
-        if(r < .035) out = out.map(c => c * (r < .012 ? .45 : .72));
+        if(r < .014) out = out.map(c => c * (r < .004 ? .6 : .8));
       }
     }
     for(let c = 0; c < 3; c++) a[i+c] = Math.max(0, Math.min(255, out[c]));
@@ -167,7 +184,7 @@ function pintarProductos(){
   if(!GRID) return;
   GRID.innerHTML = PRODUCTOS.filter(p => SOLO_DESTACADOS ? p.destacado : (filtro === "Todo" || p.cat === filtro)).map(p => `
     <article class="card" data-p="${p.id}">
-      ${p.img ? `<div class="ph${p.recorte ? " recorte" : " foto"}"><img src="${p.img}" alt="${esc(p.nombre)}" loading="lazy" data-img="${p.id}"></div>` : `<div class="ph vacio">${ICONO}<span>Foto pronto</span></div>`}
+      ${p.img ? `<div class="ph${p.recorte ? " recorte" : " foto"}${p.sinColor ? "" : " mover"}"><img src="${p.img}" alt="${esc(p.nombre)}" loading="lazy" data-img="${p.id}" draggable="false">${p.sinColor ? "" : `<span class="mover-tip" aria-hidden="true">↔ Arrastra para girar</span>`}</div>` : `<div class="ph vacio">${ICONO}<span>Foto pronto</span></div>`}
       <div class="bd">
         <span class="cat">${esc(p.cat)}</span>
         <h3>${esc(p.nombre)}</h3>
@@ -318,3 +335,23 @@ if(menuBtn && menu){
   document.addEventListener("click", e => { if(!menu.hidden && !menu.contains(e.target)) cerrarMenu(); });
   document.addEventListener("keydown", e => { if(e.key === "Escape" && !menu.hidden){ cerrarMenu(); menuBtn.focus(); } });
 }
+
+/* ---------- arrastrar la foto para girarla un poco (como mover el clicker en 3D) ---------- */
+(function(){
+  let act = null;
+  document.addEventListener("pointerdown", e => {
+    const ph = e.target.closest(".ph.mover"); if(!ph) return;
+    const im = ph.querySelector("img"); act = {ph, im, x: e.clientX, y: e.clientY, rx: +(im.dataset.rx || 0), ry: +(im.dataset.ry || 0)};
+    ph.classList.add("moviendo"); ph.setPointerCapture && ph.setPointerCapture(e.pointerId);
+  });
+  document.addEventListener("pointermove", e => {
+    if(!act) return;
+    const ry = Math.max(-40, Math.min(40, act.ry + (e.clientX - act.x) * .35)), rx = Math.max(-25, Math.min(25, act.rx - (e.clientY - act.y) * .25));
+    act.im.dataset.ry = ry; act.im.dataset.rx = rx;
+    act.im.style.transform = `perspective(700px) rotateY(${ry}deg) rotateX(${rx}deg) scale(1.04)`;
+  });
+  const fin = () => { if(!act) return; act.ph.classList.remove("moviendo"); act.ph.classList.add("movido"); act = null; };
+  document.addEventListener("pointerup", fin); document.addEventListener("pointercancel", fin);
+  // doble toque: vuelve a su lugar
+  document.addEventListener("dblclick", e => { const ph = e.target.closest(".ph.mover"); if(!ph) return; const im = ph.querySelector("img"); im.dataset.rx = im.dataset.ry = 0; im.style.transform = ""; });
+})();

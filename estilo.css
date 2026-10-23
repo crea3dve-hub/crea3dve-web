@@ -179,3 +179,23 @@ header.top{position:sticky}
 .dlg-foto img{width:150px;height:150px;object-fit:contain}
 .col-blq{display:flex;flex-direction:column;gap:6px;margin-top:4px}
 #dlg-cuerpo .col-blq{margin-bottom:10px}
+
+/* elegir color: una rayita que abre las opciones */
+.picker{position:relative}
+.col-btn{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:8px 12px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:500 14px "Figtree",sans-serif;cursor:pointer;text-align:left}
+.col-btn:hover{border-color:#B9C2B0}
+.col-btn .dot{width:22px;height:22px;border-radius:50%;border:1.5px solid #D5DACE;flex:none}
+.col-btn .col-txt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.col-btn .chev{width:18px;height:18px;flex:none;transition:transform .15s}
+.col-btn[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.col-pop{position:absolute;left:0;right:0;bottom:calc(100% + 6px);z-index:15;background:var(--surface);border-radius:14px;box-shadow:0 10px 30px rgba(14,26,8,.22);padding:12px}
+.col-pop[hidden]{display:none}
+/* fotos que se pueden girar */
+.ph.mover{cursor:grab;touch-action:pan-y;position:relative;user-select:none;-webkit-user-select:none}
+.ph.mover.moviendo{cursor:grabbing}
+.ph.mover img{transition:transform .25s ease-out}
+.ph.mover.moviendo img{transition:none}
+.mover-tip{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);font-size:12px;font-weight:700;color:var(--muted);background:rgba(255,255,255,.85);padding:4px 10px;border-radius:999px;pointer-events:none;transition:opacity .3s;white-space:nowrap}
+.ph.mover.movido .mover-tip{opacity:0}
+.card{overflow:visible}
+.card .ph{border-radius:22px 22px 0 0}
