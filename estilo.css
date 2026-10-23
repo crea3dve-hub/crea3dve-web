@@ -166,3 +166,10 @@ header.top{position:sticky}
   header.top .logo img{height:22px;width:auto}
   .links{flex-wrap:nowrap;gap:8px}
 }
+
+/* fotos de producto: cuadradas */
+.card .ph{height:auto;aspect-ratio:1/1}
+.card .ph.foto img{width:100%;height:100%;max-width:none;max-height:none;object-fit:cover}
+.card .ph{overflow:hidden}
+.card .ph.recorte img{width:82%;height:82%;max-width:none;max-height:none;object-fit:contain}
+.grid.dos-col{max-width:880px}

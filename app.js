@@ -16,17 +16,19 @@ const CATEGORIAS = ["Casa", "Oficina", "Llaveros y charms", "Fidgets", "Para neg
 // hoja: nombre exacto del producto en la hoja de ventas (para que se anote solo). precio: null = se cotiza.
 // destacado: true = sale en la página de inicio ("Los más vendidos"). El resto, en crea3dve.com/productos/
 const PRODUCTOS = [
-  {id:"florero",   cat:"Casa", nombre:"Florero Japandi", hoja:"Florero Japandi (M)", precio:6.50, img:"/img/florero.webp",
+  {id:"florero",   cat:"Casa", nombre:"Florero Japandi", hoja:"Florero Japandi (M)", precio:6.50, img:"/img/florero.webp", recorte:true,
    desc:"Acanalado, para flores secas o de decoración.", color:"Beige"},
-  {id:"joyas",     cat:"Casa", destacado:true, nombre:"Organizador de joyas", hoja:"Organizador de joyas con soporte para reloj", precio:15.00, img:null,
-   desc:"Con soporte para reloj. Aprox. 23 × 11 × 24 cm.", color:"Blanco"},
-  {id:"soporte",   cat:"Oficina", nombre:"Soporte de teléfono", hoja:"Soporte de teléfono ondulado", precio:7.50, img:"/img/soportes.webp",
+  {id:"joyas",     cat:"Casa", destacado:true, nombre:"Organizador de joyas", hoja:"Organizador de joyas con soporte para reloj", precio:15.00, img:"/img/organizador-joyas.webp",
+   desc:"Con soporte para reloj. Aprox. 23 × 11 × 24 cm.", color:"Beige"},
+  {id:"lampara",   cat:"Casa", nombre:"Lámpara de mesa", hoja:"Lámpara de mesa", precio:null, img:"/img/lampara.webp",
+   desc:"Pantalla ondulada con luz LED cálida, para la mesa de noche o la sala.", color:"Blanco"},
+  {id:"soporte",   cat:"Oficina", nombre:"Soporte de teléfono", hoja:"Soporte de teléfono ondulado", precio:7.50, img:"/img/soporte-telefono.webp",
    desc:"Para el escritorio o la mesa de noche. Varios colores.", color:"Blanco"},
-  {id:"nfc-ig",    cat:"Llaveros y charms", destacado:true, nombre:"Llavero NFC de Instagram", hoja:"Llavero NFC Instagram", precio:5.00, img:null,
-   desc:"Acercas el teléfono y se abre tu Instagram.", color:"Negro"},
-  {id:"fidget",    cat:"Fidgets", nombre:"Fidget espiral", hoja:"Fidget espiral", precio:null, img:"/img/deco.webp",
+  {id:"nfc-ig",    cat:"Llaveros y charms", destacado:true, nombre:"Llavero NFC de Instagram", hoja:"Llavero NFC Instagram", precio:5.00, img:"/img/llavero-nfc.webp",
+   desc:"Acercas el teléfono y se abre tu Instagram.", color:"Blanco"},
+  {id:"fidget",    cat:"Fidgets", nombre:"Fidget espiral", hoja:"Fidget espiral", precio:null, img:"/img/deco.webp", recorte:true,
    desc:"Para tener en las manos y no parar de jugar. Varios colores.", color:"Blanco"},
-  {id:"exhibidor", cat:"Para negocios", nombre:"Exhibidor de pago móvil con NFC", hoja:"Exhibidor pago móvil + NFC (a pedido)", precio:24.50, img:null,
+  {id:"exhibidor", cat:"Para negocios", nombre:"Exhibidor de pago móvil con NFC", hoja:"Exhibidor pago móvil + NFC (a pedido)", precio:24.50, img:"/img/exhibidor-nfc.webp",
    desc:"Tu QR del banco y botones que abren tu WhatsApp, Instagram y web con solo acercar el teléfono.", color:"Negro"},
   {id:"llav-logo", cat:"Para negocios", nombre:"Llaveros con tu logo", hoja:"Llaveros con logo (por cotizar)", precio:null, img:null,
    desc:"Para regalar a tus clientes o a tu equipo. Precio especial por cantidad.", color:"Blanco", cotizar:true},
@@ -99,7 +101,7 @@ function pintarProductos(){
   if(!GRID) return;
   GRID.innerHTML = PRODUCTOS.filter(p => SOLO_DESTACADOS ? p.destacado : (filtro === "Todo" || p.cat === filtro)).map(p => `
     <article class="card" data-p="${p.id}">
-      ${p.img ? `<div class="ph"><img src="${p.img}" alt="${esc(p.nombre)}" loading="lazy"></div>` : `<div class="ph vacio">${ICONO}<span>Foto pronto</span></div>`}
+      ${p.img ? `<div class="ph${p.recorte ? " recorte" : " foto"}"><img src="${p.img}" alt="${esc(p.nombre)}" loading="lazy"></div>` : `<div class="ph vacio">${ICONO}<span>Foto pronto</span></div>`}
       <div class="bd">
         <span class="cat">${esc(p.cat)}</span>
         <h3>${esc(p.nombre)}</h3>
