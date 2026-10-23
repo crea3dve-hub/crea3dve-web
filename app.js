@@ -28,8 +28,8 @@ const PRODUCTOS = [
    partes:[{k:"pantalla", nombre:"Pantalla", color:"Blanco", enFoto:""}, {k:"base", nombre:"Base", color:"Blanco", enFoto:""}], corte:.718},   // enFoto "": la foto está encendida, siempre se pinta con el color real
   {id:"soporte",   cat:"Oficina", destacado:true, nombre:"Soporte de teléfono", hoja:"Soporte de teléfono ondulado", precio:7.50, img:"/img/soporte-telefono.webp",
    desc:"Para el escritorio o la mesa de noche. Varios colores.", color:"Blanco"},
-  {id:"nfc-ig",    cat:"Llaveros", destacado:true, nombre:"Llavero NFC de Instagram", hoja:"Llavero NFC Instagram", precio:5.00, img:"/img/llavero-nfc.webp",
-   desc:"Acercas el teléfono y se abre tu Instagram.", color:"Blanco", sinColor:true},
+  {id:"nfc-ig",    cat:"Llaveros", destacado:true, nombre:"Llavero NFC personalizado", hoja:"Llavero NFC Instagram", precio:5.00, img:"/img/llavero-nfc.webp",
+   desc:"Acercas el teléfono y se abre el link que quieras: tu Instagram, WhatsApp, página web, menú o catálogo.", color:"Blanco", sinColor:true},
   {id:"fidget",    cat:"Fidgets", nombre:"Fidget espiral", hoja:"Fidget espiral", precio:null, img:"/img/deco.webp", recorte:true,
    desc:"Para tener en las manos y no parar de jugar. Varios colores.", color:"Blanco"},
   {id:"exhibidor", cat:"Para negocios", nombre:"Exhibidor de pago móvil con NFC", hoja:"Exhibidor pago móvil + NFC (a pedido)", precio:24.50, img:"/img/exhibidor-nfc.webp",
