@@ -2,28 +2,30 @@
 const WHATSAPP = "584242674222";
 const CAJA_API = "https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec";
 // Colores de filamento (los mismos del configurador). Los agotados salen tachados.
-const COLORES = [
+const COLORES = [   // [nombre, color, (fondo del botón)] — los mismos de crea3dve.com/clicker/
   ["Blanco","#F2F1EC"],["Negro","#242424"],["Gris","#8C8F94"],["Beige","#C6A77E"],
-  ["Plateado","linear-gradient(135deg,#F4F5F7 0%,#C9CCD1 38%,#8E939A 62%,#F4F5F7 100%)"],
-  ["Rojo","#D52A2F"],["Fucsia","#E0457F"],["Naranja","#F27B30"],["Amarillo","#F8D62A"],["Marrón","#7B4A2D"],
-  ["Verde claro","#A3E3A0"],["Verde","#3DA857"],["Celeste","#8FCBF0"],["Azul","#2A5BC9"],
-  ["Morado metalizado","linear-gradient(135deg,#C7A6F2 0%,#7E4FC0 38%,#4B2A80 62%,#C7A6F2 100%)"],
-  ["Dorado","linear-gradient(135deg,#FFF6A6 0%,#E2C233 38%,#9E8212 62%,#FFF6A6 100%)"],
-  ["Mármol","#E7E6E2"]
+  ["Plateado","#C9CCD1","linear-gradient(135deg, #F4F5F7 0%, #C9CCD1 38%, #8E939A 62%, #F4F5F7 100%)"],
+  ["Rojo","#D52A2F"],["Fucsia","#E0457F"],["Naranja","#F27B30"],["Amarillo","#F8D62A"],
+  ["Marrón","#7B4A2D"],["Verde claro","#A3E3A0"],["Verde","#3DA857"],
+  ["Celeste","#8FCBF0"],["Azul","#2A5BC9"],["Morado metalizado","#7E4FC0","linear-gradient(135deg, #C7A6F2 0%, #7E4FC0 38%, #4B2A80 62%, #C7A6F2 100%)"],
+  ["Dorado","#E2C233","linear-gradient(135deg, #FFF6A6 0%, #E2C233 38%, #9E8212 62%, #FFF6A6 100%)"],
+  ["Mármol","#E7E6E2","radial-gradient(circle at 30% 35%, #9a9a9a 0 1.5px, transparent 2px), radial-gradient(circle at 65% 60%, #8c8c8c 0 1.5px, transparent 2px), radial-gradient(circle at 45% 75%, #a5a5a5 0 1px, transparent 1.5px), #E7E6E2"]
 ];
 const FIL_AGOTADO = new Set(["Fucsia"]);
 const CATEGORIAS = ["Casa", "Oficina", "Llaveros", "Fidgets", "Para negocios"];
 // hoja: nombre exacto del producto en la hoja de ventas (para que se anote solo). precio: null = se cotiza.
 // sinColor: true = no se escoge color (se hace como en la foto o a pedido).
 // color: el color del producto en la foto (al escoger otro, la foto se pinta de ese color).
+// partes: cuando tiene dos colores (ej. lámpara: pantalla y base). corte = dónde termina la parte de arriba en la foto (0 a 1).
 // destacado: true = sale en la página de inicio ("Los más vendidos"). El resto, en crea3dve.com/productos/
 const PRODUCTOS = [
   {id:"florero",   cat:"Casa", nombre:"Florero Japandi", hoja:"Florero Japandi (M)", precio:6.50, img:"/img/florero.webp", recorte:true,
    desc:"Acanalado, para flores secas o de decoración.", color:"Beige"},
   {id:"joyas",     cat:"Casa", destacado:true, nombre:"Organizador de joyas", hoja:"Organizador de joyas con soporte para reloj", precio:15.00, img:"/img/organizador-joyas.webp",
    desc:"Con soporte para reloj. Aprox. 23 × 11 × 24 cm.", color:"Beige"},
-  {id:"lampara",   cat:"Casa", nombre:"Lámpara de mesa", hoja:"Lámpara de mesa", precio:null, img:"/img/lampara.webp",
-   desc:"Pantalla ondulada con luz LED cálida, para la mesa de noche o la sala.", color:"Blanco"},
+  {id:"lampara",   cat:"Casa", nombre:"Lámpara de mesa", hoja:"Lámpara de mesa", precio:40.00, img:"/img/lampara.webp",
+   desc:"Pantalla ondulada con luz LED cálida, para la mesa de noche o la sala.",
+   partes:[{k:"pantalla", nombre:"Pantalla", color:"Blanco"}, {k:"base", nombre:"Base", color:"Blanco"}], corte:.718},
   {id:"soporte",   cat:"Oficina", destacado:true, nombre:"Soporte de teléfono", hoja:"Soporte de teléfono ondulado", precio:7.50, img:"/img/soporte-telefono.webp",
    desc:"Para el escritorio o la mesa de noche. Varios colores.", color:"Blanco"},
   {id:"nfc-ig",    cat:"Llaveros", destacado:true, nombre:"Llavero NFC de Instagram", hoja:"Llavero NFC Instagram", precio:5.00, img:"/img/llavero-nfc.webp",
@@ -74,22 +76,26 @@ function abrirWhatsApp(texto){
 }
 
 /* ---------- selector de colores ---------- */
-function swatches(nombreSel, grupo){
-  return `<div class="col-lbl">Color: <span data-colname>${esc(nombreSel)}</span></div>
-  <div class="sws" role="radiogroup" aria-label="Color" data-grupo="${grupo}">` + COLORES.map(([n,c])=>{
+// partes de color de un producto (la mayoría tiene una sola)
+const partesDe = p => p.sinColor ? [] : (p.partes || [{k:"", nombre:"Color", color:p.color}]);
+function swatches(p, parte, donde){
+  const sel = elegido[p.id][parte.k];
+  return `<div class="col-blq"><div class="col-lbl">${esc(parte.nombre)}: <span data-colname>${esc(sel)}</span></div>
+  <div class="sws" role="radiogroup" aria-label="${esc(parte.nombre)}" data-prod="${p.id}" data-parte="${parte.k}" data-donde="${donde}">` + COLORES.map(([n,c,bg])=>{
     const ag = FIL_AGOTADO.has(n);
-    return `<button type="button" class="sw" role="radio" aria-checked="${n===nombreSel}" aria-label="${esc(n)}${ag?" (agotado)":""}" data-color="${esc(n)}" style="background:${c}" ${ag?"disabled":""}></button>`;
-  }).join("") + `</div>`;
+    return `<button type="button" class="sw" role="radio" aria-checked="${n===sel}" aria-label="${esc(n)}${ag?" (agotado)":""}" data-color="${esc(n)}" style="background:${bg||c}" ${ag?"disabled":""}></button>`;
+  }).join("") + `</div></div>`;
 }
 document.addEventListener("click", e => {
   const b = e.target.closest(".sw"); if(!b || b.disabled) return;
-  const g = b.parentElement, box = g.parentElement;
-  g.querySelectorAll(".sw").forEach(x => x.setAttribute("aria-checked", x === b));
-  const lbl = box.querySelector("[data-colname]"); if(lbl) lbl.textContent = b.dataset.color;
-  const card = b.closest("[data-p]"), id = card ? card.dataset.p : (g.dataset.grupo === "dlg" && modo && modo.p ? modo.p.id : null);
-  if(id){ elegido[id] = b.dataset.color; const p = PRODUCTOS.find(x => x.id === id); if(p) pintarFoto(p);
-    // si se cambió en la ventanita, la tarjeta también queda con ese color
-    if(!card) document.querySelectorAll(`[data-p="${id}"] .sws`).forEach(gr => { gr.querySelectorAll(".sw").forEach(x => x.setAttribute("aria-checked", x.dataset.color === b.dataset.color)); const l = gr.parentElement.querySelector("[data-colname]"); if(l) l.textContent = b.dataset.color; }); }
+  const g = b.parentElement, id = g.dataset.prod, k = g.dataset.parte, p = PRODUCTOS.find(x => x.id === id); if(!p) return;
+  elegido[id][k] = b.dataset.color;
+  // marca el color en la tarjeta y en la ventanita a la vez
+  document.querySelectorAll(`.sws[data-prod="${id}"][data-parte="${k}"]`).forEach(gr => {
+    gr.querySelectorAll(".sw").forEach(x => x.setAttribute("aria-checked", x.dataset.color === b.dataset.color));
+    const l = gr.parentElement.querySelector("[data-colname]"); if(l) l.textContent = b.dataset.color;
+  });
+  pintarFoto(p);
 });
 
 /* ---------- la foto del producto toma el color escogido (como en el configurador) ---------- */
@@ -97,20 +103,25 @@ const BASE = {"Plateado":"#C9CCD1", "Morado metalizado":"#7E4FC0", "Dorado":"#E2
 const hexDe = n => BASE[n] || (COLORES.find(c => c[0] === n) || ["","#F2F1EC"])[1];
 const fotoCache = {}, fotoOrig = {};
 function cargarImg(src){ return new Promise((ok, mal) => { const im = new Image(); im.onload = () => ok(im); im.onerror = mal; im.src = src; }); }
-async function fotoEnColor(p, nombre){
-  const clave = p.id + "|" + nombre; if(fotoCache[clave]) return fotoCache[clave];
+const firma = p => partesDe(p).map(x => elegido[p.id][x.k]).join("|");
+const esOriginal = p => partesDe(p).every(x => elegido[p.id][x.k] === x.color);
+async function fotoEnColor(p){
+  const clave = p.id + "|" + firma(p); if(fotoCache[clave]) return fotoCache[clave];
   if(!fotoOrig[p.id]) fotoOrig[p.id] = cargarImg(p.img);
   const im = await fotoOrig[p.id], W = Math.min(700, im.naturalWidth), H = Math.round(im.naturalHeight * W / im.naturalWidth);
   const cv = document.createElement("canvas"); cv.width = W; cv.height = H; const x = cv.getContext("2d");
   x.drawImage(im, 0, 0, W, H); const d = x.getImageData(0, 0, W, H), a = d.data;
-  // brillo promedio del objeto (para conservar luces y sombras)
-  let suma = 0, n = 0;
-  for(let i = 0; i < a.length; i += 4) if(a[i+3] > 200){ suma += (.299*a[i] + .587*a[i+1] + .114*a[i+2]); n++; }
-  const ref = Math.max(1, suma / Math.max(1, n));
-  const h = hexDe(nombre), t = [1,3,5].map(k => parseInt(h.substr(k, 2), 16));
+  const partes = partesDe(p), corte = Math.round((p.corte || 1) * H);
+  const parteDe = i => partes.length > 1 && Math.floor(i / 4 / W) >= corte ? 1 : 0;
+  // brillo promedio de cada parte (para conservar luces y sombras)
+  const suma = [0,0], n = [0,0];
+  for(let i = 0; i < a.length; i += 4) if(a[i+3] > 200){ const q = parteDe(i); suma[q] += .299*a[i] + .587*a[i+1] + .114*a[i+2]; n[q]++; }
+  const ref = [0,1].map(q => Math.max(1, suma[q] / Math.max(1, n[q])));
+  const tono = partes.map(pt => { if(elegido[p.id][pt.k] === pt.color) return null; const h = hexDe(elegido[p.id][pt.k]); return [1,3,5].map(k => parseInt(h.substr(k, 2), 16)); });
   for(let i = 0; i < a.length; i += 4){
     if(a[i+3] < 90) continue;   // la sombrita del piso se queda igual
-    const k = (.299*a[i] + .587*a[i+1] + .114*a[i+2]) / ref;
+    const q = parteDe(i), t = tono[q]; if(!t) continue;   // esa parte sigue en su color original
+    const k = (.299*a[i] + .587*a[i+1] + .114*a[i+2]) / ref[q];
     for(let c = 0; c < 3; c++) a[i+c] = Math.max(0, Math.min(255, k <= 1 ? t[c]*k : t[c] + (255 - t[c]) * (k - 1) * .6));
   }
   x.putImageData(d, 0, 0);
@@ -118,15 +129,15 @@ async function fotoEnColor(p, nombre){
 }
 async function pintarFoto(p){
   if(!p.img || p.sinColor) return;
-  const nombre = elegido[p.id];
-  const src = nombre === p.color ? p.img : await fotoEnColor(p, nombre).catch(() => p.img);
-  if(elegido[p.id] !== nombre) return;   // cambió mientras se pintaba
+  const f = firma(p);
+  const src = esOriginal(p) ? p.img : await fotoEnColor(p).catch(() => p.img);
+  if(firma(p) !== f) return;   // cambió mientras se pintaba
   document.querySelectorAll(`[data-img="${p.id}"]`).forEach(im => { im.src = src; });
 }
 
 /* ---------- catálogo ---------- */
-const elegido = {};   // color escogido en cada tarjeta
-PRODUCTOS.forEach(p => { if(FIL_AGOTADO.has(p.color)) p.color = "Blanco"; elegido[p.id] = p.color; });
+const elegido = {};   // colores escogidos en cada producto: {parte: color}
+PRODUCTOS.forEach(p => { elegido[p.id] = {}; partesDe(p).forEach(pt => { elegido[p.id][pt.k] = FIL_AGOTADO.has(pt.color) ? "Blanco" : pt.color; }); });
 let filtro = "Todo";
 const GRID = $("#grid"), TABS = $("#tabs"), SOLO_DESTACADOS = GRID && GRID.dataset.modo === "destacados";
 function pintarTabs(){
@@ -143,14 +154,14 @@ function pintarProductos(){
         <span class="cat">${esc(p.cat)}</span>
         <h3>${esc(p.nombre)}</h3>
         <p class="desc">${esc(p.desc)}</p>
-        ${p.sinColor ? "" : `<div>${swatches(elegido[p.id], p.id)}</div>`}
+        ${partesDe(p).map(pt => swatches(p, pt, "card")).join("")}
         <div class="pie">
           ${p.precio != null ? `<span class="precio">${money(p.precio)}<small>tasa BCV</small></span>` : `<span class="precio cotiza">Precio por cotizar</span>`}
           <button class="btn sm" type="button" data-quiero="${p.id}">${p.cotizar ? "Cotizar" : "Lo quiero"}</button>
         </div>
       </div>
     </article>`).join("");
-  PRODUCTOS.forEach(p => { if(!p.sinColor && elegido[p.id] !== p.color) pintarFoto(p); });
+  PRODUCTOS.forEach(p => { if(!p.sinColor && !esOriginal(p)) pintarFoto(p); });
 }
 if(TABS) TABS.addEventListener("click", e => { const b = e.target.closest(".tab"); if(!b) return; filtro = b.dataset.cat; pintarTabs(); pintarProductos(); });
 if(GRID) GRID.addEventListener("click", e => { const b = e.target.closest("[data-quiero]"); if(b) abrirProducto(PRODUCTOS.find(p => p.id === b.dataset.quiero)); });
@@ -178,7 +189,7 @@ function abrirProducto(p){
   $("#dlg-s").textContent = p.precio != null ? money(p.precio) + " c/u · tasa BCV" : "Te pasamos el precio por WhatsApp";
   $("#dlg-btn").textContent = p.cotizar || p.precio == null ? "Pedir precio por WhatsApp" : "Pedir por WhatsApp";
   $("#dlg-cuerpo").innerHTML = (p.img ? `<div class="dlg-foto"><img src="${p.img}" alt="" data-img="${p.id}"></div>` : "")
-    + (p.sinColor ? "" : `<div style="display:flex;flex-direction:column;gap:8px">${swatches(elegido[p.id], "dlg")}</div>`) + `
+    + partesDe(p).map(pt => swatches(p, pt, "dlg")).join("") + `
     <div class="fld" style="margin-top:14px">Cantidad
       <div class="cant"><button type="button" data-c="-1" aria-label="Uno menos">−</button><output id="cant-n" aria-live="polite">${cantidad}</output><button type="button" data-c="1" aria-label="Uno más">+</button></div>
     </div>
@@ -214,9 +225,11 @@ fd.addEventListener("submit", e => {
   const c = leerCliente(fd); if(!c) return;
   let texto, datos;
   if(modo.tipo === "Producto"){
-    const p = modo.p, col = p.sinColor ? "" : (elegido[p.id] = (fd.querySelector('[data-grupo="dlg"] [aria-checked="true"]') || {}).dataset?.color || elegido[p.id]);
+    const p = modo.p, pts = partesDe(p);
+    const colTxt = pts.map(pt => (pts.length > 1 ? pt.nombre.toLowerCase() + " " : "") + "*" + elegido[p.id][pt.k].toLowerCase() + "*").join(" · ");
+    const col = pts.map(pt => (pts.length > 1 ? pt.nombre + " " : "") + elegido[p.id][pt.k]).join(", ");
     const det = fd.detalle ? fd.detalle.value.trim() : "";
-    texto = `✨ ¡Hola Crea3d! ${p.precio != null && !p.cotizar ? "Quiero" : "Quiero cotizar"} este producto ✨\n\n👤 Soy *${c.nombre}*\n\n🛍️ *${p.nombre}*` + (col ? `\n🎨 Color: *${col.toLowerCase()}*` : "") + `\n🔢 Cantidad: *${cantidad}*`
+    texto = `✨ ¡Hola Crea3d! ${p.precio != null && !p.cotizar ? "Quiero" : "Quiero cotizar"} este producto ✨\n\n👤 Soy *${c.nombre}*\n\n🛍️ *${p.nombre}*` + (colTxt ? `\n🎨 Color: ${colTxt}` : "") + `\n🔢 Cantidad: *${cantidad}*`
       + (det ? `\n📝 ${det}` : "")
       + (p.precio != null ? `\n\n💰 *Total: ${money(p.precio * cantidad)}* (tasa BCV)` : "");
     datos = {tipo:"Producto", palabras: p.nombre + (col ? " · " + col : ""), texto, nombre:c.nombre, telefono:c.telefono,

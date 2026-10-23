@@ -177,3 +177,5 @@ header.top{position:sticky}
 
 .dlg-foto{background:#F4F5F0;border-radius:16px;display:flex;justify-content:center;margin:0 0 12px}
 .dlg-foto img{width:150px;height:150px;object-fit:contain}
+.col-blq{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+#dlg-cuerpo .col-blq{margin-bottom:10px}
