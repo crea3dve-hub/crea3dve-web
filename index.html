@@ -78,8 +78,8 @@ header.top .logo img{height:26px;display:block}
 .cl-top{display:flex;flex-wrap:wrap;align-items:center;gap:32px}
 .cl-top > *{flex:1 1 360px;min-width:0}
 .cl-top p{color:var(--on-dark-muted);font-size:18px;margin:0 0 20px}
-.cl-foto{background:var(--bg);border-radius:28px;padding:24px;display:flex;align-items:center;justify-content:center;min-height:280px}
-.cl-foto img{width:100%;max-width:480px}
+.cl-foto{background:var(--bg);border-radius:28px;padding:32px 28px;display:flex;align-items:center;justify-content:center}
+.cl-foto img{width:100%;height:auto;display:block}
 .objs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:16px}
 .obj{background:var(--dark-2);border-radius:18px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--on-dark);text-decoration:none;text-align:center}
 .obj img{height:96px;width:auto;object-fit:contain}
@@ -117,8 +117,9 @@ header.top .logo img{height:26px;display:block}
 
 /* fiestas */
 #fiestas{background:var(--brand-soft)}
-.ideas{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:0 0 24px;max-width:900px}
-.ideas div{background:var(--surface);border-radius:14px;padding:12px 16px;font-weight:700}
+.ideas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 24px}
+@media (min-width:900px){ .ideas{grid-template-columns:repeat(4,minmax(0,1fr))} }
+.ideas div{background:var(--surface);border-radius:14px;padding:14px 16px;font-weight:700;display:flex;align-items:center}
 .nota{margin:12px 0 0;font-size:14px;color:var(--muted)}
 
 /* formularios */
@@ -211,7 +212,7 @@ footer a{color:var(--on-dark);padding:6px 0;display:inline-block}
         <p style="font-size:16px;color:var(--on-dark)"><b style="color:#8FDB63">$1,50 por letra</b> · base y cadena incluidas</p>
         <a class="btn" href="/clicker/">Empezar a diseñar</a>
       </div>
-      <div class="cl-foto"><img src="/img/luna.webp" alt="Clicker LUNA con charms de corazón, carita y flor" width="900" height="475"></div>
+      <div class="cl-foto"><img src="/img/luna-clicker.webp" alt="Clicker LUNA con charms de carita y flor" width="1600" height="594"></div>
     </div>
     <h3 style="margin:44px 0 0;font-size:20px">Clickers de objeto <span style="font-weight:500;color:var(--on-dark-muted)">· también hacen clic</span></h3>
     <div class="objs">
