@@ -30,8 +30,8 @@ const PRODUCTOS = [
    desc:"Para tener en las manos y no parar de jugar. Varios colores.", color:"Blanco"},
   {id:"exhibidor", cat:"Para negocios", nombre:"Exhibidor de pago móvil con NFC", hoja:"Exhibidor pago móvil + NFC (a pedido)", precio:24.50, img:"/img/exhibidor-nfc.webp",
    desc:"Tu QR del banco y botones que abren tu WhatsApp, Instagram y web con solo acercar el teléfono.", color:"Negro"},
-  {id:"llav-logo", cat:"Para negocios", nombre:"Llaveros con tu logo", hoja:"Llaveros con logo (por cotizar)", precio:null, img:null,
-   desc:"Para regalar a tus clientes o a tu equipo. Precio especial por cantidad.", color:"Blanco", cotizar:true},
+  {id:"llav-logo", cat:"Para negocios", nombre:"Llaveros con tu logo", hoja:"Llaveros con logo (por cotizar)", precio:null, img:"/img/llaveros-logo.webp",
+   desc:"Para regalar a tus clientes o a tu equipo. Precio especial por cantidad.", color:"Gris", cotizar:true},
   {id:"letrero",   cat:"Para negocios", nombre:"Letrero con tu logo", hoja:"Letrero con logo (por cotizar)", precio:null, img:null,
    desc:"Para el mostrador, la vitrina o tu puesto en el bazar.", color:"Negro", cotizar:true},
 ];
