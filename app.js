@@ -22,7 +22,7 @@ const PRODUCTOS = [
    desc:"Con soporte para reloj. Aprox. 23 × 11 × 24 cm.", color:"Beige"},
   {id:"lampara",   cat:"Casa", nombre:"Lámpara de mesa", hoja:"Lámpara de mesa", precio:null, img:"/img/lampara.webp",
    desc:"Pantalla ondulada con luz LED cálida, para la mesa de noche o la sala.", color:"Blanco"},
-  {id:"soporte",   cat:"Oficina", nombre:"Soporte de teléfono", hoja:"Soporte de teléfono ondulado", precio:7.50, img:"/img/soporte-telefono.webp",
+  {id:"soporte",   cat:"Oficina", destacado:true, nombre:"Soporte de teléfono", hoja:"Soporte de teléfono ondulado", precio:7.50, img:"/img/soporte-telefono.webp",
    desc:"Para el escritorio o la mesa de noche. Varios colores.", color:"Blanco"},
   {id:"nfc-ig",    cat:"Llaveros y charms", destacado:true, nombre:"Llavero NFC de Instagram", hoja:"Llavero NFC Instagram", precio:5.00, img:"/img/llavero-nfc.webp",
    desc:"Acercas el teléfono y se abre tu Instagram.", color:"Blanco"},
