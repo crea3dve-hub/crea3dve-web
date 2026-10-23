@@ -92,6 +92,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-o
 .pedido-cab .num{font-weight:800}
 .chico{font-size:13px;color:var(--muted)}
 .lista-items{margin:8px 0 10px;padding:0;list-style:none;font-size:14px}
+.web-cli{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(92,186,46,.12);border-radius:12px;padding:10px 12px;margin:8px 0}
+.web-foto{display:inline-block;margin:4px 0 8px;font-weight:700}
 .web-det{margin:4px 0 10px;display:grid;gap:8px}
 .web-clk{border:1px solid var(--line);border-radius:12px;padding:8px 10px;display:grid;gap:6px}
 .web-clk .tit{font-weight:800;font-size:13px;color:var(--muted)}
@@ -1192,19 +1194,29 @@ details[open] > summary{margin-bottom:4px}
     } catch (e) { return `<div class="web-txt">${esc(sinAst(texto))}</div>`; }
   }
   let webAbierto = null;
+  // link para escribirle al cliente de la web (0414-1234567 → 584141234567)
+  function waCliente(w) {
+    let d = String(w.telefono || '').replace(/\D/g, ''); if (d.startsWith('58')) d = d.slice(2); if (d.startsWith('0')) d = d.slice(1);
+    if (d.length !== 10) return '';
+    const nom = (w.nombre || '').split(' ')[0];
+    const que = w.tipo === 'Evento' ? 'la cotización de tu evento' : w.tipo === 'A la medida' ? 'tu pieza a la medida' : w.tipo === 'Producto' ? 'tu pedido (' + (w.palabras || '') + ')' : 'tu clicker ' + (w.palabras || '');
+    return 'https://wa.me/58' + d + '?text=' + encodeURIComponent('¡Hola' + (nom ? ' ' + nom : '') + '! Te escribimos de Crea3d 💚 Vimos ' + que + ' en nuestra página. ¿Te ayudamos a completarlo?');
+  }
   function pintarWeb() {
     const lista = datos.pedidosWeb || [];
     $('#bandejaWeb').innerHTML = lista.length ? `<h3>📲 Llegaron desde la página (${lista.length})</h3>
-      <div class="ayuda" style="margin-top:0">Alguien armó un pedido en crea3dve.com y abrió WhatsApp. Revisa que te haya escrito y tócalo para pasarlo a <b>Sin pagar</b>, o descártalo si no siguió.</div>` +
+      <div class="ayuda" style="margin-top:0">Alguien hizo un pedido en crea3dve.com. Si no te escribió, contáctalo con <b>Escribirle</b>. Luego pásalo a <b>Sin pagar</b>, o descártalo si no siguió.</div>` +
       lista.map(w => `<div class="card web" data-w="${w.fila}">
-        <div class="pedido-cab"><div><span class="num">${esc(w.palabras || 'Pedido web')}</span><div class="chico">${esc(w.fecha)}</div></div><b>${fmt(w.total)}</b></div>
+        <div class="pedido-cab"><div><span class="num">${esc(w.palabras || 'Pedido web')}</span><div class="chico">${esc(w.tipo || 'Clicker')} · ${esc(w.fecha)}</div></div><b>${w.total ? fmt(w.total) : 'Por cotizar'}</b></div>
+        ${w.nombre || w.telefono ? `<div class="web-cli"><div><b>${esc(w.nombre || 'Sin nombre')}</b>${w.telefono ? `<div class="chico">${esc(w.telefono)}</div>` : ''}</div>${waCliente(w) ? `<a class="btn chico primario" href="${waCliente(w)}" target="_blank" rel="noopener">Escribirle</a>` : ''}</div>` : ''}
+        ${/^https:\/\//.test(w.foto || '') ? `<a class="web-foto" href="${esc(w.foto)}" target="_blank" rel="noopener">📸 Ver la foto que mandó</a>` : (w.foto ? `<div class="chico">${esc(w.foto)}</div>` : '')}
         <ul class="lista-items">${w.items.map(i => `<li>${i.cantidad} × ${esc(i.producto)}</li>`).join('')}</ul>
         ${w.texto ? detalleWeb(w.texto) : ''}
         ${webAbierto === w.fila ? `<div class="dos">
             <div><label>Cédula</label><input data-wk="cedula" inputmode="numeric"></div>
-            <div><label>Teléfono</label><input data-wk="telefono" type="tel"></div>
+            <div><label>Teléfono</label><input data-wk="telefono" type="tel" value="${esc(w.telefono || '')}"></div>
           </div>
-          <label>Nombre del cliente</label><input data-wk="cliente" placeholder="Como aparece en WhatsApp">
+          <label>Nombre del cliente</label><input data-wk="cliente" placeholder="Como aparece en WhatsApp" value="${esc(w.nombre || '')}">
           <div class="acciones" style="margin-top:10px"><button class="btn chico primario" data-w-ok>Crear pedido</button><button class="btn chico" data-w-x>Cancelar</button></div>`
         : `<div class="acciones"><button class="btn chico primario" data-w-pasar>Pasar a pedido</button><button class="btn chico peligro" data-w-del>Descartar</button></div>`}
       </div>`).join('') + '<h3>Mis pedidos</h3>' : '';

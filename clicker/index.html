@@ -1,0 +1,1589 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Arma tu Clicker Crea3d</title>
+<meta name="description" content="Arma tu clicker personalizado: escoge tu palabra, colores y charms, mira cómo queda en 3D y pídelo por WhatsApp. Impresión 3D en Caracas.">
+<meta property="og:title" content="Arma tu Clicker · Crea3d">
+<meta property="og:description" content="Escoge tu palabra, colores y charms, míralo en 3D y pídelo por WhatsApp.">
+<meta property="og:image" content="https://crea3dve.com/og.jpg">
+<meta property="og:url" content="https://crea3dve.com/clicker/">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#5CBA2E">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/favicon.png">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+
+</head>
+<body>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Figtree:wght@400;500;600;700;800&family=Inter:wght@800&family=Comic+Neue:wght@700&family=Nunito:wght@900&display=swap">
+<style>
+/* Layout: phone-first single column (vista previa arriba, opciones abajo, barra de pedido fija); en desktop, vista previa fija a la izquierda y opciones a la derecha */
+:root{
+  --bg:#F2F4EE; --surface:#FFFFFF; --ink:#141712; --muted:#5E6659; --line:#DDE3D6;
+  --brand:#5CBA2E; --brand-ink:#0E1A08; --brand-soft:#E6F4DD; --stage:#E9EDE3; --focus:#2F7D12;
+  --display:"Orbitron", "Arial Black", system-ui, sans-serif;
+  --body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0F110D; --surface:#181B15; --ink:#EEF2EA; --muted:#A0A99A; --line:#2B3127;
+  --brand:#6BCB3B; --brand-ink:#0E1A08; --brand-soft:#1F2B18; --stage:#1D2119; --focus:#8EE05F; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#0F110D; --surface:#181B15; --ink:#EEF2EA; --muted:#A0A99A; --line:#2B3127;
+  --brand:#6BCB3B; --brand-ink:#0E1A08; --brand-soft:#1F2B18; --stage:#1D2119; --focus:#8EE05F; color-scheme:dark }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{overflow-x:clip;max-width:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:16px;padding-block:14px 120px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.logo{height:34px;width:auto;border-radius:8px;display:block}
+.ig{font-weight:700;color:var(--muted);font-size:13px}
+h1{font-family:var(--display);font-weight:900;font-size:clamp(26px,6vw,40px);letter-spacing:.5px;line-height:1.05;margin:18px 0 6px;text-wrap:balance}
+.lead{color:var(--muted);margin:0 0 16px;max-width:60ch}
+.grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media (min-width:880px){ .grid{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);align-items:start} }
+.stagebox{background:var(--stage);border-radius:18px;padding:18px 14px 14px;min-width:0;position:relative}
+@media (max-width:879px){ .stagebox{position:sticky;top:0;z-index:6;border-radius:0 0 18px 18px;margin-inline:-16px;padding:8px 12px 8px;box-shadow:0 10px 18px -12px rgba(0,0,0,.35)}
+  #view3d{height:clamp(190px,52vw,290px)!important} .stagecap{margin-top:4px;font-size:12px} }
+@media (min-width:880px){ .stagebox{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)} }
+.viewtools{position:absolute;right:22px;top:22px;z-index:3;display:flex;gap:6px}
+.vt{font:700 12.5px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:5px 11px;cursor:pointer;min-height:32px;display:inline-flex;align-items:center;gap:5px}
+.vt svg{width:15px;height:15px}
+.vt.dice{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.vt.dice .d{display:inline-block;transition:transform .35s}
+.vt.dice.spin .d,.randbtn.spin .d{transform:rotate(360deg)}
+.btn.randbtn{width:100%;justify-content:center;display:flex;align-items:center;gap:8px;background:var(--brand);color:var(--brand-ink);border-color:var(--brand);margin:0 0 12px;min-height:42px;font-size:15px}
+.btn.randbtn .d{display:inline-block;transition:transform .35s}
+.vt[aria-pressed=true]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+@media (max-width:879px){ .viewtools{right:20px;top:14px} }
+#capword b{color:var(--ink)}
+#caphint .nr,#caphint.near .far{display:none} #caphint.near .nr{display:inline}
+.t-mouse{display:none} @media (hover:hover) and (pointer:fine){ .t-touch{display:none} .t-mouse{display:inline} }
+.crow{display:grid;grid-template-columns:40px minmax(0,1fr) 36px;gap:10px;align-items:center;padding:10px;border:1.5px solid var(--brand);background:var(--brand-soft);border-radius:12px;margin-top:8px}
+.crow svg{width:40px;height:40px}
+.cart{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.citem{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg)}
+.citem .t{font-weight:700;font-size:14px}.citem .t small{display:block;font-weight:500;color:var(--muted,#666);font-size:12px}
+.citem .btn{min-height:32px;padding:5px 10px;font-size:13px}
+.ccur{font:800 12px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--brand-ink);background:var(--brand);border-radius:999px;padding:4px 10px;display:inline-block;margin-bottom:8px}
+.btn.addclk{width:100%;margin-top:12px;min-height:44px;font-size:15px;border-color:var(--brand);color:var(--ink)}
+.crow .n{font-weight:700;font-size:14px;margin-bottom:6px}
+.crow .sw{width:26px;height:26px}
+.crow .x{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:800 15px var(--body);cursor:pointer}
+.otro-row{display:flex;gap:8px;align-items:center;margin:0 0 8px}
+#otrolist .otro-row input{flex:1;min-width:0;font:600 15px/1.3 var(--body);letter-spacing:0;text-transform:none;padding:10px 12px}
+.otro-row .x{flex:0 0 auto}
+.addotro{width:100%;margin:2px 0 6px}
+#preview{width:100%;height:auto;display:block;max-height:340px}
+#view3d{width:100%;height:clamp(250px,64vw,440px);border-radius:12px;overflow:hidden;touch-action:none;cursor:grab;position:relative;contain:size}
+#view3d:active{cursor:grabbing}
+#view3d canvas{position:absolute;inset:0;display:block;width:100%!important;height:100%!important}
+.colgar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:0 0 14px}
+.colgar button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);font:600 14px var(--body);color:var(--ink);cursor:pointer;text-align:left}
+.coloresCad{margin:-6px 0 14px}.coloresCad .cadsw{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}.coloresCad .cadsw button{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:2px solid var(--line);padding:0;cursor:pointer}.coloresCad .cadsw button[aria-pressed="true"]{box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--ink)}
+.colgar button small{font-weight:500;color:var(--muted)}
+.colgar button[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.incl{font-size:13px;color:var(--muted);margin:0 0 8px}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);border-radius:18px 18px 0 0;
+  box-shadow:0 -10px 30px rgba(0,0,0,.18);padding:12px 16px calc(14px + env(safe-area-inset-bottom,0px));max-height:56vh;overflow:auto;
+  max-width:560px;margin:0 auto;animation:shin .2s ease-out}
+@keyframes shin{from{transform:translateY(30px);opacity:.4}to{transform:none;opacity:1}}
+@media (min-width:880px){ .sheet{left:auto;right:24px;bottom:96px;border-radius:18px;border:1px solid var(--line);width:440px;max-height:70vh} }
+.sh-head{display:flex;align-items:center;gap:12px;margin:-12px -16px 6px;padding:12px 16px 8px;position:sticky;top:-12px;z-index:2;background:var(--surface);border-bottom:1px solid var(--line)}
+.sh-key{width:46px;height:46px;border-radius:11px;display:flex;align-items:center;justify-content:center;font:900 22px var(--body);flex:none;box-shadow:inset 0 -5px 0 rgba(0,0,0,.18)}
+.sh-key svg{width:24px;height:24px}
+.sh-titles{display:flex;flex-direction:column;min-width:0;flex:1}
+.sh-titles span{font-size:12.5px;color:var(--muted)}
+.sh-done{background:var(--brand);color:var(--brand-ink);border:0;border-radius:999px;font:800 14px var(--body);padding:9px 16px;cursor:pointer}
+#sh-char{width:56px;text-align:center;font-size:20px;padding:6px;letter-spacing:0}
+.sh-nav{justify-content:space-between;margin-top:12px}
+body.sheet-open .bar{visibility:hidden}
+.order{max-height:88vh}
+#ord-img{-webkit-touch-callout:default;-webkit-user-select:auto;user-select:auto;display:block;width:100%;max-width:420px;margin:6px auto 10px;border-radius:14px;border:1px solid var(--line);background:var(--stage);aspect-ratio:1/1;object-fit:contain}
+.ord-steps{margin:4px 0 10px;padding-left:20px;font-size:14px;display:grid;gap:6px}
+.ord-tip{text-align:center;margin:-2px 0 8px}
+.ord-copybtn{width:100%;font-size:16px;padding:14px 18px}
+.ord-copybtn:disabled{opacity:.5}
+.ord-skip{display:block;margin:6px auto 0}
+.ord-status{margin:0 0 8px;font-weight:700;font-size:14px;text-align:center}
+.ord-status.ok{color:var(--focus)}
+#ord-retry-row{justify-content:center;margin-bottom:6px}
+.ord-cta{display:flex;justify-content:center;margin-top:10px}
+.fld{display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:14px;margin:0 0 10px}
+.fld input{font:inherit;font-weight:500;font-size:16px;padding:11px 12px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);min-height:44px;box-sizing:border-box}
+.fld input:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+.fld-err{color:#C0262D;font-weight:700;font-size:14px;margin:0 0 6px;min-height:0}
+.fld-err:empty{display:none}
+.fromlink{background:var(--brand-soft);border:1px solid var(--brand);border-radius:12px;padding:10px 12px;font-size:13.5px;margin:0 0 14px}
+.stagecap{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}
+.stagecap b{color:var(--ink)}
+.panel{display:flex;flex-direction:column;gap:12px;min-width:0}
+.sec{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;min-width:0}
+.sec h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin:0 0 10px;display:flex;align-items:center;gap:8px;font-weight:800}
+.step{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--brand);color:var(--brand-ink);font-size:12px;align-items:center;justify-content:center;font-family:var(--display)}
+.hint{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+input[type=text]{width:100%;font:800 22px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;padding:10px 12px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+input[type=text]:focus{outline:none;border-color:var(--brand)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{font:700 14px var(--body);border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:7px 12px;cursor:pointer;min-height:36px}
+.btn:hover{border-color:var(--brand)}
+.btn[aria-pressed=true]{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.btn:focus-visible,.sw:focus-visible,.keychip:focus-visible,a:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.sym{font-size:18px;min-width:44px;padding:4px 10px}
+.sym svg{width:20px;height:20px;display:block;margin:auto}
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.sw.sw-agotado{opacity:.35;cursor:not-allowed}
+.sw.sw-agotado::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:2px;background:#B4232C;transform:translateX(-50%) rotate(45deg);border-radius:2px}
+.sw{width:34px;height:34px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0;position:relative}
+.sw[aria-pressed=true]{box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--ink)}
+.label{font-size:13px;font-weight:700;margin:10px 0 6px;display:block}
+.keys{display:flex;flex-wrap:wrap;gap:6px}
+.keychip{width:38px;height:38px;border-radius:9px;border:2px solid transparent;font:800 16px var(--body);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.keychip[aria-pressed=true]{border-color:var(--ink);transform:translateY(-2px)}
+.keychip svg{width:18px;height:18px}
+.extras{display:grid;grid-template-columns:1fr;gap:8px}
+.extra{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px;border:1.5px solid var(--line);border-radius:12px}
+.extra.on{border-color:var(--brand);background:var(--brand-soft)}
+.extra .n{font-weight:700}
+.extra .p{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.qty{display:flex;align-items:center;gap:6px}
+.qty button{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:800 16px var(--body);cursor:pointer}
+.qty output{min-width:18px;text-align:center;font-weight:800;font-variant-numeric:tabular-nums}
+.extra .sub{grid-column:1/-1}
+.aros{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px}
+.aro{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);cursor:pointer;font:600 13px var(--body);text-align:center}
+.aro img.ph{width:64px;height:64px;object-fit:contain;display:block}
+.vrow{margin-top:10px;padding:10px;border:1.5px solid var(--brand);border-radius:12px;background:var(--brand-soft)}
+.vrow .n{font-weight:700;font-size:13px;margin-bottom:8px}
+.vchips{display:flex;flex-wrap:wrap;gap:8px}
+.vchip{display:flex;flex-direction:column;align-items:center;gap:2px;width:74px;padding:6px 4px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);font:600 11.5px var(--body);color:var(--ink);cursor:pointer}
+.vchip img{width:52px;height:52px;object-fit:contain}
+.vchip[aria-pressed=true]{border-color:var(--brand);box-shadow:0 0 0 2px var(--brand) inset}
+.aro[aria-pressed=true]{border-color:var(--brand);background:var(--brand-soft)}
+.aro svg{width:44px;height:44px}
+.aro small{color:var(--muted);font-variant-numeric:tabular-nums}
+.aro.agotado{opacity:.45;cursor:not-allowed}
+.aro.agotado small{font-weight:700;color:#B4232C}
+.notice{font-size:12.5px;color:var(--muted)}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));z-index:5}
+.bar .in{max-width:1080px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.total{display:flex;flex-direction:column;min-width:0}
+.total small{color:var(--muted);font-size:12px}
+.total strong{font-family:var(--display);font-size:26px;font-variant-numeric:tabular-nums;line-height:1.1}
+.cta{border:0;cursor:pointer;display:inline-flex;align-items:center;gap:8px;background:var(--brand);color:var(--brand-ink);font:800 15px var(--body);text-decoration:none;border-radius:999px;padding:12px 18px;white-space:nowrap}
+.cta svg{width:20px;height:20px}
+.summary{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;max-width:100%;font-size:13px;background:var(--bg);border:1px dashed var(--line);border-radius:10px;padding:10px;margin:0;font-family:var(--body)}
+.copy{margin-top:8px}
+.breakdown{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;font-size:14px;font-variant-numeric:tabular-nums;margin:0}
+.breakdown dt{color:var(--muted)} .breakdown dd{margin:0;font-weight:700;text-align:right}
+.breakdown .tot{border-top:1px solid var(--line);padding-top:6px;color:var(--ink);font-weight:800}
+.warn{color:#B4441A;font-weight:700;font-size:12.5px;margin-top:6px}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .warn{color:#FF9B6A} }
+:root[data-theme="dark"] .warn{color:#FF9B6A}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+.keychip,.btn,.sw{transition:transform .12s, background .12s, border-color .12s}
+</style>
+
+<div class="wrap">
+  <header>
+    <a href="/" aria-label="Crea3d, ir al inicio"><img class="logo" src="data:image/png;base64,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" alt="CREA3D"></a>
+    <a class="ig" href="/" style="text-decoration:none">← Ver todos los productos</a>
+  </header>
+  <h1>ARMA TU CLICKER</h1>
+  <p class="fromlink" id="fromlink" hidden>Este es el diseño que te enviaron. Puedes girarlo y ver cada tecla.</p>
+  <p class="lead">Escribe tu nombre o palabra, escoge los colores y los charms. Te lo imprimimos en 3D con un switch mecánico de verdad: suena <b>clic</b>.</p>
+
+  <div class="grid">
+    <div class="stagebox">
+      <div class="viewtools" role="group" aria-label="Controles de la vista 3D">
+        <button class="vt dice" id="randtop" type="button" aria-label="Colores al azar">Al azar</button>
+        <button class="vt" id="homebtn" type="button">Centrar</button>
+      </div>
+      <div id="view3d" role="img" aria-label="Vista 3D de tu clicker. Arrastra para girarlo."></div>
+      <svg id="preview" viewBox="0 0 640 360" role="img" aria-label="Vista previa de tu clicker" hidden></svg>
+      <div class="stagecap"><span id="capword"></span><span id="caphint"><span class="far"><span class="t-touch">Arrastra para girar · pellizca para acercar</span><span class="t-mouse">Arrastra para girar · rueda o pellizco para acercar</span></span><span class="nr"><span class="t-touch">De cerca: arrastra para moverlo · dos dedos para girar</span><span class="t-mouse">De cerca: arrastra para moverlo · clic derecho para girar</span></span></span></div>
+    </div>
+
+    <div class="panel">
+      <section class="sec">
+        <h2><span class="step">1</span>Tu palabra</h2>
+        <input type="text" id="word" maxlength="10" autocomplete="off" spellcheck="false" aria-label="Tu palabra, hasta 10 teclas">
+        <div class="row" style="margin-top:8px" id="symrow" aria-label="Agregar símbolo"></div>
+        <p class="hint">Hasta 10 teclas. Letras A–Z, números, &amp; y los símbolos de arriba.<br><b>Cada letra $1,50</b> · base y cadena de bolitas incluidas.</p>
+        <p class="warn" id="warn" hidden></p>
+      </section>
+
+      <section class="sec">
+        <h2><span class="step">2</span>Colores</h2>
+        <button class="btn randbtn" id="randbtn" type="button">Colores al azar</button>
+        <p class="hint" style="margin:-4px 0 10px">¿No sabes qué colores escoger? Toca las veces que quieras hasta que te guste.</p>
+        <span class="label">Base</span>
+        <div class="swatches" id="sw-base"></div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" id="st-lisa" aria-pressed="true">Base lisa</button>
+          <button class="btn" id="st-acan" aria-pressed="false">Base acanalada</button>
+        </div>
+        <span class="label">Teclas</span>
+        <div class="row" style="margin-bottom:8px">
+          <button class="btn" id="mode-one" aria-pressed="false">Todas iguales</button>
+          <button class="btn" id="mode-mix" aria-pressed="true">Combinadas</button>
+        </div>
+        <div class="keys" id="keychips" aria-label="Tus teclas"></div>
+        <p class="hint" id="mixhint">Toca una tecla (aquí o en el 3D) para cambiarle el color o la letra.</p>
+        <div id="onecolors">
+          <span class="label">Color de las teclas</span>
+          <div class="swatches" id="sw-tile"></div>
+          <span class="label">Color de las letras</span>
+          <div class="swatches" id="sw-leg"></div>
+        </div>
+        <span class="label" hidden>Letra</span>
+        <div class="row" id="fonts" hidden></div>
+        <p class="hint">Los colores dependen del filamento disponible; si alguno se agota, te avisamos por WhatsApp.</p>
+      </section>
+
+      <section class="sec">
+        <h2><span class="step">3</span>Charms y extras</h2>
+        <span class="label">¿Cómo lo quieres colgar?</span>
+        <div class="colgar" id="colgar">
+          <button type="button" data-c="cadena" aria-pressed="true"><b>⛓️ Cadena plateada</b><small>De bolitas · incluida</small></button>
+          <button type="button" data-c="colores" aria-pressed="false"><b>🎨 Cadenita de colores</b><small>+$0,50</small></button>
+          <button type="button" data-c="llavero" aria-pressed="false"><b>🔑 Aro de llavero</b><small>+$0,50</small></button>
+        </div>
+        <div class="coloresCad" id="coloresCad" hidden>
+          <span class="label">Color de la cadenita: <b id="cadName">Azul</b></span>
+          <div class="cadsw" id="cadsw">
+            <button type="button" data-cc="Blanco" style="background:#F4F4F2" title="Blanco" aria-label="Blanco" aria-pressed="false"></button><button type="button" data-cc="Celeste" style="background:#9CC7E8" title="Celeste" aria-label="Celeste" aria-pressed="false"></button><button type="button" data-cc="Azul" style="background:#1F4FB8" title="Azul" aria-label="Azul" aria-pressed="false"></button><button type="button" data-cc="Verde" style="background:#2E8B3E" title="Verde" aria-label="Verde" aria-pressed="false"></button><button type="button" data-cc="Verde limón" style="background:#A6D84A" title="Verde limón" aria-label="Verde limón" aria-pressed="false"></button><button type="button" data-cc="Verde menta" style="background:#7FC4A4" title="Verde menta" aria-label="Verde menta" aria-pressed="false"></button><button type="button" data-cc="Amarillo" style="background:#F2D33A" title="Amarillo" aria-label="Amarillo" aria-pressed="false"></button><button type="button" data-cc="Naranja" style="background:#F07A2A" title="Naranja" aria-label="Naranja" aria-pressed="false"></button><button type="button" data-cc="Rojo" style="background:#D9262E" title="Rojo" aria-label="Rojo" aria-pressed="false"></button><button type="button" data-cc="Fucsia" style="background:#E0306F" title="Fucsia" aria-label="Fucsia" aria-pressed="false"></button><button type="button" data-cc="Rosado" style="background:#F49AC1" title="Rosado" aria-label="Rosado" aria-pressed="false"></button>
+          </div>
+          <p class="hint">Sujeto a disponibilidad del color seleccionado, te confirmamos al recibir el pedido.</p>
+        </div>
+        <span class="label">Aros para colgar <span class="notice">(toca uno para agregarlo; puedes poner varios)</span></span>
+        <div class="aros" id="aros"></div>
+        <div id="arolist"></div>
+        <span class="label">Charms <span class="notice">(toca uno para agregarlo; puedes poner varios)</span></span>
+        <div class="aros" id="charmcards"></div>
+        <div id="charmlist"></div>
+        <div id="otrobox" hidden>
+          <span class="label">Charms personalizados <span class="notice">(uno por casilla · $1,00 c/u)</span></span>
+          <div id="otrolist"></div>
+          <button class="btn addotro" id="addotro" type="button">＋ Agregar otro charm personalizado</button>
+          <p class="hint">Te los diseñamos y te confirmamos el precio por WhatsApp.</p>
+        </div>
+        <span class="label" style="margin-top:16px">Clicker de objeto <span class="notice">(también hace clic; toca para agregarlo)</span></span>
+        <div class="aros" id="objcards"></div>
+        <div id="objvars"></div>
+        <p class="hint">Junto a tu clicker de letras: <b>$3</b> c/u · Solo, con su cadena: <b>$4</b>. ¿Solo quieres el objeto? Deja la palabra vacía.</p>
+      </section>
+
+      <section class="sec">
+        <h2><span class="step">4</span>Tu pedido</h2>
+        <div id="cartbox"></div>
+        <dl class="breakdown" id="breakdown"></dl>
+        <button class="btn addclk" id="addclk" type="button">＋ Armar otro clicker</button>
+        <p class="hint" style="margin-top:6px">¿Quieres varios? Guarda este y arma el siguiente: todos van en el mismo pedido.</p>
+        <p class="notice" style="margin:10px 0 8px">Precios en dólares a tasa BCV del día. Pagas por pago móvil, Zelle o Binance.</p>
+        <pre class="summary" id="summary"></pre>
+        <div class="row copy">
+          <button class="btn" id="copybtn">Copiar pedido</button>
+          <span class="notice">Si WhatsApp no abre, copia el pedido y envíalo al <b>0424-267-4222</b>.</span>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="sheet" role="dialog" aria-modal="false" aria-labelledby="sh-title" hidden>
+  <div class="sh-head">
+    <div class="sh-key" id="sh-key"></div>
+    <div class="sh-titles"><strong id="sh-title">Tecla 1</strong><span id="sh-sub">Cambia su color o su letra</span></div>
+    <button class="sh-done" id="sh-done">Listo</button>
+  </div>
+  <div class="sh-body">
+    <span class="label">Color de la tecla</span>
+    <div class="swatches" id="sh-tile"></div>
+    <span class="label">Color de la letra</span>
+    <div class="swatches" id="sh-leg"></div>
+    <span class="label" hidden>Tipografía <span class="notice">(todas las teclas)</span></span>
+    <div class="row" id="sh-fonts" hidden></div>
+    <span class="label">Cambiar por</span>
+    <div class="row">
+      <input type="text" id="sh-char" maxlength="1" autocomplete="off" spellcheck="false" aria-label="Nueva letra o número">
+      <div class="row" id="sh-syms"></div>
+    </div>
+    <div class="row sh-nav">
+      <button class="btn" id="sh-prev" aria-label="Tecla anterior">‹ Anterior</button>
+      <button class="btn" id="sh-del">Quitar tecla</button>
+      <button class="btn" id="sh-next" aria-label="Tecla siguiente">Siguiente ›</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet order" id="order" role="dialog" aria-modal="false" aria-labelledby="ord-title" hidden>
+  <div class="sh-head">
+    <div class="sh-titles"><strong id="ord-title">Tu pedido está listo</strong><span>Envíanos la foto y el mensaje por WhatsApp</span></div>
+    <button class="btn" id="ord-close" aria-label="Cerrar">✕</button>
+  </div>
+  <form id="ord-datos" novalidate>
+    <p class="ord-status">Primero, tus datos para anotar tu pedido:</p>
+    <label class="fld">Tu nombre<input id="cli-nombre" autocomplete="name" maxlength="60" required></label>
+    <label class="fld">Tu teléfono (WhatsApp)<input id="cli-tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="0414-1234567" maxlength="20" required></label>
+    <p class="fld-err" id="cli-err" role="alert"></p>
+    <button class="cta ord-cta ord-copybtn" type="submit">Continuar</button>
+  </form>
+  <div id="ord-photo">
+    <img id="ord-img" alt="Foto de tu clicker">
+    <p class="ord-status" id="ord-status" role="status">Preparando la foto…</p>
+    <button class="cta ord-cta ord-copybtn" id="ord-copy" type="button" disabled>Copiar la foto</button>
+    <p class="notice ord-tip" id="ord-tip">Si el botón no funciona, mantén presionada la foto y toca <b>“Copiar”</b>.</p>
+  </div>
+  <div id="ord-step2" hidden>
+    <ol class="ord-steps">
+      <li>Toca <b>Abrir WhatsApp</b>: se abre el chat con tu pedido ya escrito. <b>Envía ese mensaje.</b></li>
+      <li>Luego <b>mantén presionado</b> el cuadro donde se escribe y toca <b>“Pegar”</b>: aparece la foto de tu clicker.</li>
+      <li><b>Envía la foto.</b> Sin la foto no podemos ver tu diseño, ¡no la olvides!</li>
+    </ol>
+    <a class="cta ord-cta" id="ord-wa" href="#" target="_blank" rel="noopener">Abrir WhatsApp</a>
+  </div>
+  <button class="btn ord-skip" id="ord-skip" type="button" hidden>Ya copié la foto, continuar</button>
+</div>
+
+<div class="bar"><div class="in">
+  <div class="total"><small>Total</small><strong id="total">$0,00</strong></div>
+  <button class="cta" id="wa" type="button">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.2.1-.1 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7a2.8 2.8 0 0 0 1.8-1.3 2.3 2.3 0 0 0 .2-1.3c-.1-.1-.2-.2-.5-.3Z"/></svg>
+    Pedir por WhatsApp
+  </button>
+</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+/* ====== CONFIGURACIÓN: cambia aquí precios, colores y teléfono ====== */
+const WHATSAPP = "584242674222";
+const LINK_PAGINA = "https://crea3dve.com/";   // dominio de la página (el configurador vive en /clicker/)
+const PRECIO_LETRA = 1.50;           // cada letra: tecla + switch + su parte de la base (base y cadena incluidas)
+const PRECIO_LLAVERO = 0.50, PRECIO_COLORES = 0.50;
+// Filamentos que se acabaron: se ven tachados y no se pueden escoger (bórralos de aquí cuando vuelvan)
+const FIL_AGOTADO = new Set(["Fucsia"]);
+const CADC = {"Blanco":"#F4F4F2", "Celeste":"#9CC7E8", "Azul":"#1F4FB8", "Verde":"#2E8B3E", "Verde limón":"#A6D84A", "Verde menta":"#7FC4A4", "Amarillo":"#F2D33A", "Naranja":"#F07A2A", "Rojo":"#D9262E", "Fucsia":"#E0306F", "Rosado":"#F49AC1"};   // colores de la cadenita
+   // cadenita de colores en vez de la plateada
+   // aro de llavero en vez de la cadena de bolitas
+const PRECIO_OTRO = 1.00;   // charm personalizado ("Otro charm"), precio fijo
+const CHARMS = [   // charms impresos en 3D (cada uno del color que el cliente escoja)
+  {id:"carita", nombre:"Carita feliz", precio:0.50, color:"Amarillo"},
+  {id:"flor",   nombre:"Flor",         precio:1.00, color:"Celeste"},
+  {id:"pelota", nombre:"Pelota de fútbol", precio:0.50, color:"Negro"},   // blanca con el dibujo del color escogido
+];
+const MAX_CHARMS = 6;
+// Clickers de objeto (con switch). "solo" = precio si se piden sin clicker de letras (incluye cadena)
+const OBJETOS = [   // "img" = archivo en /obj (foto 3D real); "var" = versiones a escoger
+  {id:"smore",    nombre:"S'more de chocolate",     emo:"🍫", solo:4.00, extra:3.00, img:"smore"},
+  {id:"tostada",  nombre:"Tostada con mantequilla", emo:"🍞", solo:4.00, extra:3.00, img:"tostada"},
+  {id:"margarita",nombre:"Margarita",               emo:"🌼", solo:4.00, extra:3.00, img:"margarita-carita",
+     var:[["carita","Con carita"],["clasica","Clásica"]]},
+  {id:"queso",    nombre:"Queso",                   emo:"🧀", solo:4.00, extra:3.00, img:"queso"},
+  {id:"libros",   nombre:"Mini libros",             emo:"📚", solo:4.00, extra:3.00, img:"libros"},
+  {id:"mascota",  nombre:"Mascota virtual", emo:"👾", solo:4.00, extra:3.00, img:"mascota-caragato",
+     var:[["caragato","Cara de gato"],["perro3","Perro"],["corazon","Corazón"]]},
+];
+const objImg = o => { const x = OBJETOS.find(y=>y.id===o.t); return x.var ? `${x.id}-${o.v||x.var[0][0]}` : x.img; };
+const objVarName = o => { const x = OBJETOS.find(y=>y.id===o.t); if(!x.var) return ""; const v = x.var.find(k=>k[0]===o.v)||x.var[0]; return v[1]; };
+window.objImg = objImg;
+// Aros / mosquetones de resorte disponibles (cambia precios o agrega/quita colores aquí)
+// agotado:true = se muestra como "Agotado" y no se puede agregar (bórralo cuando vuelva a haber)
+// cada color: [nombre, color, color de los puntitos]
+const AROS = [
+  {id:"peq",  nombre:"Aro redondo pequeño",  desc:"brillante", precio:1.00, colores:[   // los que hay en stock (oct 2026)
+    ["Blanco","#F7F6F2"],["Crema","#F2E8C9"],["Nude","#D9C2B0"],["Rosado claro","#F8CAD5"],["Rosado","#F59AB8"],["Fucsia","#E0408A"],
+    ["Rojo","#C8202A"],["Naranja","#F2782A"],["Amarillo","#FBE36A"],["Lima","#D8EE3C"],["Celeste","#86CDF2"],["Lila","#C2A6F0"],
+    ["Marrón","#8A5A3C"],["Negro","#1E1E1E"]]},
+  {id:"gra",  nombre:"Aro redondo grande",   desc:"mate",      precio:1.50, agotado:true, colores:[
+    ["Rosado","#F27FAA"],["Fucsia","#C9346F"],["Rojo","#D8333A"],["Naranja","#F27A2B"],
+    ["Amarillo","#F7DF4A"],["Verde","#6CD45A"],["Crema","#EBD9B8"],["Marrón","#6E4038"]]},
+  {id:"cor",  nombre:"Corazón con puntitos", desc:"",          precio:1.50, colores:[   // los que hay en stock (oct 2026)
+    ["Verde menta","#8CC98E","#E5603A"],["Verde lima","#94C83C","#F0D24C"],["Naranja","#DE7F3C","#EC4C8E"],
+    ["Amarillo","#F2E24C","#E2B0E6"],["Blanco","#F3F2EE","#A6CDEE"]]},
+  {id:"flor", nombre:"Flor con giratorio",   desc:"",          precio:1.50, agotado:true, colores:[["Celeste","#8CC8EE","#F7B6D2"]]},
+];
+// Inventario de aros (contado de las fotos del 14/10/2026). Cuando un color llega a 0 deja de aparecer;
+// si todos los colores de un aro llegan a 0, el aro sale como "Agotado".
+const STOCK_AROS = {
+  peq: {"Blanco":3,"Crema":4,"Nude":3,"Rosado claro":7,"Rosado":3,"Fucsia":1,"Rojo":2,"Naranja":3,"Amarillo":3,"Lima":2,"Celeste":1,"Lila":1,"Marrón":3,"Negro":2},
+  cor: {"Verde menta":0,"Verde lima":3,"Naranja":2,"Amarillo":0,"Blanco":1},
+};
+AROS.forEach(a=>{ const inv = STOCK_AROS[a.id]; if(!inv) return;
+  a.colores = a.colores.filter(c=>(inv[c[0]]||0) > 0); if(!a.colores.length){ a.agotado = true; a.colores = [["—","#CCCCCC"]]; } });
+const COLORES = [   // filamentos disponibles en el taller  [nombre, color, (fondo del botón)]
+  ["Blanco","#F2F1EC"],["Negro","#242424"],["Gris","#8C8F94"],["Beige","#C6A77E"],
+  ["Plateado","#C9CCD1","linear-gradient(135deg, #F4F5F7 0%, #C9CCD1 38%, #8E939A 62%, #F4F5F7 100%)"],
+  ["Rojo","#D52A2F"],["Fucsia","#E0457F"],["Naranja","#F27B30"],["Amarillo","#F8D62A"],
+  ["Marrón","#7B4A2D"],["Verde claro","#A3E3A0"],["Verde","#3DA857"],
+  ["Celeste","#8FCBF0"],["Azul","#2A5BC9"],["Morado metalizado","#7E4FC0","linear-gradient(135deg, #C7A6F2 0%, #7E4FC0 38%, #4B2A80 62%, #C7A6F2 100%)"],
+  ["Dorado","#E2C233","linear-gradient(135deg, #FFF6A6 0%, #E2C233 38%, #9E8212 62%, #FFF6A6 100%)"],
+  ["Mármol","#E7E6E2","radial-gradient(circle at 30% 35%, #9a9a9a 0 1.5px, transparent 2px), radial-gradient(circle at 65% 60%, #8c8c8c 0 1.5px, transparent 2px), radial-gradient(circle at 45% 75%, #a5a5a5 0 1px, transparent 1.5px), #E7E6E2"]
+];
+window.METAL = {"#C9CCD1":1, "#7E4FC0":1, "#E2C233":1};   // se ven metalizados en el 3D
+// nombres viejos → nuevos (diseños guardados o links de antes)
+const RENOMBRE = {"Plata":"Plateado","Cobre":"Marrón","Menta":"Verde claro","Aqua":"Celeste","Lila":"Morado metalizado"};
+const COLORES_V1 = ["Blanco","Negro","Beige","Plata","Rojo","Fucsia","Naranja","Amarillo","Cobre","Menta","Verde","Celeste","Aqua","Azul","Lila","Dorado","Mármol"];
+const ren = n => RENOMBRE[n] || n;
+/* ==================================================================== */
+
+const SYMS = {"♥":"corazón","★":"estrella","✿":"flor","☺":"carita","♣":"trébol","🐾":"huella","⚽":"balón","✝":"cruz","⚡":"rayo"};
+const EXTRA_SYMS = ["&"];
+const FONTS = [["Redonda","'Nunito', system-ui, sans-serif","Redonda"]];   // por ahora solo letra redonda (antes también: ["Comic","'Comic Neue', 'Comic Sans MS', cursive","Comic"])
+const MIX = ["Amarillo","Azul","Verde claro","Rojo","Fucsia","Celeste","Naranja","Morado metalizado","Verde"].filter(c=>!FIL_AGOTADO.has(c));
+const LEGMIX = ["Morado metalizado","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Fucsia"].filter(c=>!FIL_AGOTADO.has(c));
+const hex = n => (COLORES.find(c=>c[0]===n)||COLORES[0])[1];
+const bg = n => { const c = COLORES.find(c=>c[0]===n)||COLORES[0]; return c[2]||c[1]; };   // fondo para botones (degradados)
+window.SPECIAL = {"#D9342C":"rainbow", "#E7E6E2":"marble"};
+
+const st = {
+  word:"LUNA★", base:"Fucsia", style:"lisa", mode:"mix", sel:0, font:0,
+  tiles:[], legs:[], charms:[{t:"carita",c:"Amarillo"}], objs:[], otro:[], aros:[], cart:[]
+};
+try{ const s=JSON.parse(localStorage.getItem("clicker-crea3d-v3")||"null"); if(s&&s.word!==undefined){ Object.assign(st,s); } }catch(e){}
+if(!Array.isArray(st.charms)){   // diseños guardados con el formato anterior
+  st.charms = []; const ex = st.extras||{};
+  ["carita","flor"].forEach(t=>{ const e = ex[t]; if(e) for(let i=0;i<Math.min(e.q||0,3);i++) st.charms.push({t, c:e.c||"Blanco"}); });
+}
+delete st.extras;
+if(!Array.isArray(st.objs)) st.objs = [];
+st.objs = st.objs.filter(o=>o && OBJETOS.some(x=>x.id===o.t));
+st.objs.forEach(o=>{ const x = OBJETOS.find(y=>y.id===o.t); if(x.var && !x.var.some(k=>k[0]===o.v)) o.v = x.var[0][0]; });
+if(!st.fv2){ st.font = st.font===1 ? 1 : 0; st.fv2 = 1; }          // antes: 0 Inter, 1 Comic, 2 Redonda
+st.font = Math.min(Math.max(0, st.font|0), FONTS.length-1);
+st.base = ren(st.base); st.tiles = (st.tiles||[]).map(ren); st.legs = (st.legs||[]).map(ren);
+if(st.mixTiles) st.mixTiles = st.mixTiles.map(ren); if(st.mixLegs) st.mixLegs = st.mixLegs.map(ren);
+st.charms.forEach(c=>{ c.c = ren(c.c); });
+function sinAgotados(){ const f = c => FIL_AGOTADO.has(c) ? "Rojo" : c;   // un filamento agotado se cambia por uno disponible
+  st.base = f(st.base); st.tiles = st.tiles.map(f); st.legs = st.legs.map(f); st.charms.forEach(c=>{ c.c = f(c.c); }); }
+// charms personalizados: una lista (antes era uno solo como texto)
+const listaOtros = v => Array.isArray(v) ? v.map(x=>String(x==null?"":x)) : (typeof v==="string" ? [v] : []);
+st.otro = listaOtros(st.otro);
+sinAgotados();
+const charmInfo = t => CHARMS.find(x=>x.id===t);
+window.charmList = ()=> st.charms.map(x=>({t:x.t, c:hex(x.c)})).concat(st.objs.map(o=>({t:'obj', c:null, img:objImg(o)})));
+const objInfo = t => OBJETOS.find(x=>x.id===t);
+const objPrice = i => keys().length ? objInfo(st.objs[i].t).extra : (i===0 ? objInfo(st.objs[i].t).solo : objInfo(st.objs[i].t).extra);
+const canOrder = () => keys().length>0 || st.objs.length>0 || st.cart.some(hasContent);
+if(!Array.isArray(st.aros)) st.aros = (st.aro && st.aro.t) ? [{t:st.aro.t, c:st.aro.c}] : [];
+st.aros = st.aros.filter(x=>{ const a = AROS.find(y=>y.id===x.t); return a && !a.agotado; });
+delete st.aro;
+if(!Array.isArray(st.cart)) st.cart = [];
+const MAX_AROS = 4;
+function aroInfo(x){ const a = AROS.find(y=>y.id===x.t); if(!a || a.agotado) return null;
+  const c = a.colores.find(k=>k[0]===x.c) || a.colores[0]; return {tipo:a, nombre:c[0], color:c[1], dot:c[2]||null}; }
+function aroList(){ return st.aros.map(aroInfo).filter(Boolean); }
+function aroSel(){ return aroList()[0] || null; }
+window.aroSel = aroSel; window.aroList = aroList;
+// ---------- varios clickers en un pedido ----------
+const DKEYS = ["word","base","style","mode","font","tiles","legs","charms","objs","otro","aros","colgar","cadColor"];
+const snap = () => JSON.parse(JSON.stringify(Object.fromEntries(DKEYS.map(k=>[k, st[k]]))));
+function loadDesign(d){ Object.assign(st, {colgar:"cadena", cadColor:"Azul"}, JSON.parse(JSON.stringify(d))); st.otro = listaOtros(st.otro); st.font = Math.min(Math.max(0, st.font|0), FONTS.length-1); st.sel = 0; st.mixTiles = null; st.mixLegs = null; }
+function withDesign(d, fn){ const keep = snap(), ks = st.sel; loadDesign(d); try{ return fn(); } finally{ loadDesign(keep); st.sel = ks; } }
+const hasContent = d => (d.word && d.word.length) || (d.objs && d.objs.length);
+function save(){ try{ localStorage.setItem("clicker-crea3d-v3",JSON.stringify(st)); }catch(e){} }
+
+const $ = id => document.getElementById(id);
+const money = v => "$" + v.toFixed(2).replace(".",",");
+
+function clean(t){
+  t = t.toUpperCase().normalize("NFD").replace(/[̀-́̈]/g,"");
+  let out="", bad=false;
+  for(const ch of t){
+    if(/[A-Z0-9]/.test(ch) || SYMS[ch] || EXTRA_SYMS.includes(ch)) out+=ch;
+    else if(ch===" ") { bad=true; }
+    else bad=true;
+  }
+  return {out:[...out].slice(0,10).join(""), bad};
+}
+function keys(){ return [...st.word]; }
+function ensureColors(){
+  const n = keys().length;
+  for(let i=0;i<n;i++){
+    if(!st.tiles[i]) st.tiles[i] = st.mode==="one" ? (st.tiles[0]||"Morado metalizado") : MIX[i%MIX.length];
+    if(!st.legs[i]) st.legs[i] = st.mode==="one" ? (st.legs[0]||"Blanco") : LEGMIX[i%LEGMIX.length];
+  }
+  st.tiles.length = Math.max(n,0); st.legs.length = Math.max(n,0);
+  if(st.sel>=n) st.sel = Math.max(0,n-1);
+}
+
+/* ---------- símbolos dibujados ---------- */
+function symPath(ch, cx, cy, s, fill){
+  if(ch==="♥") return `<path fill="${fill}" d="M${cx} ${cy+s*.42} C${cx-s*.62} ${cy+s*.02} ${cx-s*.5} ${cy-s*.5} ${cx-s*.18} ${cy-s*.42} C${cx-s*.05} ${cy-s*.39} ${cx} ${cy-s*.28} ${cx} ${cy-s*.2} C${cx} ${cy-s*.28} ${cx+s*.05} ${cy-s*.39} ${cx+s*.18} ${cy-s*.42} C${cx+s*.5} ${cy-s*.5} ${cx+s*.62} ${cy+s*.02} ${cx} ${cy+s*.42}Z"/>`;
+  if(ch==="★"){ let p=""; for(let i=0;i<10;i++){ const r=i%2? s*.2:s*.46, a=-Math.PI/2+i*Math.PI/5; p+=(i?"L":"M")+(cx+r*Math.cos(a)).toFixed(1)+" "+(cy+r*Math.sin(a)).toFixed(1);} return `<path fill="${fill}" stroke="${fill}" stroke-width="${s*.06}" stroke-linejoin="round" d="${p}Z"/>`; }
+  if(ch==="✿"){ let g=""; for(let i=0;i<5;i++){ const a=-Math.PI/2+i*Math.PI*2/5; g+=`<circle cx="${(cx+s*.25*Math.cos(a)).toFixed(1)}" cy="${(cy+s*.25*Math.sin(a)).toFixed(1)}" r="${s*.19}" fill="${fill}"/>`;} return g+`<circle cx="${cx}" cy="${cy}" r="${s*.12}" fill="rgba(255,255,255,.55)"/>`; }
+  if(ch==="☺"){   // carita sólida como la tecla real: círculo lleno con ojos y sonrisa calados
+    const R=s*.45, f=v=>v.toFixed(1), circ=(x,y,r)=>`M${f(x-r)} ${f(y)} a${f(r)} ${f(r)} 0 1 0 ${f(2*r)} 0 a${f(r)} ${f(r)} 0 1 0 ${f(-2*r)} 0Z`;
+    const ojo=(x,y,rx,ry)=>`M${f(x-rx)} ${f(y)} a${f(rx)} ${f(ry)} 0 1 0 ${f(2*rx)} 0 a${f(rx)} ${f(ry)} 0 1 0 ${f(-2*rx)} 0Z`;
+    const rm=s*.25, w=s*.075, a0=Math.PI*.12, a1=Math.PI*.88, P=(a,r)=>`${f(cx+r*Math.cos(a))} ${f(cy+s*.02+r*Math.sin(a))}`;
+    const boca=`M${P(a0,rm+w/2)} A${f(rm+w/2)} ${f(rm+w/2)} 0 0 1 ${P(a1,rm+w/2)} A${f(w/2)} ${f(w/2)} 0 0 1 ${P(a1,rm-w/2)} A${f(rm-w/2)} ${f(rm-w/2)} 0 0 0 ${P(a0,rm-w/2)} A${f(w/2)} ${f(w/2)} 0 0 1 ${P(a0,rm+w/2)}Z`;
+    return `<path fill="${fill}" fill-rule="evenodd" d="${circ(cx,cy,R)} ${ojo(cx-s*.15,cy-s*.1,s*.055,s*.09)} ${ojo(cx+s*.15,cy-s*.1,s*.055,s*.09)} ${boca}"/>`; }
+  if(ch==="♣"){ /* trébol de 4 hojas: cada hoja es un corazón apuntando al centro */ let g=""; for(let i=0;i<4;i++){ const a=i*90; g+=`<g transform="rotate(${a} ${cx} ${cy})"><path fill="${fill}" d="M${cx} ${cy-s*.03} C${cx-s*.3} ${cy-s*.22} ${cx-s*.27} ${cy-s*.5} ${cx-s*.1} ${cy-s*.46} C${cx-s*.03} ${cy-s*.44} ${cx} ${cy-s*.38} ${cx} ${cy-s*.33} C${cx} ${cy-s*.38} ${cx+s*.03} ${cy-s*.44} ${cx+s*.1} ${cy-s*.46} C${cx+s*.27} ${cy-s*.5} ${cx+s*.3} ${cy-s*.22} ${cx} ${cy-s*.03}Z"/></g>`; } return g+`<path d="M${cx} ${cy} Q${cx+s*.02} ${cy+s*.25} ${cx+s*.12} ${cy+s*.44}" fill="none" stroke="${fill}" stroke-width="${s*.07}" stroke-linecap="round"/>`; }
+  if(ch==="🐾"){ const e=(x,y,rx,ry,r)=>`<ellipse cx="${(cx+x*s).toFixed(1)}" cy="${(cy+y*s).toFixed(1)}" rx="${rx*s}" ry="${ry*s}" transform="rotate(${r} ${(cx+x*s).toFixed(1)} ${(cy+y*s).toFixed(1)})" fill="${fill}"/>`; return e(0,.14,.24,.2,0)+e(-.3,-.1,.09,.13,-20)+e(-.11,-.3,.09,.13,-8)+e(.11,-.3,.09,.13,8)+e(.3,-.1,.09,.13,20); }
+  if(ch==="⚽"){ const R=s*.44; let g=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${fill}" stroke-width="${s*.07}"/>`; const pent=(px,py,r,rot)=>{ let p=""; for(let i=0;i<5;i++){ const a=rot+i*Math.PI*2/5; p+=(i?"L":"M")+(px+r*Math.cos(a)).toFixed(1)+" "+(py+r*Math.sin(a)).toFixed(1);} return p+"Z"; }; g+=`<path fill="${fill}" d="${pent(cx,cy,R*.3,-Math.PI/2)}"/>`; for(let i=0;i<5;i++){ const a=-Math.PI/2+i*Math.PI*2/5, px=cx+R*.78*Math.cos(a), py=cy+R*.78*Math.sin(a); g+=`<path fill="${fill}" d="${pent(px,py,R*.26,a)}"/><line x1="${(cx+R*.3*Math.cos(a)).toFixed(1)}" y1="${(cy+R*.3*Math.sin(a)).toFixed(1)}" x2="${px.toFixed(1)}" y2="${py.toFixed(1)}" stroke="${fill}" stroke-width="${s*.05}"/>`; } return g; }
+  if(ch==="⚡"){ const P=[[.12,-.46],[-.26,.04],[-.04,.04],[-.14,.46],[.26,-.06],[.04,-.06]]; return `<path fill="${fill}" stroke="${fill}" stroke-width="${s*.04}" stroke-linejoin="round" d="${P.map(([x,y],i)=>(i?"L":"M")+(cx+x*s).toFixed(1)+" "+(cy+y*s).toFixed(1)).join("")}Z"/>`; }
+  if(ch==="✝"){ const w=s*.13; return `<rect x="${cx-w/2}" y="${cy-s*.45}" width="${w}" height="${s*.9}" rx="${w*.15}" fill="${fill}"/><rect x="${cx-s*.3}" y="${cy-s*.22}" width="${s*.6}" height="${w}" rx="${w*.15}" fill="${fill}"/>`; }
+  return "";
+}
+function shade(h, f){ const n=parseInt(h.slice(1),16); let r=n>>16,g=n>>8&255,b=n&255; const m=v=>Math.max(0,Math.min(255,Math.round(f<0? v*(1+f) : v+(255-v)*f))); return "#"+[m(r),m(g),m(b)].map(v=>v.toString(16).padStart(2,"0")).join(""); }
+
+/* ---------- vista previa ---------- */
+function drawPreview(){
+  const ks = keys(), n = Math.max(ks.length,1);
+  const W=640,H=360, gap=8;
+  const k = Math.min(96, (W-80-(n-1)*gap)/n);
+  const pad = k*.16, baseW = n*k+(n-1)*gap+pad*2, baseH = k+pad*2;
+  const bx=(W-baseW)/2, by=(H-baseH)/2+22;
+  const bc = hex(st.base), dark = shade(bc,-.22), lite = shade(bc,.25);
+  const ff = FONTS[st.font][1];
+  let s = `<defs><filter id="sh" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity=".18"/></filter></defs>`;
+  // aro / cadena / charms colgando del lazo
+  const lx=W/2, ly=by-6;
+  const ar = aroSel();
+  if(ar) s += `<circle cx="${lx}" cy="${ly-48}" r="${ar.tipo.id==="gra"?28:24}" fill="none" stroke="${ar.color}" stroke-width="7"/>`;
+  else s += `<circle cx="${lx}" cy="${ly-44}" r="22" fill="none" stroke="#B9BDB4" stroke-width="5"/>`;
+  { for(let i=0;i<7;i++) s+=`<circle cx="${lx+30+i*9}" cy="${ly-40+i*5}" r="3.6" fill="#BFC3BA"/>`; }
+  // charms
+  let cxs = lx+105;
+  const charmY = ly-18;
+  st.charms.forEach(ch=>{ const c = hex(ch.c);
+    if(ch.t==="carita"){ s+=`<circle cx="${cxs}" cy="${charmY}" r="22" fill="${c}" filter="url(#sh)"/>`+symPath("☺",cxs,charmY,44,shade(c,-.45)); cxs+=54; }
+    else if(ch.t==="pelota"){ s+=`<circle cx="${cxs}" cy="${charmY}" r="22" fill="#F2F1EC" filter="url(#sh)"/>`+symPath("⚽",cxs,charmY,48,c); cxs+=54; }
+    else { s+=symPath("✿",cxs,charmY,62,c); cxs+=58; } });
+  // lazo
+  s += `<rect x="${lx-14}" y="${by-26}" width="28" height="34" rx="10" fill="${bc}" filter="url(#sh)"/><circle cx="${lx}" cy="${by-14}" r="6.5" style="fill:var(--stage)"/>`;
+  // base
+  s += `<rect x="${bx}" y="${by}" width="${baseW}" height="${baseH}" rx="${k*.32}" fill="${dark}" filter="url(#sh)"/>`;
+  s += `<rect x="${bx}" y="${by-4}" width="${baseW}" height="${baseH}" rx="${k*.32}" fill="${bc}"/>`;
+  if(st.style==="acanalada"){ for(let x=bx+10;x<bx+baseW-6;x+=7) s+=`<line x1="${x}" y1="${by+3}" x2="${x}" y2="${by+baseH-10}" stroke="${shade(bc,-.1)}" stroke-width="2.4" stroke-linecap="round"/>`; }
+  // teclas
+  ks.forEach((ch,i)=>{
+    const x=bx+pad+i*(k+gap), y=by-4+pad, tc=hex(st.tiles[i]), lc=hex(st.legs[i]);
+    const sel = i===st.sel && st.mode==="mix";
+    s += `<g data-i="${i}" style="cursor:pointer">`;
+    s += `<rect x="${x}" y="${y+5}" width="${k}" height="${k}" rx="${k*.2}" fill="${shade(tc,-.28)}"/>`;
+    s += `<rect x="${x}" y="${y}" width="${k}" height="${k}" rx="${k*.2}" fill="${tc}"/>`;
+    s += `<rect x="${x+k*.1}" y="${y+k*.08}" width="${k*.8}" height="${k*.78}" rx="${k*.16}" fill="${shade(tc,.14)}"/>`;
+    if(SYMS[ch]) s += symPath(ch, x+k/2, y+k*.47, k*.62, lc);
+    else s += `<text x="${x+k/2}" y="${y+k*.47}" dy=".36em" text-anchor="middle" font-family="${ff}" font-weight="900" font-size="${k*.56}" fill="${lc}">${ch.replace("&","&amp;")}</text>`;
+    if(sel) s += `<rect x="${x-4}" y="${y-4}" width="${k+8}" height="${k+13}" rx="${k*.24}" fill="none" style="stroke:var(--ink)" stroke-width="2.5" stroke-dasharray="6 5"/>`;
+    s += `</g>`;
+  });
+  if(!ks.length) s += `<text x="${W/2}" y="${by+baseH/2}" text-anchor="middle" font-family="Figtree, sans-serif" font-size="18" style="fill:var(--ink)">Escribe tu palabra</text>`;
+  $("preview").innerHTML = s;
+  $("preview").querySelectorAll("g[data-i]").forEach(g=>g.addEventListener("click",()=>{ st.sel=+g.dataset.i; if(st.mode==="one"){} render(); }));
+  $("capword").innerHTML = ks.length ? `<b>${ks.length}</b> ${ks.length===1?"tecla":"teclas"} · base ${st.base.toLowerCase()} ${st.style}` : "";
+}
+
+/* ---------- controles ---------- */
+function charmIcon(t, c){
+  if(t==="carita"){ const d = shade(c,-.45);
+    return `<circle cx="22" cy="23" r="16" fill="${c}" stroke="${shade(c,-.18)}" stroke-width="1.5"/><circle cx="22" cy="11.5" r="2" fill="var(--surface)"/><ellipse cx="16.5" cy="21" rx="2" ry="3.6" fill="${d}"/><ellipse cx="27.5" cy="21" rx="2" ry="3.6" fill="${d}"/><path d="M14 27 Q22 35 30 27" fill="none" stroke="${d}" stroke-width="3" stroke-linecap="round"/>`; }
+  if(t==="flor"){ let g = ""; for(let k=0;k<8;k++){ const a = k*Math.PI/4; g += `<ellipse cx="${(22+Math.cos(a)*10).toFixed(1)}" cy="${(22+Math.sin(a)*10).toFixed(1)}" rx="7" ry="4.6" transform="rotate(${k*45} ${(22+Math.cos(a)*10).toFixed(1)} ${(22+Math.sin(a)*10).toFixed(1)})" fill="${c}" stroke="${shade(c,-.18)}" stroke-width="1"/>`; }
+    return g + `<circle cx="22" cy="22" r="5.5" fill="${shade(c,-.35)}"/>`; }
+  if(t==="pelota") return `<circle cx="22" cy="22" r="16" fill="#F2F1EC" stroke="#C9CCC4" stroke-width="1"/>` + symPath("⚽",22,22,36,c);
+  return `<circle cx="22" cy="22" r="15" fill="none" stroke="#9AA394" stroke-width="2.5" stroke-dasharray="4 4"/><text x="22" y="22" dy=".36em" text-anchor="middle" font-family="Figtree, sans-serif" font-weight="800" font-size="18" fill="#7A8474">?</text>`;
+}
+function swatches(el, current, onPick){
+  el.innerHTML = COLORES.map(([n,h,css])=>{ const ag = FIL_AGOTADO.has(n);
+    return `<button class="sw${ag?" sw-agotado":""}" style="background:${css||h}" title="${n}${ag?" (agotado)":""}" aria-label="${n}${ag?" agotado":""}" aria-pressed="${n===current}" data-n="${n}" ${ag?"disabled":""}></button>`; }).join("");
+  el.querySelectorAll(".sw").forEach(b=>b.onclick=()=>onPick(b.dataset.n));
+}
+function render(){
+  ensureColors();
+  const ks = keys();
+  $("word").value = st.word;
+  swatches($("sw-base"), st.base, n=>{st.base=n; render();});
+  $("st-lisa").setAttribute("aria-pressed", st.style==="lisa"); $("st-acan").setAttribute("aria-pressed", st.style==="acanalada");
+  $("mode-one").setAttribute("aria-pressed", st.mode==="one"); $("mode-mix").setAttribute("aria-pressed", st.mode==="mix");
+  // chips
+  $("keychips").innerHTML = ks.map((ch,i)=>`<button class="keychip" data-i="${i}" aria-pressed="${st.mode==='mix'&&i===st.sel}" aria-label="Tecla ${i+1}: ${SYMS[ch]||ch}" style="background:${bg(st.tiles[i])};color:${hex(st.legs[i])}">${SYMS[ch]?`<svg viewBox="0 0 40 40">${symPath(ch,20,20,34,hex(st.legs[i]))}</svg>`:ch.replace("&","&amp;")}</button>`).join("");
+  $("keychips").hidden = st.mode==="one" || !ks.length;
+  $("keychips").querySelectorAll(".keychip").forEach(b=>b.onclick=()=>openSheet(+b.dataset.i));
+  $("mixhint").hidden = st.mode==="one" || !ks.length;
+  $("onecolors").hidden = st.mode!=="one";
+  const i = st.sel;
+  swatches($("sw-tile"), st.tiles[i]||st.tiles[0], n=>{ if(st.mode==="one") st.tiles=st.tiles.map(()=>n); else st.tiles[i]=n; render(); });
+  swatches($("sw-leg"), st.legs[i]||st.legs[0], n=>{ if(st.mode==="one") st.legs=st.legs.map(()=>n); else st.legs[i]=n; render(); });
+  $("fonts").innerHTML = FONTS.map((f,j)=>`<button class="btn" aria-pressed="${j===st.font}" data-j="${j}" style="font-family:${f[1]};font-weight:800">${f[2]} Aa</button>`).join("");
+  $("fonts").querySelectorAll(".btn").forEach(b=>b.onclick=()=>{st.font=+b.dataset.j; render();});
+  // aros
+  const ICON = {
+    peq:c=>`<circle cx="22" cy="22" r="12" fill="none" stroke="${c}" stroke-width="4.5"/>`,
+    gra:c=>`<circle cx="22" cy="22" r="16" fill="none" stroke="${c}" stroke-width="5"/>`,
+    cor:c=>`<path d="M22 35 C9 26 6 19 9 13 C12 7 19 8 22 14 C25 8 32 7 35 13 C38 19 35 26 22 35Z" fill="none" stroke="${c}" stroke-width="4" stroke-linejoin="round"/>`,
+    flor:c=>{ let d=""; for(let k=0;k<5;k++){ const a=k*Math.PI*2/5-Math.PI/2; d+=`<circle cx="${22+Math.cos(a)*8}" cy="${22+Math.sin(a)*8}" r="6" fill="none" stroke="${c}" stroke-width="3.5"/>`; } return d; },
+    no:()=>`<line x1="12" y1="12" x2="32" y2="32" stroke="#999" stroke-width="3"/><circle cx="22" cy="22" r="14" fill="none" stroke="#bbb" stroke-width="3" stroke-dasharray="4 4"/>`
+  };
+  const afull = st.aros.length >= MAX_AROS;
+  $("aros").innerHTML = AROS.map(a=>{ const col = ({peq:"#C2A6F0",gra:"#F27FAA"}[a.id]||a.colores[0][1]);
+    return `<button class="aro${a.agotado?" agotado":""}" type="button" data-a="${a.id}" ${afull||a.agotado?"disabled":""}><svg viewBox="0 0 44 44">${ICON[a.id](col)}</svg>${a.nombre}<small>${a.agotado?"Agotado":money(a.precio)+" c/u"}</small></button>`; }).join("");
+  $("aros").querySelectorAll(".aro").forEach(b=>b.onclick=()=>{ if(st.aros.length>=MAX_AROS) return; const a = AROS.find(x=>x.id===b.dataset.a); if(!a || a.agotado) return;
+    const used = st.aros.filter(x=>x.t===a.id).map(x=>x.c), inv = STOCK_AROS[a.id]||{}, libre = k=>used.filter(u=>u===k[0]).length < (inv[k[0]]||99);
+    const elegido = a.colores.find(k=>!used.includes(k[0]) && libre(k)) || a.colores.find(libre); if(!elegido) return; const c = elegido[0];
+    st.aros.push({t:a.id, c}); render(); });
+  $("arolist").innerHTML = st.aros.map((x,i)=>{ const r = aroInfo(x); if(!r) return "";
+    return `<div class="crow"><svg viewBox="0 0 44 44">${ICON[r.tipo.id](r.color)}</svg>
+      <div><div class="n">${r.tipo.nombre} · ${r.nombre.toLowerCase()} <span class="notice">${money(r.tipo.precio)}</span></div>
+      <div class="swatches">${r.tipo.colores.map(([n,h,d])=>`<button class="sw" style="background:${d?`radial-gradient(circle at 35% 35%, ${d} 0 3px, transparent 3.5px), radial-gradient(circle at 68% 62%, ${d} 0 3px, transparent 3.5px), ${h}`:h}" title="${n}" aria-label="${n}" aria-pressed="${n===r.nombre}" data-ai="${i}" data-n="${n}"></button>`).join("")}</div></div>
+      <button class="x" type="button" data-adel="${i}" aria-label="Quitar ${r.tipo.nombre}">✕</button></div>`; }).join("")
+    + (afull ? `<p class="hint">Máximo ${MAX_AROS} aros por llavero.</p>` : (st.aros.length ? "" : (AROS.every(a=>a.agotado) ? `<p class="hint">Por ahora no tenemos aros disponibles; tu llavero va con su cadena de bolitas.</p>` : `<p class="hint">Sin aro: solo la cadena de bolitas.</p>`)));
+  $("arolist").querySelectorAll("[data-ai]").forEach(b=>b.onclick=()=>{ const x = st.aros[+b.dataset.ai], inv = STOCK_AROS[x.t]||{};
+    const otros = st.aros.filter((y,k)=>k!==+b.dataset.ai && y.t===x.t && y.c===b.dataset.n).length;
+    if(otros >= (inv[b.dataset.n]||99)){ b.animate([{transform:"translateX(-3px)"},{transform:"translateX(3px)"},{transform:"none"}],{duration:200}); return; }   // no hay más de ese color
+    x.c = b.dataset.n; render(); });
+  $("arolist").querySelectorAll("[data-adel]").forEach(b=>b.onclick=()=>{ st.aros.splice(+b.dataset.adel,1); render(); });
+  // pedido con varios clickers
+  $("cartbox").innerHTML = st.cart.length ? `<div class="cart">${st.cart.map((d,i)=>{ const c = withDesign(d, designCalc);
+      const nm = d.word ? [...d.word].map(ch=>SYMS[ch]?`[${SYMS[ch]}]`:ch).join("") : (d.objs.length ? objInfo(d.objs[0].t).nombre : "(vacío)");
+      return `<div class="citem"><div class="t">Clicker ${i+1}: ${nm.replace(/[<&>]/g,"")}<small>${money(c.tot)}</small></div><button class="btn" type="button" data-cedit="${i}">Editar</button><button class="btn" type="button" data-cdel="${i}">Quitar</button></div>`; }).join("")}</div><span class="ccur">Clicker ${st.cart.length+1} (el que estás armando)</span>` : "";
+  $("cartbox").querySelectorAll("[data-cedit]").forEach(b=>b.onclick=()=>{ const i=+b.dataset.cedit, cur = snap();
+    loadDesign(st.cart[i]); if(hasContent(cur)) st.cart[i] = cur; else st.cart.splice(i,1); if(window.closeSheetIfOpen) window.closeSheetIfOpen(); render(); window.scrollTo({top:0, behavior:"smooth"}); });
+  $("cartbox").querySelectorAll("[data-cdel]").forEach(b=>b.onclick=()=>{ st.cart.splice(+b.dataset.cdel,1); render(); });
+  // charms
+  const full = st.charms.length >= MAX_CHARMS;
+  $("charmcards").innerHTML = CHARMS.map(x=>`<button class="aro" type="button" data-c="${x.id}" ${full?"disabled":""}><svg viewBox="0 0 44 44">${charmIcon(x.id, hex(x.color))}</svg>${x.nombre}<small>${money(x.precio)} c/u</small></button>`).join("")
+    + `<button class="aro" type="button" data-c="otro" aria-pressed="${st.otro.length>0}"><svg viewBox="0 0 44 44">${charmIcon("otro")}</svg>Otro charm${st.otro.length>1?` ×${st.otro.length}`:""}<small>$1,00 c/u · dinos cuál</small></button>`;
+  $("charmcards").querySelectorAll(".aro").forEach(b=>b.onclick=()=>{
+    const t = b.dataset.c;
+    if(t==="otro"){ agregarOtro(); return; }
+    if(st.charms.length < MAX_CHARMS){ const used = st.charms.filter(c=>c.t===t).map(c=>c.c);
+      const pal = ["Amarillo","Celeste","Fucsia","Verde claro","Morado metalizado","Blanco","Naranja","Rojo"]; const c = t==="pelota" ? charmInfo(t).color : (pal.find(p=>!used.includes(p)) || charmInfo(t).color);
+      st.charms.push({t, c}); render(); } });
+  $("charmlist").innerHTML = st.charms.map((ch,i)=>{ const x = charmInfo(ch.t);
+    return `<div class="crow"><svg viewBox="0 0 44 44">${charmIcon(ch.t, hex(ch.c))}</svg>
+      <div><div class="n">${x.nombre} · ${ch.c.toLowerCase()} <span class="notice">${money(x.precio)}</span></div><div class="swatches" data-ci="${i}"></div></div>
+      <button class="x" type="button" data-del="${i}" aria-label="Quitar ${x.nombre}">✕</button></div>`; }).join("")
+    + (full ? `<p class="hint">Máximo ${MAX_CHARMS} charms por llavero.</p>` : "");
+  $("charmlist").querySelectorAll("[data-ci]").forEach(el=>{ const i = +el.dataset.ci; swatches(el, st.charms[i].c, n=>{ st.charms[i].c = n; render(); }); });
+  $("charmlist").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{ st.charms.splice(+b.dataset.del,1); render(); });
+  $("objcards").innerHTML = OBJETOS.map(x=>{ const sel = st.objs.find(o=>o.t===x.id), on = !!sel;
+    const im = sel ? objImg(sel) : x.img;
+    return `<button class="aro" type="button" data-o="${x.id}" aria-pressed="${on}"><img class="ph" src="/obj/${im}.webp" alt="" loading="lazy">${x.nombre}<small>${on?"✓ Agregado":`${money(keys().length?x.extra:x.solo)}`}</small></button>`; }).join("");
+  $("objcards").querySelectorAll(".aro").forEach(b=>b.onclick=()=>{ const t=b.dataset.o, i=st.objs.findIndex(o=>o.t===t);
+    if(i>=0) st.objs.splice(i,1); else { const x = OBJETOS.find(y=>y.id===t); st.objs.push(x.var ? {t, v:x.var[0][0]} : {t}); } render(); });
+  $("objvars").innerHTML = st.objs.map((o,i)=>{ const x = OBJETOS.find(y=>y.id===o.t); if(!x.var) return "";
+    return `<div class="vrow"><div class="n">${x.nombre}: escoge cuál</div><div class="vchips">${x.var.map(([k,nm])=>`<button class="vchip" type="button" data-i="${i}" data-v="${k}" aria-pressed="${o.v===k}"><img src="/obj/${x.id}-${k}.webp" alt="" loading="lazy">${nm}</button>`).join("")}</div></div>`; }).join("");
+  $("objvars").querySelectorAll(".vchip").forEach(b=>b.onclick=()=>{ st.objs[+b.dataset.i].v = b.dataset.v; render(); });
+  window.__onlyObj = !keys().length && st.objs.length>0;
+  document.querySelectorAll("#colgar button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.c === (st.colgar||"cadena")));
+  document.getElementById("coloresCad").hidden = st.colgar !== "colores";
+  if(!CADC[st.cadColor]) st.cadColor = "Azul";
+  document.querySelectorAll("#cadsw button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.cc === st.cadColor));
+  document.getElementById("cadName").textContent = st.cadColor;
+  $("otrobox").hidden = !st.otro.length;
+  pintarOtros();
+  if(window.__3d) window.__3d.update(); else drawPreview(); pricing(); save(); renderSheet();
+}
+
+let waURL = "";
+const EMO = {"Rojo":"🔴","Naranja":"🟠","Amarillo":"🟡","Marrón":"🟤","Verde":"🟢","Azul":"🔵","Morado metalizado":"🟣"};
+const colTxt = n => EMO[n] ? `${EMO[n]} *${n.toLowerCase()}*` : `*${n.toLowerCase()}*`;
+function designCalc(){   // usa el diseño cargado en st
+  const n = keys().length, ks = keys(), lines = []; let tot = 0;
+  const llavero = st.colgar === "llavero" && (n || st.objs.length);
+  if(n){ const l = n*PRECIO_LETRA; lines.push([`${n} ${n===1?"letra":"letras"} × ${money(PRECIO_LETRA)} (base${llavero?"":" y cadena"} incluida${llavero?"":"s"})`, l]); tot += l; }
+  if(llavero){ lines.push(["Aro de llavero (en vez de cadena)", PRECIO_LLAVERO]); tot += PRECIO_LLAVERO; }
+  const colores = st.colgar === "colores" && (n || st.objs.length);
+  if(colores){ lines.push([`Cadenita de colores: ${st.cadColor.toLowerCase()} (en vez de la plateada)`, PRECIO_COLORES]); tot += PRECIO_COLORES; }
+  aroList().forEach(ar=>{ lines.push([`${ar.tipo.nombre} (${ar.nombre.toLowerCase()})`, ar.tipo.precio]); tot+=ar.tipo.precio; });
+  st.charms.forEach(ch=>{ const x = charmInfo(ch.t); lines.push([`Charm ${x.nombre.toLowerCase()} (${ch.c.toLowerCase()})`, x.precio]); tot+=x.precio; });
+  st.objs.forEach((o,i)=>{ const x = objInfo(o.t), p = objPrice(i); lines.push([`Clicker de objeto: ${x.nombre.toLowerCase()}${o.v?` (${objVarName(o).toLowerCase()})`:''}${!n&&i===0?' (con cadena)':''}`, p]); tot+=p; });
+  const otros = st.otro.map(x=>x.trim() || "(te cuento cuál)"), otro = otros.length ? otros.join(", ") : null;
+  otros.forEach(x=>{ lines.push([`Charm personalizado: ${x}`, PRECIO_OTRO]); tot += PRECIO_OTRO; });
+  const charmEmo = {carita:"😊", flor:"🌼", pelota:"⚽"};
+  let body = "";
+  if(ks.length){
+    const teclas = ks.map((ch,i)=>`${i+1}. *${SYMS[ch]?SYMS[ch]:ch}* → tecla ${colTxt(st.tiles[i])} · letra ${colTxt(st.legs[i])}`).join("\n");
+    body = `🔤 Palabra: *${ks.map(c=>SYMS[c]?`[${SYMS[c]}]`:c).join("")}*\n🧱 Base: ${colTxt(st.base)} · ${st.style}\n✍️ Tipografía: ${FONTS[st.font][2]}\n\n⌨️ Teclas:\n${teclas}`;
+  }
+  const extras = [];
+  if(llavero) extras.push(`🔑 *Aro de llavero* en vez de cadena — ${money(PRECIO_LLAVERO)}`);
+  if(colores) extras.push(`🎨 *Cadenita de colores* color *${st.cadColor.toLowerCase()}* en vez de la plateada — ${money(PRECIO_COLORES)} (sujeto a disponibilidad)`);
+  aroList().forEach(ar=>extras.push(`*${ar.tipo.nombre}* color *${ar.nombre.toLowerCase()}* — ${money(ar.tipo.precio)}`));
+  st.charms.forEach(ch=>{ const x = charmInfo(ch.t); extras.push(`${charmEmo[ch.t] ? charmEmo[ch.t]+" " : ""}Charm ${x.nombre.toLowerCase()} ${colTxt(ch.c)} — ${money(x.precio)}`); });
+  st.objs.forEach((o,i)=>{ const x = objInfo(o.t); extras.push(`${x.emo} Clicker *${x.nombre.toLowerCase()}*${o.v?` *${objVarName(o).toLowerCase()}*`:""}${!ks.length&&i===0?" (con cadena)":""} — ${money(objPrice(i))}`); });
+  otros.forEach(x=>extras.push(`Charm personalizado: *${x}* — ${money(PRECIO_OTRO)}`));
+  if(extras.length) body += (body ? `\n\nExtras:\n` : "") + extras.join("\n");
+  return {lines, tot, otro, body, word: ks.length, link: designLink()};
+}
+function pricing(){
+  const cur = designCalc();
+  const items = st.cart.filter(hasContent).map(d=>withDesign(d, designCalc));
+  const all = hasContent(snap()) ? items.concat([cur]) : items;
+  const tot = all.reduce((a,c)=>a+c.tot,0), anyOtro = all.some(c=>c.otro!==null);
+  $("breakdown").innerHTML = cur.lines.map(([a,b])=>`<dt>${a.replace(/[<&>]/g,"")}</dt><dd>${money(b)}</dd>`).join("")
+    + (items.length ? `<dt>Clickers anteriores (${items.length})</dt><dd>${money(items.reduce((a,c)=>a+c.tot,0))}</dd>` : "")
+    + `<dt class="tot">Total${all.length>1?` (${all.length} clickers)`:""}</dt><dd class="tot">${money(tot)}</dd>`;
+  $("total").textContent = money(tot);
+  let txt;
+  if(all.length<=1){
+    const c = all[0] || cur;
+    txt = (c.word ? `✨ ¡Hola Crea3d! Quiero este clicker ✨` : `✨ ¡Hola Crea3d! Quiero este clicker de objeto ✨`) + (c.body ? `\n\n${c.body}` : "")
+      + `\n\n💰 *Total: ${money(tot)}* (tasa BCV)\n\n🔗 Mi diseño en 3D: ${c.link}\n\n📸 A continuación te envío la foto de mi diseño 💚`;
+  } else {
+    txt = `✨ ¡Hola Crea3d! Quiero estos ${all.length} clickers ✨` + all.map((c,i)=>`\n\n*━━━ Clicker ${i+1} ━━━*\n${c.body}\nSubtotal: ${money(c.tot)}\n🔗 Diseño en 3D: ${c.link}`).join("")
+      + `\n\n💰 *Total: ${money(tot)}* (tasa BCV)\n\n📸 A continuación te envío la foto de mis diseños 💚`;
+  }
+  window.__pedidoCompleto = txt;
+  $("summary").textContent = txt;
+  waURL = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(txt)}`;
+  const ok = canOrder();
+  $("wa").style.opacity = ok?1:.5; $("wa").setAttribute("aria-disabled", !ok);
+}
+
+/* ---------- eventos ---------- */
+$("word").addEventListener("input", e=>{
+  const {out,bad} = clean(e.target.value);
+  st.word = out;
+  const w=$("warn");
+  if(bad){ w.hidden=false; w.textContent = /Ñ/i.test(e.target.value) ? "La Ñ no viene en el set de letras. Escríbenos y buscamos una solución." : "Ese carácter no está disponible. Usa letras A–Z, números o los símbolos."; }
+  else w.hidden=true;
+  render();
+});
+$("symrow").innerHTML = Object.keys(SYMS).map(ch=>`<button class="btn sym" data-s="${ch}" aria-label="Agregar ${SYMS[ch]}"><svg viewBox="0 0 40 40">${symPath(ch,20,20,34,"currentColor")}</svg></button>`).join("") + EXTRA_SYMS.map(ch=>`<button class="btn sym" data-s="${ch}" aria-label="Agregar ${ch}">${ch.replace("&","&amp;")}</button>`).join("");
+$("symrow").querySelectorAll("button").forEach(b=>b.onclick=()=>{ if([...st.word].length<10){ st.word+=b.dataset.s; st.sel=[...st.word].length-1; render(); } else { $("warn").hidden=false; $("warn").textContent="Máximo 10 teclas."; } });
+// cada charm personalizado en su casilla: se pueden agregar varios (cada uno cuesta lo mismo)
+function pintarOtros(){
+  const box = $("otrolist");
+  if(box.contains(document.activeElement) && box.children.length === st.otro.length) return;   // no borrar lo que estás escribiendo
+  box.innerHTML = st.otro.map((v,i)=>`<div class="otro-row"><input type="text" data-oi="${i}" maxlength="80" autocomplete="off" aria-label="Charm personalizado ${i+1}" placeholder="${i===0?"Ej.: un Lego, una inicial, una estrella…":"Ej.: un control de Play"}" value="${v.replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;")}"><button class="x" type="button" data-od="${i}" aria-label="Quitar charm personalizado ${i+1}">✕</button></div>`).join("");
+}
+function agregarOtro(){
+  if(st.otro.length >= MAX_CHARMS) return;
+  st.otro.push(""); render();
+  const ins = $("otrolist").querySelectorAll("input"); if(ins.length) ins[ins.length-1].focus();
+}
+$("otrolist").addEventListener("input", e=>{ const i = e.target.dataset.oi; if(i===undefined) return; st.otro[+i] = e.target.value; pricing(); save(); });
+$("otrolist").addEventListener("click", e=>{ const b = e.target.closest("[data-od]"); if(!b) return; st.otro.splice(+b.dataset.od,1); render(); });
+$("addotro").onclick = agregarOtro;
+/* ---------- colores al azar ---------- */
+const pick = a => { const ok = a.filter(x=>!(typeof x==="string" && FIL_AGOTADO.has(x))), b = ok.length ? ok : a; return b[Math.floor(Math.random()*b.length)]; };
+const shuffle = a => { a=[...a]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+function lumOf(n){ const h=hex(n).slice(1); const [r,g,b]=[0,2,4].map(i=>parseInt(h.substr(i,2),16)/255).map(c=>c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)); return .2126*r+.7152*g+.0722*b; }
+function contrast(a,b){ const x=lumOf(a), y=lumOf(b); return (Math.max(x,y)+.05)/(Math.min(x,y)+.05); }
+function legFor(tile, accents){
+  const ok = shuffle(accents).filter(c=>c!==tile && contrast(c,tile)>=2.6);
+  if(ok.length && Math.random()<.6) return ok[0];
+  return contrast("Blanco",tile) >= contrast("Negro",tile) ? "Blanco" : "Negro";
+}
+const TEMAS = [
+  {n:"pastel",    bases:["Blanco","Morado metalizado","Verde claro","Celeste","Beige"], tiles:["Celeste","Verde claro","Morado metalizado","Amarillo","Blanco","Beige"], acc:["Morado metalizado","Fucsia","Azul","Celeste","Verde claro","Amarillo"]},
+  {n:"vibrante",  bases:["Negro","Blanco","Azul","Fucsia"],          tiles:["Rojo","Fucsia","Naranja","Amarillo","Azul","Verde","Morado metalizado","Celeste"], acc:["Blanco","Amarillo","Negro"]},
+  {n:"arcoiris",  bases:["Blanco","Negro"],                          seq:["Rojo","Naranja","Amarillo","Verde","Celeste","Azul","Morado metalizado","Fucsia"], acc:["Blanco"]},
+  {n:"dos tonos", bases:["Blanco","Negro","Beige","Plateado","Gris"],          tiles:["Fucsia","Celeste","Morado metalizado","Verde claro","Amarillo","Azul","Rojo","Naranja","Verde","Negro","Blanco"], acc:["Blanco","Negro","Amarillo","Fucsia"]},
+  {n:"elegante",  bases:["Negro","Blanco","Plateado","Beige"],          tiles:["Blanco","Negro","Gris","Dorado","Plateado","Mármol","Beige","Morado metalizado"], acc:["Dorado","Negro","Blanco"], one:true},
+  {n:"un color",  bases:["Blanco","Negro","Plateado"],                  tiles:["Fucsia","Morado metalizado","Celeste","Verde claro","Rojo","Azul","Amarillo","Naranja","Verde"], acc:["Blanco","Negro","Amarillo","Morado metalizado","Fucsia"], one:true},
+];
+TEMAS.forEach(t=>["bases","tiles","seq","acc"].forEach(k=>{ if(t[k]) t[k] = t[k].filter(c=>!FIL_AGOTADO.has(c)); }));   // sin filamentos agotados
+let lastRand = "";
+function randomize(){
+  const n = keys().length; let sig="", tries=0;
+  do{
+    const t = pick(TEMAS.concat(TEMAS.slice(0,2)));   // pastel y vibrante salen un poco más
+    let tiles=[];
+    if(t.seq){ const off=Math.floor(Math.random()*t.seq.length); tiles=Array.from({length:n},(_,i)=>t.seq[(off+i)%t.seq.length]); }
+    else if(t.one){ const c=pick(t.tiles); tiles=Array.from({length:n},()=>c); }
+    else if(t.n==="dos tonos"){ const [a,b]=shuffle(t.tiles); tiles=Array.from({length:n},(_,i)=>i%2?b:a); }
+    else { let bag=[]; while(bag.length<n) bag=bag.concat(shuffle(t.tiles)); tiles=bag.slice(0,n);
+      for(let i=1;i<n;i++) if(tiles[i]===tiles[i-1]) tiles[i]=pick(t.tiles.filter(c=>c!==tiles[i-1])); }
+    let base = pick(t.bases.filter(b=>!tiles.every(x=>x===b)));
+    let legs;
+    if(t.one || t.n==="dos tonos"){ const l = legFor(tiles[0], t.acc); legs = tiles.map(x=> contrast(l,x)>=2.6 ? l : legFor(x,t.acc)); }
+    else legs = tiles.map(x=>legFor(x,t.acc));
+    st.tiles=tiles; st.legs=legs; st.base=base; st.mode = t.one ? "one" : "mix";
+    st.style = Math.random()<.3 ? "acanalada" : "lisa";
+    sig = st.base+st.style+tiles.join()+legs.join(); tries++;
+  } while(sig===lastRand && tries<8);
+  lastRand = sig; st.mixTiles=null; st.mixLegs=null;
+  // aro y charms: solo cambia el color, no lo que la persona escogió
+  st.aros.forEach(x=>{ const a = AROS.find(y=>y.id===x.t); if(a) x.c = pick(a.colores)[0]; });
+  const CH = ["Amarillo","Celeste","Fucsia","Verde claro","Morado metalizado","Blanco","Naranja","Rojo","Azul"];
+  st.charms.forEach(c=>{ c.c = pick(CH.filter(x=>!st.tiles.includes(x)).concat(CH).slice(0,CH.length)); });
+  render();
+}
+function spinDice(btn){ btn.classList.remove("spin"); void btn.offsetWidth; btn.classList.add("spin"); setTimeout(()=>btn.classList.remove("spin"),380); }
+["randtop","randbtn"].forEach(id=>$(id).onclick=()=>{
+  if(!keys().length){ $("word").focus(); return; }
+  spinDice($(id)); randomize();
+});
+$("homebtn").onclick = ()=>{ if(window.__homeView) window.__homeView(); };
+
+$("st-lisa").onclick=()=>{st.style="lisa";render();};
+$("st-acan").onclick=()=>{st.style="acanalada";render();};
+$("mode-one").onclick=()=>{
+  if(st.mode==="one") return;
+  st.mixTiles=[...st.tiles]; st.mixLegs=[...st.legs];          // guarda cómo estaban
+  st.mode="one"; const t=st.tiles[st.sel]||"Morado metalizado", l=st.legs[st.sel]||"Blanco"; st.tiles=st.tiles.map(()=>t); st.legs=st.legs.map(()=>l); render();
+};
+$("mode-mix").onclick=()=>{
+  if(st.mode==="mix") return;
+  st.mode="mix";
+  if(st.mixTiles){ const n=keys().length;                      // vuelve a como estaban
+    st.tiles = Array.from({length:n},(_,i)=> st.mixTiles[i] || MIX[i%MIX.length]);
+    st.legs  = Array.from({length:n},(_,i)=> st.mixLegs[i]  || LEGMIX[i%LEGMIX.length]); }
+  render();
+};
+$("addclk").onclick = ()=>{
+  if(!hasContent(snap())){ $("word").focus(); return; }
+  st.cart.push(snap());
+  loadDesign({word:"", base:st.base, style:"lisa", mode:"mix", font:st.font, tiles:[], legs:[], charms:[], objs:[], otro:[], aros:[]});
+  render(); window.scrollTo({top:0, behavior:"smooth"}); setTimeout(()=>$("word").focus(), 400);
+};
+$("wa").addEventListener("click", e=>{
+  e.preventDefault();
+  if(!canOrder()){ $("word").focus(); return; }
+  openOrder();
+});
+let photoBlob = null, photoPng = null;
+function dataURLtoBlob(u){ const type = u.slice(5, u.indexOf(";")); const b = atob(u.split(",")[1]); const a = new Uint8Array(b.length); for(let i=0;i<b.length;i++) a[i]=b.charCodeAt(i); return new Blob([a], {type}); }
+function setStatus(t, ok){ const e = $("ord-status"); e.textContent = t; e.classList.toggle("ok", !!ok); }
+function photoCopied(){
+  setStatus("✓ Foto copiada. Ahora envíala con tu pedido:", true);
+  $("ord-copy").hidden = true; $("ord-tip").hidden = true; $("ord-skip").hidden = true; $("ord-step2").hidden = false;
+}
+async function copyPhoto(){
+  try{
+    if(!(window.ClipboardItem && navigator.clipboard && navigator.clipboard.write)) throw new Error("no");
+    await navigator.clipboard.write([new ClipboardItem({"image/png": photoPng})]);
+    photoCopied();
+  }catch(err){
+    setStatus("No se pudo copiar con el botón. Mantén presionada la foto y toca “Copiar”.");
+    $("ord-skip").hidden = false;
+  }
+}
+/* ---------- datos del cliente (se recuerdan en este teléfono) ---------- */
+const CLI_KEY = "crea3d-cliente";
+function cliente(){ try{ return JSON.parse(localStorage.getItem(CLI_KEY)) || {}; }catch(e){ return {}; } }
+function telOK(t){ const d = String(t||"").replace(/\D/g,""); return d.length >= 10 && d.length <= 15; }
+function waConNombre(){
+  const c = cliente(), txt = window.__pedidoCompleto || "";
+  if(!c.nombre) return waURL;
+  const i = txt.indexOf("\n\n"), t2 = i < 0 ? txt + `\n\n👤 Soy *${c.nombre}*` : txt.slice(0,i) + `\n\n👤 Soy *${c.nombre}*` + txt.slice(i);
+  return `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(t2)}`;
+}
+function openOrder(){
+  $("order").hidden = false; document.body.classList.add("sheet-open");
+  const c = cliente();
+  $("cli-nombre").value = c.nombre || ""; $("cli-tel").value = c.telefono || ""; $("cli-err").textContent = "";
+  $("ord-datos").hidden = false; $("ord-photo").hidden = true; $("ord-step2").hidden = true; $("ord-skip").hidden = true;
+  $("ord-title").textContent = "Tu pedido está listo";
+  setTimeout(()=>{ (c.nombre ? $("ord-datos").querySelector("button") : $("cli-nombre")).focus(); }, 60);
+}
+$("ord-datos").addEventListener("submit", e=>{
+  e.preventDefault();
+  const nombre = $("cli-nombre").value.trim().replace(/\s+/g," "), telefono = $("cli-tel").value.trim();
+  if(nombre.length < 2){ $("cli-err").textContent = "Escribe tu nombre."; $("cli-nombre").focus(); return; }
+  if(!telOK(telefono)){ $("cli-err").textContent = "Revisa el teléfono: escríbelo completo, ej. 0414-1234567."; $("cli-tel").focus(); return; }
+  try{ localStorage.setItem(CLI_KEY, JSON.stringify({nombre, telefono})); }catch(err){}
+  $("ord-datos").hidden = true;
+  avisarCaja();            // el pedido queda anotado aunque no lo envíen por WhatsApp
+  startPhoto();
+});
+async function startPhoto(){
+  $("ord-wa").href = waConNombre(); $("ord-step2").hidden = true; $("ord-skip").hidden = true;
+  $("ord-copy").hidden = false; $("ord-copy").disabled = true; $("ord-tip").hidden = false; $("ord-photo").hidden = false;
+  $("ord-img").removeAttribute("src"); setStatus("Preparando la foto…");
+  let url = null;
+  if(window.__3d && window.__3d.photo){
+    const saved = st.cart.filter(hasContent);
+    if(!saved.length) url = await window.__3d.photo();
+    else {
+      // varios clickers: una foto de cada uno, juntas en una sola imagen
+      const cur = snap(), list = hasContent(cur) ? saved.concat([cur]) : saved, imgs = [];
+      for(const d of list){ loadDesign(d); const tot = money(designCalc().tot); const u = await window.__3d.photo({total: tot});
+        const im = new Image(); await new Promise(r=>{ im.onload = r; im.src = u.png; }); imgs.push(im); }
+      loadDesign(cur); render();
+      const cols = imgs.length>1 ? 2 : 1, cell = 1080/cols, rows = Math.ceil(imgs.length/cols);
+      const c = document.createElement("canvas"); c.width = 1080; c.height = cell*rows; const x = c.getContext("2d");
+      x.fillStyle = "#F2F4EE"; x.fillRect(0,0,c.width,c.height);
+      imgs.forEach((im,i)=>{ const cx = (i%cols)*cell, cy = Math.floor(i/cols)*cell; x.drawImage(im, cx, cy, cell, cell);
+        x.fillStyle = "rgba(20,23,18,.85)"; x.beginPath(); x.roundRect ? x.roundRect(cx+14, cy+cell*0.13, 150, 44, 22) : x.rect(cx+14, cy+cell*0.13, 150, 44); x.fill();
+        x.fillStyle = "#fff"; x.font = "800 24px Figtree, system-ui, sans-serif"; x.textAlign = "left"; x.fillText(`Clicker ${i+1}`, cx+32, cy+cell*0.13+30); });
+      url = {png: c.toDataURL("image/png")};
+    }
+  }
+  if(!url){ $("ord-photo").hidden = true; $("ord-step2").hidden = false; return; }
+  $("ord-img").src = url.png; photoPng = dataURLtoBlob(url.png); photoBlob = photoPng;
+  setStatus("Paso 1: copia la foto de tu clicker"); $("ord-copy").disabled = false;
+}
+/* ---------- avisa a la caja de Crea3d que llegó un pedido (para registrarlo como pendiente) ---------- */
+const CAJA_API = "https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec";
+const NOMBRE_AROS = {peq:"Aro redondo pequeño (metal)", gra:"Aro redondo grande (metal)", cor:"Corazón con puntitos (metal)", flor:"Flor con giratorio (metal)"};
+const NOMBRE_CHARMS = {carita:"Charm carita feliz", flor:"Charm flor", pelota:"Charm pelota de fútbol"};
+const NOMBRE_OBJ = {smore:"S'more de chocolate", tostada:"Tostada con mantequilla", margarita:"Margarita", queso:"Queso", libros:"Mini libros", mascota:"Mascota virtual"};
+function itemsDiseno(){   // productos del diseño cargado en st, con los nombres de la hoja de ventas
+  const out = [], n = keys().length;
+  if(n) out.push({producto:"Clicker – cada letra (base y cadena incluidas)", cantidad:n, precio:PRECIO_LETRA});
+  if(st.colgar === "llavero" && (n || st.objs.length)) out.push({producto:"Aro de llavero (en vez de cadena)", cantidad:1, precio:PRECIO_LLAVERO});
+  if(st.colgar === "colores" && (n || st.objs.length)) out.push({producto:"Cadenita de colores (en vez de la plateada)", cantidad:1, precio:PRECIO_COLORES});
+  aroList().forEach(ar=>out.push({producto:NOMBRE_AROS[ar.tipo.id] || ar.tipo.nombre, cantidad:1, precio:ar.tipo.precio}));
+  st.charms.forEach(ch=>{ const x = charmInfo(ch.t); out.push({producto:NOMBRE_CHARMS[ch.t] || ("Charm " + x.nombre), cantidad:1, precio:x.precio}); });
+  st.objs.forEach((o,i)=>out.push({producto:"Clicker de objeto – " + (NOMBRE_OBJ[o.t] || objInfo(o.t).nombre), cantidad:1, precio:objPrice(i)}));
+  if(st.otro.length) out.push({producto:"Charm personalizado (otro)", cantidad:st.otro.length, precio:PRECIO_OTRO});
+  return out;
+}
+let pedidoEnviado = "";
+function avisarCaja(){
+  try{
+    const saved = st.cart.filter(hasContent), cur = snap(), list = hasContent(cur) ? saved.concat([cur]) : saved;
+    if(!list.length) return;
+    const items = [], palabras = [];
+    list.forEach(d=>withDesign(d, ()=>{ items.push(...itemsDiseno()); palabras.push(st.word || "objeto"); }));
+    const cli = cliente();
+    const firma = JSON.stringify(items) + palabras.join() + (cli.telefono || "");
+    if(firma === pedidoEnviado) return;   // no mandar el mismo pedido dos veces
+    pedidoEnviado = firma;
+    const body = JSON.stringify({accion:"pedidoWeb", id: Date.now().toString(36) + Math.random().toString(36).slice(2,8),
+      palabras: palabras.join(", "), texto: window.__pedidoCompleto || $("summary").textContent, items,
+      tipo: "Clicker", nombre: cli.nombre || "", telefono: cli.telefono || ""});
+    fetch(CAJA_API, {method:"POST", mode:"no-cors", keepalive:true, body}).catch(()=>{});
+  }catch(e){}
+}
+$("ord-wa").addEventListener("click", avisarCaja);
+document.querySelectorAll("#colgar button").forEach(b=>b.onclick=()=>{ st.colgar = b.dataset.c; render(); });
+document.querySelectorAll("#cadsw button").forEach(b=>b.onclick=()=>{ st.cadColor = b.dataset.cc; render(); });
+$("ord-copy").onclick = copyPhoto;
+$("ord-skip").onclick = photoCopied;
+$("ord-close").onclick = ()=>{ $("order").hidden = true; document.body.classList.remove("sheet-open"); };
+
+$("copybtn").onclick=async()=>{
+  const t=$("summary").textContent;
+  try{ await navigator.clipboard.writeText(t); $("copybtn").textContent="Copiado"; setTimeout(()=>$("copybtn").textContent="Copiar pedido",1800); }
+  catch(e){ const r=document.createRange(); r.selectNodeContents($("summary")); const s=getSelection(); s.removeAllRanges(); s.addRange(r); $("copybtn").textContent="Seleccionado: copia con Ctrl+C"; }
+};
+/* ---------- link del diseño (para verlo en 3D desde WhatsApp) ---------- */
+const CN = COLORES.map(c=>c[0]), CN2 = CN;
+function encodeDesign(){
+  const o = {v:2, w:st.word, b:CN.indexOf(st.base), s:st.style==="acanalada"?1:0, f:st.font,
+    t:st.tiles.map(c=>CN.indexOf(c)), l:st.legs.map(c=>CN.indexOf(c)),
+    c:st.charms.map(x=>[x.t, CN.indexOf(x.c)]), j:st.objs.map(o=>o.v?[o.t,o.v]:o.t), o:st.otro.length ? st.otro : null, a:st.aros.map(x=>[x.t, x.c])};
+  if(st.colgar && st.colgar !== "cadena"){ o.k = st.colgar; if(st.colgar === "colores") o.kc = st.cadColor; }
+  const bytes = new TextEncoder().encode(JSON.stringify(o)); let bin = ""; bytes.forEach(b=>bin+=String.fromCharCode(b));
+  return "c_" + btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+function decodeDesign(h){
+  try{
+    if(!h.startsWith("c_")) return false;
+    let b = h.slice(2).replace(/-/g,"+").replace(/_/g,"/"); while(b.length%4) b+="=";
+    const bin = atob(b), o = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, c=>c.charCodeAt(0))));
+    const CN = o.v===2 ? CN2 : COLORES_V1.map(ren); if(o.v!==2) o.f = o.f===1 ? 1 : 0;
+    st.word = clean(o.w||"").out; st.base = CN[o.b]||st.base; st.style = o.s?"acanalada":"lisa"; st.font = Math.min(o.f||0, FONTS.length-1); st.mode = "mix";
+    st.tiles = (o.t||[]).map(k=>CN[k]||"Morado metalizado"); st.legs = (o.l||[]).map(k=>CN[k]||"Blanco");
+    if(o.a) st.aros = Array.isArray(o.a[0]) ? o.a.map(x=>({t:x[0], c:x[1]})) : (o.a[0] ? [{t:o.a[0], c:o.a[1]}] : []);
+    if(Array.isArray(o.c)) st.charms = o.c.filter(x=>charmInfo(x[0])).map(x=>({t:x[0], c:CN[x[1]]||"Blanco"}));
+    else if(o.e){ const oe = o.e.length===3 ? o.e.slice(1) : o.e; st.charms = [];
+      ["carita","flor"].forEach((t,i)=>{ const e = oe[i]; if(e) for(let k=0;k<Math.min(e[0],3);k++) st.charms.push({t, c:CN[e[1]]||"Blanco"}); }); }
+    st.otro = listaOtros(o.o);
+    st.colgar = ["llavero","colores"].includes(o.k) ? o.k : "cadena"; st.cadColor = CADC[o.kc] ? o.kc : "Azul";
+    st.objs = Array.isArray(o.j) ? o.j.map(e=>Array.isArray(e)?{t:e[0],v:e[1]}:{t:e}).filter(e=>objInfo(e.t)) : [];
+    return true;
+  }catch(err){ return false; }
+}
+const fromLink = decodeDesign((location.hash||"").slice(1));
+function designLink(){ return `${LINK_PAGINA}d/#${encodeDesign()}`; }   // /d/ no tiene imagen de vista previa: WhatsApp no pone la tarjeta de LUNA encima
+
+/* ---------- pestaña para editar una tecla ---------- */
+let sheetOpen = false;
+function keyFace(ch, tile, leg){ return SYMS[ch] ? `<svg viewBox="0 0 40 40">${symPath(ch,20,20,34,leg)}</svg>` : ch.replace("&","&amp;"); }
+function openSheet(i){
+  const n = keys().length; if(!n) return;
+  st.sel = Math.max(0, Math.min(n-1, i)); sheetOpen = true; window.__sheetOpen = true;
+  $("sheet").hidden = false; document.body.classList.add("sheet-open");
+  render();
+  // que la vista 3D quede a la vista arriba de la pestaña
+  const sb = document.querySelector(".stagebox");
+  if(window.innerWidth < 880 && sb){ const top = sb.getBoundingClientRect().top + window.scrollY - 8; window.scrollTo({top, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"}); }
+}
+function closeSheet(){ sheetOpen = false; window.__sheetOpen = false; $("sheet").hidden = true; document.body.classList.remove("sheet-open"); render(); }
+window.closeSheetIfOpen = ()=>{ if(sheetOpen){ sheetOpen = false; window.__sheetOpen = false; $("sheet").hidden = true; document.body.classList.remove("sheet-open"); } };
+function renderSheet(){
+  if(!sheetOpen) return;
+  const ks = keys(), n = ks.length; if(!n){ closeSheet(); return; }
+  const i = st.sel, ch = ks[i], one = st.mode==="one";
+  const k = $("sh-key"); k.style.background = bg(st.tiles[i]); k.style.color = hex(st.legs[i]); k.innerHTML = keyFace(ch, hex(st.tiles[i]), hex(st.legs[i]));
+  $("sh-title").textContent = `Tecla ${i+1} de ${n}: ${SYMS[ch] ? SYMS[ch] : ch}`;
+  $("sh-sub").textContent = one ? "Con “Todas iguales”, el color se aplica a todas las teclas" : "Cambia su color o su letra";
+  const setT = c=>{ if(one) st.tiles = st.tiles.map(()=>c); else st.tiles[i] = c; render(); };
+  const setL = c=>{ if(one) st.legs = st.legs.map(()=>c); else st.legs[i] = c; render(); };
+  swatches($("sh-tile"), st.tiles[i], setT);
+  swatches($("sh-leg"), st.legs[i], setL);
+  const inp = $("sh-char"); if(document.activeElement !== inp) inp.value = SYMS[ch] ? "" : ch;
+  $("sh-prev").disabled = i===0; $("sh-next").disabled = i===n-1;
+  $("sh-fonts").innerHTML = FONTS.map((f,j)=>`<button class="btn" aria-pressed="${j===st.font}" data-j="${j}" style="font-family:${f[1]};font-weight:800">${f[2]} Aa</button>`).join("");
+  $("sh-fonts").querySelectorAll(".btn").forEach(b=>b.onclick=()=>{ st.font=+b.dataset.j; render(); });
+}
+function replaceChar(c){ const ks = keys(); ks[st.sel] = c; st.word = ks.join(""); render(); }
+$("sh-char").addEventListener("input", e=>{
+  const v = clean(e.target.value).out; if(v){ replaceChar([...v][0]); e.target.value = [...v][0]; }
+});
+$("sh-syms").innerHTML = Object.keys(SYMS).concat(EXTRA_SYMS).map(ch=>`<button class="btn sym" data-s="${ch}" aria-label="Cambiar por ${SYMS[ch]||ch}">${SYMS[ch]?`<svg viewBox="0 0 40 40">${symPath(ch,20,20,34,"currentColor")}</svg>`:ch.replace("&","&amp;")}</button>`).join("");
+$("sh-syms").querySelectorAll("button").forEach(b=>b.onclick=()=>replaceChar(b.dataset.s));
+$("sh-prev").onclick=()=>{ st.sel--; render(); };
+$("sh-next").onclick=()=>{ st.sel++; render(); };
+$("sh-del").onclick=()=>{ const ks = keys(); ks.splice(st.sel,1); st.tiles.splice(st.sel,1); st.legs.splice(st.sel,1); st.word = ks.join(""); st.sel = Math.max(0, st.sel-1); render(); };
+$("sh-done").onclick = closeSheet;
+document.addEventListener("keydown", e=>{ if(e.key==="Escape" && sheetOpen) closeSheet(); });
+window.__openSheet = openSheet;
+if(fromLink){ $("fromlink").hidden = false; }
+window.__render = render;
+</script>
+<script>
+/* ====== Vista 3D (three.js) ====== */
+(function(){
+  const box = document.getElementById("view3d");
+  if(!window.THREE || !box){ fallback(); return; }
+  let renderer;
+  try{ renderer = new THREE.WebGLRenderer({antialias:true, alpha:true, preserveDrawingBuffer:true}); }catch(e){ fallback(); return; }
+  function fallback(){ if(box) box.hidden = true; document.getElementById("preview").hidden = false; document.getElementById("caphint").textContent = "Toca una tecla para cambiarle el color"; window.__render(); }
+
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  box.appendChild(renderer.domElement);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(32, 4/3, 1, 2000);
+  camera.position.set(70, 95, 120);
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; controls.dampingFactor = .08; controls.enablePan = true; controls.screenSpacePanning = true;
+  controls.minDistance = 45; controls.maxDistance = 650; controls.maxPolarAngle = Math.PI*0.49;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  controls.autoRotate = !reduce; controls.autoRotateSpeed = 1.1;
+  controls.addEventListener("start", ()=>{ controls.autoRotate = false; focus = null; });
+
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8f86, 0.75));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.85);
+  sun.position.set(60, 140, 80); sun.castShadow = true;
+  sun.shadow.mapSize.set(1024,1024); Object.assign(sun.shadow.camera, {left:-120,right:120,top:120,bottom:-120,near:10,far:400}); sun.shadow.radius = 6;
+  scene.add(sun);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.35); fill.position.set(-80, 60, -60); scene.add(fill);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(800,800), new THREE.ShadowMaterial({opacity:.18}));
+  ground.rotation.x = -Math.PI/2; ground.position.y = -0.62; ground.receiveShadow = true; scene.add(ground);
+
+  const toLin = h => new THREE.Color(h).convertSRGBToLinear();
+  const texCache = {}, rbRange = {value: new THREE.Vector2(-50, 50)};
+  function specialTex(kind){
+    if(texCache[kind]) return texCache[kind];
+    const c = document.createElement("canvas"); c.width = c.height = 256; const x = c.getContext("2d");
+    if(kind==="rainbow"){
+      const g = x.createLinearGradient(0,0,0,256);
+      [["#D9342C",0],["#E8742A",.25],["#2E8B57",.5],["#1F6E4A",.62],["#E8742A",.82],["#D9342C",1]].forEach(([col,p])=>g.addColorStop(p,col));
+      x.fillStyle = g; x.fillRect(0,0,256,256);
+    } else {
+      x.fillStyle = "#E7E6E2"; x.fillRect(0,0,256,256);
+      for(let k=0;k<900;k++){ const r = Math.random()*1.6+.4; x.fillStyle = `rgba(80,80,80,${Math.random()*.5+.2})`; x.beginPath(); x.arc(Math.random()*256, Math.random()*256, r, 0, Math.PI*2); x.fill(); }
+    }
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(kind==="rainbow"?.05:.08, kind==="rainbow"?.05:.08);
+    t.encoding = THREE.sRGBEncoding; t.__keep = true; return texCache[kind] = t;
+  }
+  // reflejo de estudio para los filamentos metalizados (plateado, dorado, morado)
+  let _menv = null;
+  function metalEnv(){
+    if(_menv) return _menv;
+    const c = document.createElement("canvas"); c.width = 512; c.height = 256; const x = c.getContext("2d");
+    const g = x.createLinearGradient(0,0,0,256); g.addColorStop(0,"#ffffff"); g.addColorStop(.42,"#d9dbde"); g.addColorStop(.55,"#6d7075"); g.addColorStop(1,"#2b2d31");
+    x.fillStyle = g; x.fillRect(0,0,512,256);
+    x.fillStyle = "rgba(255,255,255,.95)"; x.fillRect(60,40,90,60); x.fillRect(330,30,120,50);   // luces tipo softbox
+    x.fillStyle = "rgba(255,255,255,.55)"; x.fillRect(0,112,512,6);
+    const t = new THREE.CanvasTexture(c); t.mapping = THREE.EquirectangularReflectionMapping; t.encoding = THREE.sRGBEncoding;
+    const pm = new THREE.PMREMGenerator(renderer); _menv = pm.fromEquirectangular(t).texture; _menv.__keep = true; pm.dispose(); t.dispose();
+    return _menv;
+  }
+  const mat = (h, rough=.62) => { const k = (window.SPECIAL||{})[h];
+    if(k==="rainbow"){
+      // arcoíris: el color cambia a lo largo del llavero (como el filamento multicolor)
+      const m = new THREE.MeshStandardMaterial({color:0xffffff, roughness:.24, metalness:.18});   // seda brillante
+      m.onBeforeCompile = sh => {
+        sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vWP;")
+          .replace("#include <begin_vertex>", "#include <begin_vertex>\nvWP = (modelMatrix * vec4(transformed, 1.0)).xyz;");
+        sh.uniforms.rbRange = rbRange; sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec3 vWP;\nuniform vec2 rbRange;\nvec3 hsv2rgb(vec3 c){ vec4 K = vec4(1.0, 2.0/3.0, 1.0/3.0, 3.0); vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www); return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y); }")
+          .replace("vec4 diffuseColor = vec4( diffuse, opacity );", "vec4 diffuseColor = vec4( pow(hsv2rgb(vec3(fract(clamp((vWP.x - rbRange.x)/(rbRange.y - rbRange.x), 0.0, 1.0) * 0.55 + vWP.y/38.0), 0.62, 0.98)), vec3(2.2)), opacity );");
+      };
+      m.customProgramCacheKey = () => "rainbow"; return m;
+    }
+    if(k) return new THREE.MeshStandardMaterial({color:0xffffff, map:specialTex(k), roughness:rough, metalness:0});
+    if((window.METAL||{})[h]) return new THREE.MeshStandardMaterial({color:toLin(h), roughness:.26, metalness:.92, envMap:metalEnv(), envMapIntensity:1.15});
+    return new THREE.MeshStandardMaterial({color:toLin(h), roughness:rough, metalness:0}); };
+  function rr(w,h,r){
+    const s = new THREE.Shape(), x=-w/2, y=-h/2;
+    s.moveTo(x+r,y); s.lineTo(x+w-r,y); s.absarc(x+w-r,y+r,r,-Math.PI/2,0,false);
+    s.lineTo(x+w,y+h-r); s.absarc(x+w-r,y+h-r,r,0,Math.PI/2,false);
+    s.lineTo(x+r,y+h); s.absarc(x+r,y+h-r,r,Math.PI/2,Math.PI,false);
+    s.lineTo(x,y+r); s.absarc(x+r,y+r,r,Math.PI,Math.PI*1.5,false);
+    return s;
+  }
+  function slab(shape, depth, bevel){
+    const g = new THREE.ExtrudeGeometry(shape, {depth, bevelEnabled:bevel>0, bevelThickness:bevel, bevelSize:bevel, bevelSegments:3, curveSegments:12});
+    g.rotateX(-Math.PI/2); g.translate(0, bevel, 0);   // de y=0 hasta y=depth+2*bevel
+    return g;
+  }
+
+  /* textura de la letra / símbolo */
+  // dibuja en el canvas, sin esperar, las figuras SVG simples que genera symPath (path, circle, ellipse, rect, g con rotate)
+  function drawSvgSync(x, inner){
+    const doc = new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg">${inner}</svg>`, "image/svg+xml");
+    const num = (el,a)=>parseFloat(el.getAttribute(a)||"0");
+    const paint = (el, path)=>{
+      const f = el.getAttribute("fill"), st = el.getAttribute("stroke"), sw = el.getAttribute("stroke-width");
+      if(f !== "none"){ x.fillStyle = f || "#000"; x.fill(path, el.getAttribute("fill-rule") === "evenodd" ? "evenodd" : "nonzero"); }
+      if(st && st !== "none"){ x.strokeStyle = st; x.lineWidth = sw ? parseFloat(sw) : 1; x.lineJoin = el.getAttribute("stroke-linejoin") || "miter"; x.lineCap = el.getAttribute("stroke-linecap") || "butt"; x.stroke(path); }
+    };
+    const rot = el=>{ const m = /rotate\(\s*([-\d.]+)(?:[\s,]+([-\d.]+)[\s,]+([-\d.]+))?\s*\)/.exec(el.getAttribute("transform")||""); if(!m) return;
+      const a = parseFloat(m[1])*Math.PI/180, cx = parseFloat(m[2]||0), cy = parseFloat(m[3]||0); x.translate(cx,cy); x.rotate(a); x.translate(-cx,-cy); };
+    const walk = el=>{
+      for(const c of el.children){
+        x.save(); rot(c);
+        const t = c.tagName.toLowerCase(); let p = null;
+        if(t==="g"){ walk(c); }
+        else if(t==="path"){ p = new Path2D(c.getAttribute("d")); }
+        else if(t==="circle"){ p = new Path2D(); p.arc(num(c,"cx"), num(c,"cy"), num(c,"r"), 0, Math.PI*2); }
+        else if(t==="ellipse"){ p = new Path2D(); p.ellipse(num(c,"cx"), num(c,"cy"), num(c,"rx"), num(c,"ry"), 0, 0, Math.PI*2); }
+        else if(t==="rect"){ p = new Path2D(); const rx = num(c,"rx"); if(p.roundRect) p.roundRect(num(c,"x"), num(c,"y"), num(c,"width"), num(c,"height"), rx); else p.rect(num(c,"x"), num(c,"y"), num(c,"width"), num(c,"height")); }
+        else if(t==="line"){ p = new Path2D(); p.moveTo(num(c,"x1"), num(c,"y1")); p.lineTo(num(c,"x2"), num(c,"y2")); if(!c.getAttribute("fill")) c.setAttribute("fill","none"); }
+        else if(t==="polygon"){ const v = (c.getAttribute("points")||"").trim().split(/[\s,]+/).map(Number); p = new Path2D(); for(let i=0;i<v.length;i+=2) p[i?"lineTo":"moveTo"](v[i],v[i+1]); p.closePath(); }
+        if(p) paint(c, p);
+        x.restore();
+      }
+    };
+    walk(doc.documentElement);
+  }
+  function legendTexture(ch, color, font){
+    const c = document.createElement("canvas"); c.width = c.height = 256;
+    const x = c.getContext("2d"); x.clearRect(0,0,256,256);
+    x.fillStyle = color; x.strokeStyle = color; x.lineCap = x.lineJoin = "round";
+    
+    const cx=128, cy=128;
+    const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding; tex.anisotropy = 4;
+    if(ch==="♥"){ x.beginPath(); x.moveTo(cx,cy+70); x.bezierCurveTo(cx-110,cy+5,cx-85,cy-90,cx-30,cy-75); x.bezierCurveTo(cx-10,cy-70,cx,cy-50,cx,cy-38); x.bezierCurveTo(cx,cy-50,cx+10,cy-70,cx+30,cy-75); x.bezierCurveTo(cx+85,cy-90,cx+110,cy+5,cx,cy+70); x.fill(); }
+    else if(ch==="★"){ x.beginPath(); for(let i=0;i<10;i++){ const r=i%2?38:88, a=-Math.PI/2+i*Math.PI/5; x[i?"lineTo":"moveTo"](cx+r*Math.cos(a), cy+6+r*Math.sin(a)); } x.closePath(); x.lineWidth=14; x.stroke(); x.fill(); }
+    else if(ch==="✿"){ for(let i=0;i<5;i++){ const a=-Math.PI/2+i*Math.PI*2/5; x.beginPath(); x.arc(cx+46*Math.cos(a), cy+46*Math.sin(a), 36, 0, Math.PI*2); x.fill(); } x.shadowColor="transparent"; x.fillStyle="rgba(255,255,255,.6)"; x.beginPath(); x.arc(cx,cy,22,0,Math.PI*2); x.fill(); }
+    else if(ch==="☺"){ drawSvgSync(x, symPath(ch,128,128,210,color)); }
+    else if(ch==="♣"||ch==="🐾"||ch==="⚽"||ch==="✝"||ch==="⚡"){ drawSvgSync(x, symPath(ch,128,128,210,color)); }   // se dibuja al instante (antes era asíncrono y no salía en la foto ni a veces en el 3D)
+    else { x.font = `900 205px ${font}`; x.textAlign="center"; x.textBaseline="middle"; x.fillText(ch, cx, cy+12); }
+    tex.needsUpdate = true; return tex;
+  }
+
+
+  /* tecla de una sola pieza con caída en los lados (perfil tipo keycap) */
+  function keycapGeometry(){
+    if(keycapGeometry.g) return keycapGeometry.g.clone();
+    const N = 96, p = 7;
+    const prof = [[17.0,0],[16.8,.8],[16.3,2.4],[15.6,4.6],[15.0,5.8],[14.4,6.55],[13.7,7.0],[13.0,7.22],[12.3,7.32]];
+    const pos = [], idx = [];
+    const ring = (s,y)=>{ for(let k=0;k<N;k++){ const a=k/N*Math.PI*2, c=Math.cos(a), sn=Math.sin(a);
+      pos.push(s/2*Math.sign(c)*Math.pow(Math.abs(c),2/p), y, s/2*Math.sign(sn)*Math.pow(Math.abs(sn),2/p)); } };
+    prof.forEach(([s,y])=>ring(s,y));
+    for(let r=0;r<prof.length-1;r++) for(let k=0;k<N;k++){
+      const a=r*N+k, b=r*N+(k+1)%N, c=(r+1)*N+k, d=(r+1)*N+(k+1)%N; idx.push(a,c,b, b,c,d); }
+    const top = pos.length/3; pos.push(0, prof[prof.length-1][1], 0);
+    const last = (prof.length-1)*N;
+    for(let k=0;k<N;k++) idx.push(last+k, top, last+(k+1)%N);
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals();
+    keycapGeometry.g = g; return g.clone();
+  }
+
+  // mallas reales de los clickers de objeto (se cargan solo cuando alguien los escoge)
+  const OBJG = {}, OBJLOAD = {};
+  function objGeom(name){
+    if(!name) return null;
+    if(OBJG[name]) return OBJG[name];
+    if(!OBJLOAD[name]) OBJLOAD[name] = fetch(`/obj/${name}.bin`).then(r=>r.arrayBuffer()).then(buf=>{
+      const n = new DataView(buf).getUint32(0, true), q = new Int16Array(buf, 4, n*3), c = new Uint8Array(buf, 4 + n*6, n*3);
+      const pos = new Float32Array(n*3), col = new Float32Array(n*3);
+      for(let i=0;i<n;i++){ pos[i*3] = q[i*3]/40; pos[i*3+1] = q[i*3+2]/40; pos[i*3+2] = -q[i*3+1]/40;
+        for(let k=0;k<3;k++) col[i*3+k] = Math.pow(c[i*3+k]/255, 2.2); }
+      const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(pos,3)); g.setAttribute("color", new THREE.BufferAttribute(col,3));
+      g.computeVertexNormals(); OBJG[name] = g; if(window.__3d) window.__3d.update();
+    }).catch(()=>{});
+    return null;
+  }
+  let group = null, keyGroups = [], focus = null;
+  const disposeAll = o => o.traverse(n=>{ if(n.geometry) n.geometry.dispose(); if(n.material){ (Array.isArray(n.material)?n.material:[n.material]).forEach(m=>{ if(m.map && !m.map.__keep) m.map.dispose(); m.dispose(); }); } });
+
+  function build(){
+    if(group){ scene.remove(group); disposeAll(group); }
+    group = new THREE.Group(); keyGroups = [];
+    const demo = !st.word && !window.__onlyObj;           // clicker nuevo sin palabra: se muestra un ejemplo
+    const ks = [...(st.word || (demo ? "HOLA" : ""))], n = Math.max(ks.length,1);
+    const W=19.2, P=18.6, RC=4.6, H=14;          // cápsula por tecla, como el modelo real
+    const bc = hex(st.base), bm = mat(bc, .7);
+    const x0 = -(n-1)*P/2;
+    for(let i=0;i<n;i++){
+      const pod = new THREE.Group(); pod.position.x = x0 + i*P;
+      if(st.style === "acanalada"){
+        // anillos horizontales alrededor de los lados (arriba plano)
+        const rings = 8, pitch = H/rings;
+        for(let r=0;r<rings;r++){
+          const m = new THREE.Mesh(slab(rr(W-1.2, W-1.2, RC-.6), pitch-1.2, .6), bm);
+          m.position.y = r*pitch; m.castShadow = m.receiveShadow = true; pod.add(m);
+        }
+        const core = new THREE.Mesh(slab(rr(W-1.9, W-1.9, RC-1), H-.2, 0), bm); pod.add(core);
+      } else {
+        const m = new THREE.Mesh(slab(rr(W-1.2, W-1.2, RC-.6), H-1.2, .6), bm); m.castShadow = m.receiveShadow = true; pod.add(m);
+      }
+      group.add(pod);
+    }
+    // lazo en la punta, para la cadena
+    const tab = rr(10, 9, 3.5); const hole = new THREE.Path(); hole.absarc(-1.2, 0, 2.3, 0, Math.PI*2, true); tab.holes.push(hole);
+    const tabm = new THREE.Mesh(slab(tab, 3, .5), bm); tabm.position.set(x0 - W/2 - 2.2, H-5, 0); tabm.castShadow = true; group.add(tabm);
+    if(!ks.length && window.__onlyObj) group.children.slice().forEach(o=>{ group.remove(o); disposeAll(o); });   // solo el clicker de objeto
+    const holeX = x0 - W/2 - 3.4;
+    // teclas: switch oscuro + tecla de un color con la letra incrustada
+    const ff = FONTS[st.font][1];
+    ks.forEach((ch,i)=>{
+      const g = new THREE.Group(); g.position.set(x0 + i*P, H, 0); g.userData.y0 = H;
+      const tc = hex(demo ? "Blanco" : st.tiles[i]), lc = hex(demo ? "Gris" : st.legs[i]);
+      const sw = new THREE.Mesh(slab(rr(14.5,14.5,2), 1.1, 0), mat("#3A3226", .5));
+      const cap = new THREE.Mesh(keycapGeometry(), mat(tc, .45)); cap.position.y = 1.0; cap.castShadow = cap.receiveShadow = true;
+      const leg = new THREE.Mesh(new THREE.PlaneGeometry(11.2,11.2), new THREE.MeshStandardMaterial({map:legendTexture(ch, lc, ff), transparent:true, roughness:.45, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-2}));
+      leg.rotation.x = -Math.PI/2; leg.position.y = 1.0+7.32+.03;
+      g.add(sw, cap, leg); sw.userData.i = cap.userData.i = leg.userData.i = i;
+      group.add(g); keyGroups.push(g);
+      if(!demo && !window.__photo && i===st.sel && (window.__sheetOpen || (st.mode==="mix" && ks.length>1))){
+        const o = rr(W+1.6, W+1.6, RC+.9); o.holes.push(rr(W-1.0, W-1.0, RC-.4));
+        const sel = new THREE.Mesh(new THREE.ShapeGeometry(o, 16), new THREE.MeshBasicMaterial({color:0x5CBA2E}));
+        sel.rotation.x = -Math.PI/2; sel.position.set(x0 + i*P, H+.08, 0); group.add(sel);
+        g.userData.lift = window.__sheetOpen ? 2.2 : 0;
+      }
+    });
+    // cadena de bolitas plateada (incluida): pasa por el aro del clicker y por el huequito de cada charm
+    const ex = st.extras, metal = new THREE.MeshStandardMaterial({color:toLin("#E4E6E1"), roughness:.3, metalness:.55});
+    const charms = (window.charmList ? window.charmList() : []).filter(c=>c.t!=="otro");
+    (window.aroList ? window.aroList().slice(1) : []).forEach(a=>charms.push({t:"aro", aro:a}));
+    const side1 = charms.filter((_,i)=>i%2===0), side2 = charms.filter((_,i)=>i%2===1), maxK = Math.max(1, side1.length, side2.length);
+    const LLAV = st.colgar === "llavero";   // aro de llavero en vez de la cadena de bolitas
+    const tabBot = H-5, tabTop = H-1, far = holeX - 44 - 24*(maxK-1), Y = .9, CH = 1.85;   // CH: altura a la que descansan los charms
+    const pts = [], V = (x,y,z)=>new THREE.Vector3(x,y,z), add = (x,y,z)=>pts.push(V(x,y,z));
+    function charmTab(){ const s = rr(6.4,6.4,2.4); const h = new THREE.Path(); h.absarc(0,0,1.7,0,Math.PI*2,true); s.holes.push(h); return s; }
+    // ensarta un charm en el tramo P0→P1: la cadena pasa por debajo, sube por el huequito y baja por el otro lado
+    function thread(P0, P1, side, makeBody, offset, withTab, top){
+      const T = P1.clone().sub(P0).setY(0).normalize(), N = V(0,0,side), Q = P0.clone().lerp(P1,.5);
+      const at = (d,y)=>V(Q.x+T.x*d, y, Q.z+T.z*d);
+      pts.push(at(-9,Y), at(-3.2,Y+.05), V(Q.x,Y+.3,Q.z), V(Q.x,CH+1,Q.z), V(Q.x,CH+top+1.2,Q.z), at(3.2,CH+top+.9), at(6.2,CH+.6), at(9.5,Y));
+      const g = new THREE.Group(); g.position.set(Q.x, CH, Q.z);
+      if(withTab){ const tabm = new THREE.Mesh(slab(charmTab(), 1.4, .3), makeBody.mat); tabm.castShadow = true; g.add(tabm); }
+      const body = makeBody(side); body.position.set(N.x*offset, 0, N.z*offset); g.add(body);
+      group.add(g);
+    }
+    // 1) por el aro del clicker: entra por arriba, sale por abajo
+    if(!LLAV){ add(holeX, tabTop+1.5, 0); add(holeX, tabBot-1.3, 0); add(holeX-5, 1.3, 3.5); add(holeX-11, Y, 8); }
+    // 2) primer lado con la carita
+    const S1a = V(holeX-11, Y, 10), S1b = V(far+10, Y, 12);
+    function makerFor(t, c, ch){
+      if(t==="aro"){   // aros extra: ensartados en la cadena como un charm
+        const r = makeAro(ch.aro); let R = 0; r.path.forEach(q=>{ R = Math.max(R, Math.hypot(q.x, q.y)); });
+        const mk = (side)=>{ const outer = new THREE.Group(); r.cb.rotation.x = -Math.PI/2; r.cb.rotation.z = side<0 ? Math.PI : 0; r.cb.position.y = r.TR - CH; outer.add(r.cb); return outer; };
+        mk.mat = mat("#D9D6CE"); return {mk, offset: Math.max(4, R - r.TR - 2.2), tab:false, top:1.2};
+      }
+      if(t==="obj"){
+        const g = objGeom(ch.img), m = new THREE.MeshStandardMaterial({vertexColors:true, roughness:.62, metalness:0, side:THREE.DoubleSide});
+        let rad = 12;
+        if(g){ g.computeBoundingBox(); const b = g.boundingBox; rad = Math.max(b.max.x-b.min.x, b.max.z-b.min.z)/2; }
+        const mk = ()=>{ const outer = new THREE.Group();
+          if(g){ const me = new THREE.Mesh(g.clone(), m); me.position.y = -CH; me.castShadow = me.receiveShadow = true; outer.add(me); }
+          else { const ph = new THREE.Mesh(slab(rr(20,20,5), 8, 1), mat("#D9D6CE",.8)); ph.position.y = -CH; outer.add(ph); }
+          return outer; };
+        mk.mat = mat("#D9D6CE"); return {mk, offset: rad+4, tab:false, top:1.7};
+      }
+      if(t==="carita"){
+        const m = mat(c, .55);
+        const mk = (side)=>{
+          const R = 9.4, s = new THREE.Shape(); s.absarc(0,0,R,0,Math.PI*2,false);
+          const hole = (fn)=>{ const p = new THREE.Path(); fn(p); s.holes.push(p); };
+          hole(p=>p.absarc(0, 7.2, 1.45, 0, Math.PI*2, true));                       // huequito para la cadena
+          hole(p=>p.absellipse(-3.1, 1.6, 1.15, 2.35, 0, Math.PI*2, true));           // ojos
+          hole(p=>p.absellipse( 3.1, 1.6, 1.15, 2.35, 0, Math.PI*2, true));
+          const a0 = Math.PI*1.18, a1 = Math.PI*1.82, ro = 6.3, ri = 4.7, rm = (ro+ri)/2, rc = (ro-ri)/2;
+          hole(p=>{ p.absarc(0,0,ro,a0,a1,false); p.absarc(Math.cos(a1)*rm, Math.sin(a1)*rm, rc, a1, a1+Math.PI, false);
+                    p.absarc(0,0,ri,a1,a0,true);  p.absarc(Math.cos(a0)*rm, Math.sin(a0)*rm, rc, a0+Math.PI, a0+2*Math.PI, false); });
+          const d = new THREE.Mesh(slab(s, 1.9, .35), m); d.castShadow = d.receiveShadow = true;
+          const gg = new THREE.Group(); gg.add(d); if(side<0) gg.rotation.y = Math.PI; return gg; };
+        mk.mat = m; return {mk, offset:7.2, tab:false, top:2.6};
+      }
+      if(t==="pelota"){   // disco blanco con borde y pentágonos del color escogido
+        const m = mat("#F2F1EC", .55), dk = mat(c, .55);
+        const mk = (side)=>{
+          const R = 9.4, s = new THREE.Shape(); s.absarc(0,0,R,0,Math.PI*2,false);
+          const h = new THREE.Path(); h.absarc(0, 7.2, 1.45, 0, Math.PI*2, true); s.holes.push(h);
+          const d = new THREE.Mesh(slab(s, 1.9, .35), m); d.castShadow = d.receiveShadow = true;
+          const gg = new THREE.Group(); gg.add(d);
+          const ring = new THREE.Shape(); ring.absarc(0,0,R,0,Math.PI*2,false);
+          const rin = new THREE.Path(); rin.absarc(0,0,R-.8,0,Math.PI*2,true); ring.holes.push(rin);
+          const pent = (px,py,r,rot)=>{ const p = new THREE.Shape(); for(let i=0;i<5;i++){ const a = rot+i*Math.PI*2/5, x = px+r*Math.cos(a), y = py+r*Math.sin(a); i ? p.lineTo(x,y) : p.moveTo(x,y); } p.closePath(); return p; };
+          const shapes = [ring, pent(0,0,3.3,Math.PI/2)];
+          for(let i=0;i<5;i++){ const a = Math.PI/2 + Math.PI/5 + i*Math.PI*2/5; shapes.push(pent(Math.cos(a)*7, Math.sin(a)*7, 2.1, a)); }
+          shapes.forEach(sh=>{ const t = new THREE.Mesh(slab(sh, .25, 0), dk); t.position.y = 2.5; gg.add(t); });
+          if(side<0) gg.rotation.y = Math.PI; return gg; };
+        mk.mat = m; return {mk, offset:7.2, tab:false, top:2.6};
+      }
+      const m = mat(c);
+      const mk = ()=>{ const fg = new THREE.Group();
+        for(let i=0;i<8;i++){ const a=i*Math.PI/4; const p=new THREE.Mesh(new THREE.SphereGeometry(4.2,20,14), m); p.scale.set(1.35,.55,.85); p.position.set(Math.cos(a)*6.5,1.5,Math.sin(a)*6.5); p.rotation.y=-a; p.castShadow=true; fg.add(p); }
+        const ctr = new THREE.Mesh(new THREE.CylinderGeometry(3.4,3.6,3.6,28), mat(shade(c,-.35))); ctr.position.y = 1.8; fg.add(ctr); return fg; };
+      mk.mat = m; return {mk, offset:14.6, tab:true, top:1.7};
+    }
+    // ensarta varios charms repartidos a lo largo de un tramo de cadena
+    function threadSide(A, B, list, side, emptyPts){
+      if(!list.length){ emptyPts.forEach(p=>pts.push(p)); return; }
+      const k = list.length;
+      list.forEach((ch,j)=>{ const f = makerFor(ch.t, ch.c, ch); thread(A.clone().lerp(B, j/k), A.clone().lerp(B, (j+1)/k), side, f.mk, f.offset, f.tab, f.top); });
+    }
+    if(!LLAV){ threadSide(S1a, S1b, side1, 1, [S1a, S1a.clone().lerp(S1b,.5)]);
+    // 3) la punta: pasa por el mosquetón
+    add(far+10, Y, 12); add(far+3, Y, 7); }
+    function makeAro(ar){
+      // aro de resorte acostado sobre la mesa; la cadena pasa por dentro de su borde derecho
+      const id = ar.tipo.id, TR = id==="gra" ? 2.1 : id==="peq" ? 1.6 : 1.75;
+      const paint = new THREE.MeshStandardMaterial({color:toLin(ar.color), roughness: id==="gra" ? .62 : .2, metalness: id==="gra" ? .1 : .3});
+      const path = [], N = 220;
+      if(id==="peq" || id==="gra"){
+        const R = id==="gra" ? 13.2 : 10.4;
+        for(let k=0;k<N;k++){ const t=k/N*Math.PI*2; path.push(V(R*Math.cos(t), R*Math.sin(t), 0)); }
+      } else if(id==="cor"){
+        // corazón con la punta hacia la cadena (+x)
+        const k0 = .78;
+        for(let k=0;k<N;k++){ const t=k/N*Math.PI*2, hx=16*Math.pow(Math.sin(t),3), hy=13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);
+          path.push(V(-hy*k0 - 2.5, hx*k0, 0)); }
+      } else {
+        // flor de 5 pétalos
+        for(let k=0;k<N;k++){ const t=k/N*Math.PI*2, r = 8.2 + 4.6*Math.pow(Math.abs(Math.cos(2.5*t)), .55); path.push(V(r*Math.cos(t), r*Math.sin(t), 0)); }
+      }
+      const curveA = new THREE.CatmullRomCurve3(path, true);
+      const cb = new THREE.Group();
+      cb.add(new THREE.Mesh(new THREE.TubeGeometry(curveA, 300, TR, 18, true), paint));
+      // juntas de la compuerta del resorte
+      const seamM = new THREE.MeshStandardMaterial({color:toLin(shade(ar.color,-.4)), roughness:.5});
+      [.30,.42].forEach(u=>{ const q = curveA.getPointAt(u), tg = curveA.getTangentAt(u);
+        const m = new THREE.Mesh(new THREE.TorusGeometry(TR*1.03, .2, 8, 24), seamM); m.position.copy(q);
+        m.quaternion.setFromUnitVectors(V(0,0,1), tg); cb.add(m); });
+      // puntitos de colores (corazón y flor)
+      if(ar.dot){ const dm = new THREE.MeshStandardMaterial({color:toLin(ar.dot), roughness:.3});
+        const nd = id==="cor" ? 14 : 15;
+        for(let k=0;k<nd;k++){ const q = curveA.getPointAt((k+.5)/nd); const d = new THREE.Mesh(new THREE.SphereGeometry(.62,10,8), dm);
+          d.position.set(q.x, q.y, TR*.92); d.scale.z = .45; cb.add(d); } }
+      // giratorio de la flor
+      if(id==="flor"){ const sw = new THREE.Mesh(new THREE.TorusGeometry(3.4, 1.15, 12, 28), paint); sw.position.set(-17.5, 0, 0); cb.add(sw);
+        const neck = new THREE.Mesh(new THREE.CylinderGeometry(1.6,1.6,4.5,16), paint); neck.rotation.z = Math.PI/2; neck.position.set(-13.3,0,0); cb.add(neck); }
+      cb.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
+      return {cb, path, TR};
+    }
+    const arL = window.aroList ? window.aroList() : (window.aroSel && window.aroSel() ? [window.aroSel()] : []);
+    const ar = arL[0] || null;
+    if(LLAV){ /* con aro de llavero todo cuelga del anillo (más abajo) */ }
+    else if(ar){
+      const {cb, path, TR} = makeAro(ar);
+      let rx = -1e9, lx = 1e9; path.forEach(q=>{ if(q.x>rx) rx=q.x; if(q.x<lx) lx=q.x; });
+      const cx = far + TR + 3.5 - rx;
+      add(far+6, TR*2+1.2, 3.6); add(far+1.2, Y+.15, 2.2); add(far+1.2, Y+.15, -2.2); add(far+6, TR*2+1.2, -3.6);
+      cb.rotation.x = -Math.PI/2; cb.position.set(cx, TR, 0); group.add(cb);
+    } else { add(far, Y, 0); }
+    let beads = [];
+    if(!LLAV){
+    add(far+3, Y, -7); add(far+10, Y, -12);
+    // 4) segundo lado con la flor
+    const S2a = V(far+10, Y, -12), S2b = V(holeX-11, Y, -10);
+    threadSide(S2a, S2b, side2, -1, [S2a.clone().lerp(S2b,.5)]);
+    // 5) vuelve y sube por fuera del aro, pasando por encima
+    add(holeX-11, Y, -8); add(holeX-6.5, 1.4, -3); add(holeX-6.5, tabTop+2.4, -1);
+    const curve = new THREE.CatmullRomCurve3(pts, true, "centripetal");
+    beads = curve.getSpacedPoints(Math.round(curve.getLength()/2.0));
+    const bim = new THREE.InstancedMesh(new THREE.SphereGeometry(.9, 12, 10), metal, beads.length-1);
+    const m4 = new THREE.Matrix4();
+    for(let i=0;i<beads.length-1;i++){ m4.makeTranslation(beads[i].x, beads[i].y, beads[i].z); bim.setMatrixAt(i,m4); }
+    // cadenita de colores: en el 3D siempre se muestra azul (el color real se confirma por WhatsApp)
+    if(st.colgar === "colores") bim.material = new THREE.MeshStandardMaterial({color:toLin(CADC[st.cadColor] || CADC.Azul), roughness:.4, metalness:.25});
+    bim.castShadow = true; group.add(bim);
+    // conector de la cadena
+    const cpt = curve.getPointAt(.83), ctan = curve.getTangentAt(.83);
+    const clasp = new THREE.Mesh(new THREE.CylinderGeometry(1.25,1.25,6,16), bim.material);
+    clasp.position.copy(cpt); clasp.quaternion.setFromUnitVectors(V(0,1,0), ctan.normalize()); clasp.castShadow = true; group.add(clasp);
+    } else {
+      // aro de llavero de 2,5 cm (anillo partido de dos vueltas) unido al clicker con cadenita y triángulo
+      const RR = 12.5, cx = holeX - 15 - RR, wire = .75;
+      const ringM = new THREE.MeshStandardMaterial({color:toLin("#D7D9D4"), roughness:.22, metalness:.75});
+      const v1 = new THREE.Mesh(new THREE.TorusGeometry(RR, wire, 12, 120), ringM);
+      v1.rotation.x = -Math.PI/2; v1.position.set(cx, wire, 0);
+      const v2 = new THREE.Mesh(new THREE.TorusGeometry(RR, wire, 12, 120, Math.PI*1.62), ringM);
+      v2.rotation.x = -Math.PI/2; v2.rotation.z = -.35; v2.position.set(cx, wire*3, 0);
+      [v1, v2].forEach(m=>{ m.castShadow = m.receiveShadow = true; group.add(m); });
+      // triángulo que pasa por el huequito del clicker
+      const tri = new THREE.Mesh(new THREE.TorusGeometry(2.8, .5, 8, 3), ringM);
+      tri.rotation.z = Math.PI/2; tri.position.set(holeX - .6, tabBot + 1.2, 0); tri.castShadow = true; group.add(tri);
+      // cadenita de eslabones hasta el anillo
+      const A = V(holeX - 3.4, tabBot - .4, 0), B = V(cx + RR + .4, wire*2, 0), nL = 4;
+      for(let i=0;i<nL;i++){
+        const q = A.clone().lerp(B, (i+.5)/nL), dir = B.clone().sub(A).normalize();
+        const l = new THREE.Mesh(new THREE.TorusGeometry(1.5, .4, 8, 18), ringM); l.scale.set(1.55, 1, 1);
+        const qa = new THREE.Quaternion().setFromUnitVectors(V(1,0,0), dir);
+        const qb = new THREE.Quaternion().setFromAxisAngle(V(1,0,0), i%2 ? Math.PI/2 : 0);
+        l.quaternion.copy(qa.multiply(qb)); l.position.copy(q); l.castShadow = true; group.add(l);
+      }
+      // charms y aros colgando del anillo, repartidos por el lado de afuera
+      const enAnillo = charms.slice(); if(ar) enAnillo.unshift({t:"aro", aro:ar});
+      const k = enAnillo.length;
+      enAnillo.forEach((ch, j)=>{
+        // abanico alrededor del anillo (sin tapar el lado del clicker); si son muchos, uno cerca y otro más lejos
+        const a0 = Math.PI*.5 + .2, a1 = Math.PI*1.5 - .2, sp = Math.min(1.15, (a1 - a0)/Math.max(1, k-1));
+        const f = makerFor(ch.t, ch.c, ch), th = k === 1 ? Math.PI : Math.PI + (j - (k-1)/2) * sp;
+        if(k > 3 && j % 2) f.offset += 9;
+        const g = new THREE.Group(); g.position.set(cx + RR*Math.cos(th), CH, RR*Math.sin(th));
+        g.rotation.y = Math.atan2(Math.cos(th), Math.sin(th));
+        if(f.tab){ const tabm = new THREE.Mesh(slab(charmTab(), 1.4, .3), f.mk.mat); tabm.castShadow = true; g.add(tabm); }
+        const body = f.mk(1); body.position.set(0, 0, f.offset); g.add(body); group.add(g);
+      });
+    }
+    // centrar y encuadrar
+    group.updateMatrixWorld(true); const bb = new THREE.Box3().setFromObject(group); beads.forEach(p=>bb.expandByPoint(p));
+    const conQue = LLAV ? "con llavero" : "con cadena";
+    group.position.x = -(bb.min.x+bb.max.x)/2; rbRange.value.set(holeX - 4 + group.position.x, x0 + (n-1)*P + W/2 + group.position.x); group.position.z = -(bb.min.z+bb.max.z)/2;
+    scene.add(group);
+    const span = Math.max(bb.max.x-bb.min.x, bb.max.z-bb.min.z);
+    const sph = bb.getBoundingSphere(new THREE.Sphere());
+    const vf = THREE.MathUtils.degToRad(camera.fov), hf = 2*Math.atan(Math.tan(vf/2)*camera.aspect);
+    build.homeD = Math.max(90, sph.radius/Math.sin(Math.min(vf,hf)/2)*0.88);
+    if(!build.framed || build.lastN !== n){ const v = new THREE.Vector3(.18,.62,.78).normalize().multiplyScalar(build.homeD); camera.position.copy(v); controls.target.set(0, 8, 0); build.framed = true; build.lastN = n; }
+    // medida real del llavero
+    const lb = document.getElementById("capword");
+    if(lb){ const clk = (x0 + (n-1)*P + W/2) - (holeX - 4); const tot = bb.max.x - bb.min.x;
+      lb.innerHTML = demo ? `Ejemplo · con 4 letras mide <b>${(clk/10).toFixed(1).replace(".",",")} cm</b> · ${conQue}: <b>≈ ${(tot/10).toFixed(0)} cm</b> · escribe tu palabra arriba` : ks.length ? `Largo: <b>${(clk/10).toFixed(1).replace(".",",")} cm</b> · ${conQue}: <b>≈ ${(tot/10).toFixed(0)} cm</b>` : ""; }
+    window.__homeView = ()=>{ focus = {t:new THREE.Vector3(0,8,0), d:build.homeD||150}; };
+    // al editar una tecla, la cámara se acerca a esa tecla; al cerrar, vuelve a la vista completa
+    group.updateMatrixWorld(true);
+    if(window.__sheetOpen && keyGroups[st.sel]){
+      const p = keyGroups[st.sel].getWorldPosition(new THREE.Vector3()); p.y = H;
+      focus = {t:p, d:Math.min(build.homeD||150, 95)}; controls.autoRotate = false; build.zoomed = true;
+    } else if(build.zoomed){ focus = {t:new THREE.Vector3(0,8,0), d:build.homeD||150}; build.zoomed = false; }
+  }
+
+  // clic en una tecla: la selecciona y la "presiona"
+  const ray = new THREE.Raycaster(), ptr = new THREE.Vector2(); let downAt = null;
+  renderer.domElement.addEventListener("pointerdown", e=>{ downAt = [e.clientX, e.clientY]; });
+  renderer.domElement.addEventListener("pointerup", e=>{
+    if(!downAt || Math.hypot(e.clientX-downAt[0], e.clientY-downAt[1]) > 6) return;
+    const r = renderer.domElement.getBoundingClientRect();
+    ptr.set(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1);
+    ray.setFromCamera(ptr, camera);
+    const hits = ray.intersectObjects(keyGroups, true).filter(h=>h.object.userData.i!==undefined);
+    if(hits.length){ const i = hits[0].object.userData.i; press(i); clickSound(); setTimeout(()=>window.__openSheet(i), 230); }
+  });
+  const presses = new Map();
+  let actx = null;
+  function clickSound(){
+    try{
+      actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+      const len = Math.floor(actx.sampleRate*.035), buf = actx.createBuffer(1, len, actx.sampleRate), d = buf.getChannelData(0);
+      for(let i=0;i<len;i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/len, 6);
+      const src = actx.createBufferSource(); src.buffer = buf;
+      const bp = actx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 3200; bp.Q.value = 1.2;
+      const g = actx.createGain(); g.gain.value = .9; src.connect(bp).connect(g).connect(actx.destination); src.start();
+    }catch(e){}
+  }
+  function press(i){ presses.set(i, performance.now()); }
+
+  function resize(){ const w = box.clientWidth, h = box.clientHeight || w*.75; renderer.setSize(w, h, false); camera.aspect = w/h; camera.updateProjectionMatrix(); }
+  new ResizeObserver(resize).observe(box); resize();
+
+  (function loop(t){
+    requestAnimationFrame(loop);
+    keyGroups.forEach((g,i)=>{ const p = presses.get(i); let dy = 0; if(p!==undefined){ const k=(t-p)/300; if(k<1) dy = -Math.sin(Math.min(1,k*1.6)*Math.PI/2)*3.4*(k<.62?1:Math.max(0,1-(k-.62)/.38)); else presses.delete(i); } g.position.y = (g.userData.y0||0)+(g.userData.lift||0)+dy; });
+    if(focus){
+      controls.target.lerp(focus.t, .14);
+      const dir = camera.position.clone().sub(controls.target); const cur = dir.length();
+      dir.setLength(cur + (focus.d-cur)*.14); camera.position.copy(controls.target).add(dir);
+      if(controls.target.distanceTo(focus.t) < .2 && Math.abs(cur-focus.d) < .4) focus = null;
+    }
+    // de lejos, un dedo gira; de cerca (con zoom), un dedo mueve el llavero
+    const near = build.homeD && camera.position.distanceTo(controls.target) < build.homeD*0.78;
+    if(near !== loop.near){ loop.near = near;
+      controls.touches = {ONE: near ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE, TWO: near ? THREE.TOUCH.DOLLY_ROTATE : THREE.TOUCH.DOLLY_PAN};
+      controls.mouseButtons = {LEFT: near ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: near ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN};
+      const h = document.getElementById("caphint"); if(h) h.classList.toggle("near", near); }
+    controls.update(); renderer.render(scene, camera);
+  })(0);
+
+  /* foto del diseño completo para enviar por WhatsApp */
+  async function photo(opts){
+    if(document.fonts) await document.fonts.ready;
+    const keepPos = camera.position.clone(), keepT = controls.target.clone(), keepAR = controls.autoRotate;
+    controls.autoRotate = false;
+    const sel = window.__sheetOpen; window.__sheetOpen = false; window.__photo = true; build();
+    const PW = 1000, PH = 760, keepPR = renderer.getPixelRatio(), keepAsp = camera.aspect;
+    renderer.setPixelRatio(1); renderer.setSize(PW, PH, false); camera.aspect = PW/PH; camera.updateProjectionMatrix();
+    const dir = new THREE.Vector3(.18,.62,.78).normalize();
+    // encuadre: caja de TODO el llavero (incluye cada bolita de la cadena, que es InstancedMesh)
+    group.updateMatrixWorld(true);
+    const bb = new THREE.Box3().setFromObject(group), m4 = new THREE.Matrix4(), pt = new THREE.Vector3();
+    group.traverse(o=>{ if(o.isInstancedMesh){ for(let i=0;i<o.count;i++){ o.getMatrixAt(i, m4); pt.setFromMatrixPosition(m4).applyMatrix4(o.matrixWorld); bb.expandByPoint(pt); } } });
+    const ctr = bb.getCenter(new THREE.Vector3()), sph = bb.getBoundingSphere(new THREE.Sphere());
+    const corners = []; for(const X of [bb.min.x,bb.max.x]) for(const Y of [bb.min.y,bb.max.y]) for(const Z of [bb.min.z,bb.max.z]) corners.push(new THREE.Vector3(X,Y,Z));
+    let d = Math.max(60, sph.radius/Math.sin(THREE.MathUtils.degToRad(camera.fov)/2));
+    for(let it=0; it<6; it++){   // ajusta la distancia hasta que todo quepa con margen
+      camera.position.copy(dir).multiplyScalar(d).add(ctr); camera.lookAt(ctr); camera.updateMatrixWorld(true);
+      let m = 0; corners.forEach(c=>{ const p = c.clone().project(camera); m = Math.max(m, Math.abs(p.x), Math.abs(p.y)); });
+      d *= Math.max(.5, Math.min(2, m/0.88));
+    }
+    camera.position.copy(dir).multiplyScalar(d).add(ctr); controls.target.copy(ctr); camera.lookAt(ctr);
+    renderer.render(scene, camera);
+    const w = PW, h = PH;
+    const S = 1080, c = document.createElement("canvas"); c.width = c.height = S; const x = c.getContext("2d");
+    const css = getComputedStyle(document.documentElement);
+    x.fillStyle = "#F2F4EE"; x.fillRect(0,0,S,S);
+    x.fillStyle = "#5CBA2E"; x.fillRect(0,0,S,120);
+    const logo = document.querySelector(".logo");
+    if(logo && logo.complete){ const lh = 74, lw = lh*logo.naturalWidth/logo.naturalHeight; x.drawImage(logo, 40, 23, lw, lh); }
+    x.fillStyle = "#0E1A08"; x.font = "800 30px Figtree, system-ui, sans-serif"; x.textAlign = "right"; x.fillText("@crea3d.ve", S-40, 72);
+    const scale = Math.min((S-40)/w, (S-300)/h), dw = w*scale, dh = h*scale;
+    x.drawImage(renderer.domElement, (S-dw)/2, 140, dw, dh);
+    x.textAlign = "left"; x.fillStyle = "#141712"; x.font = "900 54px Orbitron, 'Arial Black', sans-serif";
+    const word = [...st.word].map(ch=>(SYMS[ch]?ch:ch)).join("");
+    x.fillText(word, 40, S-80);
+    x.fillStyle = "#5E6659"; x.font = "600 28px Figtree, system-ui, sans-serif";
+    x.fillText(`Base ${st.base.toLowerCase()} ${st.style} · ${(opts&&opts.total)||document.getElementById("total").textContent}`, 40, S-36);
+    const url = {jpg: c.toDataURL("image/jpeg", .93), png: c.toDataURL("image/png")};
+    renderer.setPixelRatio(keepPR); resize(); camera.position.copy(keepPos); controls.target.copy(keepT); controls.autoRotate = keepAR; window.__sheetOpen = sel; window.__photo = false; build();
+    return url;
+  }
+  // render limpio con fondo transparente (para folletos y redes)
+  function raw(PW, PH, dx, dy, dz, zoom){
+    controls.autoRotate = false; window.__sheetOpen = false; window.__photo = true; build();
+    renderer.setPixelRatio(1); renderer.setSize(PW, PH, false); camera.aspect = PW/PH; camera.updateProjectionMatrix();
+    const dir = new THREE.Vector3(dx, dy, dz).normalize();
+    const hf = 2*Math.atan(Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*camera.aspect);
+    const bb = new THREE.Box3().setFromObject(group), span = bb.max.x-bb.min.x;
+    const d = Math.max(60, (span/2)/Math.tan(hf/2)*(zoom||1.05));
+    camera.position.copy(dir.multiplyScalar(d)).add(new THREE.Vector3(0,5,0)); camera.lookAt(0,5,0);
+    renderer.render(scene, camera);
+    const out = renderer.domElement.toDataURL("image/png");
+    window.__photo = false; resize(); build();
+    return out;
+  }
+  function setMode(m){
+    const pan = m==="pan";
+    controls.mouseButtons = {LEFT: pan ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: pan ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN};
+    controls.touches = {ONE: pan ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN};
+    controls.autoRotate = false; focus = null;
+  }
+  // trackpad: deslizar con dos dedos mueve el llavero; pellizcar (o la rueda del mouse) acerca
+  box.addEventListener("wheel", e=>{
+    const trackpadScroll = !e.ctrlKey && e.deltaMode===0 && (e.deltaX!==0 || !Number.isInteger(e.deltaY) || Math.abs(e.deltaY) < 50);
+    if(!trackpadScroll) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    controls.autoRotate = false; focus = null;
+    const dist = camera.position.distanceTo(controls.target);
+    const k = dist * 0.0016;
+    const right = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0), up = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
+    const move = right.multiplyScalar(e.deltaX*k).add(up.multiplyScalar(-e.deltaY*k));
+    camera.position.add(move); controls.target.add(move);
+  }, {capture:true, passive:false});
+  window.__3d = { update: build, photo, raw, setMode };
+  window.__render();
+  if(document.fonts) document.fonts.ready.then(()=>window.__render());
+})();
+</script>
+</body>
+</html>
