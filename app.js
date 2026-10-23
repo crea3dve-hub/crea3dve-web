@@ -23,9 +23,13 @@ const PRODUCTOS = [
    desc:"Acanalado, para flores secas o de decoración.", color:"Beige"},
   {id:"florero-ondas", cat:"Casa", nombre:"Florero ondas", hoja:"Florero ondas", precio:45.00, img:"/img/florero-ondas.webp",
    desc:"Ondulado con textura de ondas, para flores o de decoración.", color:"Negro"},
+  {id:"lampara-recta", cat:"Casa", nombre:"Lámpara acanalada", hoja:"Lámpara acanalada", precio:40.00, img:"/img/lampara-recta.webp",
+   fotos:[{img:"/img/lampara-recta-arriba.webp", corte:1.01}],
+   desc:"Pantalla acanalada con luz LED, para la mesa de noche o la sala.",
+   partes:[{k:"pantalla", nombre:"Pantalla", color:"Blanco"}, {k:"base", nombre:"Base", color:"Blanco"}], corte:.785, curva:.05, ancho:.15},
   {id:"joyas",     cat:"Casa", destacado:true, nombre:"Organizador de joyas", hoja:"Organizador de joyas con soporte para reloj", precio:15.00, img:"/img/organizador-joyas.webp",
    desc:"Con soporte para reloj. Aprox. 23 × 11 × 24 cm.", color:"Beige"},
-  {id:"lampara",   cat:"Casa", nombre:"Lámpara de mesa", hoja:"Lámpara de mesa", precio:40.00, img:"/img/lampara.webp",
+  {id:"lampara",   cat:"Casa", nombre:"Lámpara ondulada", hoja:"Lámpara de mesa", precio:40.00, img:"/img/lampara.webp",
    desc:"Pantalla ondulada con luz LED cálida, para la mesa de noche o la sala.",
    partes:[{k:"pantalla", nombre:"Pantalla", color:"Blanco"}, {k:"base", nombre:"Base", color:"Blanco"}], corte:.718},
   {id:"soporte",   cat:"Oficina", destacado:true, nombre:"Soporte de teléfono", hoja:"Soporte de teléfono ondulado", precio:7.50, img:"/img/soporte-telefono.webp",
@@ -137,14 +141,21 @@ function cargarImg(src){ return new Promise((ok, mal) => { const im = new Image(
 const firma = p => partesDe(p).map(x => elegido[p.id][x.k]).join("|");
 const enFoto = pt => pt.enFoto !== undefined ? pt.enFoto : pt.color;
 const esOriginal = p => partesDe(p).every(x => elegido[p.id][x.k] === enFoto(x));
-async function fotoEnColor(p){
-  const clave = p.id + "|" + firma(p); if(fotoCache[clave]) return fotoCache[clave];
-  if(!fotoOrig[p.id]) fotoOrig[p.id] = cargarImg(p.img);
-  const im = await fotoOrig[p.id], W = Math.min(700, im.naturalWidth), H = Math.round(im.naturalHeight * W / im.naturalWidth);
+// fotos de un producto: la principal y las extra (fotos:[{img, corte}])
+const fotosDe = p => [{img:p.img, corte:p.corte, curva:p.curva, ancho:p.ancho}].concat(p.fotos || []);
+const vista = {};   // qué foto se está viendo de cada producto
+const fotoActual = p => fotosDe(p)[vista[p.id] || 0];
+async function fotoEnColor(p, f){
+  const clave = f.img + "|" + firma(p); if(fotoCache[clave]) return fotoCache[clave];
+  if(!fotoOrig[f.img]) fotoOrig[f.img] = cargarImg(f.img);
+  const im = await fotoOrig[f.img], W = Math.min(700, im.naturalWidth), H = Math.round(im.naturalHeight * W / im.naturalWidth);
   const cv = document.createElement("canvas"); cv.width = W; cv.height = H; const x = cv.getContext("2d");
   x.drawImage(im, 0, 0, W, H); const d = x.getImageData(0, 0, W, H), a = d.data;
-  const partes = partesDe(p), corte = Math.round((p.corte || 1) * H);
-  const parteDe = i => partes.length > 1 && Math.floor(i / 4 / W) >= corte ? 1 : 0;
+  const partes = partesDe(p), corte = Math.round((f.corte || 1) * H);
+  // el corte puede ser curvo (borde redondo visto de frente): más abajo en el centro que a los lados
+  const curva = (f.curva || 0) * H, ancho = (f.ancho || .5) * W;
+  const corteEn = px => corte + curva * Math.max(0, 1 - ((px - W / 2) / ancho) ** 2);
+  const parteDe = i => partes.length > 1 && Math.floor(i / 4 / W) >= corteEn((i / 4) % W) ? 1 : 0;
   // brillo promedio de cada parte (para conservar luces y sombras)
   const suma = [0,0], n = [0,0];
   for(let i = 0; i < a.length; i += 4) if(a[i+3] > 200){ const q = parteDe(i); suma[q] += .299*a[i] + .587*a[i+1] + .114*a[i+2]; n[q]++; }
@@ -174,12 +185,25 @@ async function fotoEnColor(p){
   return fotoCache[clave] = cv.toDataURL("image/webp", .9);
 }
 async function pintarFoto(p){
-  if(!p.img || p.sinColor) return;
-  const f = firma(p);
-  const src = esOriginal(p) ? p.img : await fotoEnColor(p).catch(() => p.img);
-  if(firma(p) !== f) return;   // cambió mientras se pintaba
+  if(!p.img) return;
+  const fo = fotoActual(p), f = firma(p) + fo.img;
+  const src = p.sinColor || esOriginal(p) ? fo.img : await fotoEnColor(p, fo).catch(() => fo.img);
+  if(firma(p) + fotoActual(p).img !== f) return;   // cambió mientras se pintaba
   document.querySelectorAll(`[data-img="${p.id}"]`).forEach(im => { im.src = src; });
 }
+
+// botoncitos para pasar de una foto a otra (solo si el producto tiene varias)
+function miniaturas(p){
+  const fs = fotosDe(p); if(fs.length < 2) return "";
+  return `<div class="fotos-nav" role="group" aria-label="Fotos">` + fs.map((f, i) => `<button type="button" class="fdot" data-foto="${p.id}" data-i="${i}" aria-label="Foto ${i + 1}" aria-pressed="${(vista[p.id] || 0) === i}"></button>`).join("") + `</div>`;
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest(".fdot"); if(!b) return;
+  const p = PRODUCTOS.find(x => x.id === b.dataset.foto); if(!p) return;
+  vista[p.id] = +b.dataset.i;
+  document.querySelectorAll(`.fdot[data-foto="${p.id}"]`).forEach(x => x.setAttribute("aria-pressed", x.dataset.i === b.dataset.i));
+  pintarFoto(p);
+});
 
 /* ---------- catálogo ---------- */
 const elegido = {};   // colores escogidos en cada producto: {parte: color}
@@ -195,7 +219,7 @@ function pintarProductos(){
   if(!GRID) return;
   GRID.innerHTML = PRODUCTOS.filter(p => SOLO_DESTACADOS ? p.destacado : (filtro === "Todo" || p.cat === filtro)).map(p => `
     <article class="card" data-p="${p.id}">
-      ${p.img ? `<div class="ph${p.recorte ? " recorte" : " foto"}"><img src="${p.img}" alt="${esc(p.nombre)}" loading="lazy" data-img="${p.id}"></div>` : `<div class="ph vacio">${ICONO}<span>Foto pronto</span></div>`}
+      ${p.img ? `<div class="ph${p.recorte ? " recorte" : " foto"}"><img src="${fotoActual(p).img}" alt="${esc(p.nombre)}" loading="lazy" data-img="${p.id}">${miniaturas(p)}</div>` : `<div class="ph vacio">${ICONO}<span>Foto pronto</span></div>`}
       <div class="bd">
         <span class="cat">${esc(p.cat)}</span>
         <h3>${esc(p.nombre)}</h3>
@@ -234,7 +258,7 @@ function abrirProducto(p){
   $("#dlg-t").textContent = p.nombre;
   $("#dlg-s").textContent = p.precio != null ? money(p.precio) + " c/u · tasa BCV" : "Te pasamos el precio por WhatsApp";
   $("#dlg-btn").textContent = p.cotizar || p.precio == null ? "Pedir precio por WhatsApp" : "Pedir por WhatsApp";
-  $("#dlg-cuerpo").innerHTML = (p.img ? `<div class="dlg-foto"><img src="${p.img}" alt="" data-img="${p.id}"></div>` : "")
+  $("#dlg-cuerpo").innerHTML = (p.img ? `<div class="dlg-foto"><img src="${fotoActual(p).img}" alt="" data-img="${p.id}">${miniaturas(p)}</div>` : "")
     + partesDe(p).map(pt => swatches(p, pt, "dlg")).join("") + `
     <div class="fld" style="margin-top:14px">Cantidad
       <div class="cant"><button type="button" data-c="-1" aria-label="Uno menos">−</button><output id="cant-n" aria-live="polite">${cantidad}</output><button type="button" data-c="1" aria-label="Uno más">+</button></div>

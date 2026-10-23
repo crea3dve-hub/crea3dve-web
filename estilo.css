@@ -195,3 +195,11 @@ header.top{position:sticky}
 .col-btn .dot + .dot{margin-left:-16px}
 .col-pop .col-lbl{margin:2px 0 6px}
 .col-pop .sws + .col-lbl{margin-top:12px}
+
+/* varias fotos de un producto */
+.ph{position:relative}
+.fotos-nav{position:absolute;left:0;right:0;bottom:8px;display:flex;justify-content:center;gap:2px}
+.fdot{width:28px;height:28px;border:0;background:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.fdot::after{content:"";width:9px;height:9px;border-radius:50%;background:#C5CBBE;transition:background .15s,transform .15s}
+.fdot[aria-pressed="true"]::after{background:var(--ink);transform:scale(1.15)}
+.dlg-foto{position:relative}
