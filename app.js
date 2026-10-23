@@ -30,7 +30,7 @@ const PRODUCTOS = [
    desc:"Para el escritorio o la mesa de noche. Varios colores.", color:"Blanco"},
   {id:"nfc-ig",    cat:"Llaveros", destacado:true, nombre:"Llavero NFC personalizado", hoja:"Llavero NFC Instagram", precio:5.00, img:"/img/llavero-nfc.webp",
    desc:"Acercas el teléfono y se abre el link que quieras: tu Instagram, WhatsApp, página web, menú o catálogo.", color:"Blanco", sinColor:true},
-  {id:"fidget",    cat:"Fidgets", nombre:"Fidget espiral", hoja:"Fidget espiral", precio:null, img:"/img/deco.webp", recorte:true,
+  {id:"fidget",    cat:"Fidgets", nombre:"Fidget estrella", hoja:"Fidget estrella", precio:null, img:"/img/fidget.webp", enFoto:"", contraste:.5,
    desc:"Para tener en las manos y no parar de jugar. Varios colores.", color:"Blanco"},
   {id:"exhibidor", cat:"Para negocios", nombre:"Exhibidor de pago móvil con NFC", hoja:"Exhibidor pago móvil + NFC (a pedido)", precio:24.50, img:"/img/exhibidor-nfc.webp",
    desc:"Tu QR del banco y botones que abren tu WhatsApp, Instagram y web con solo acercar el teléfono.", color:"Negro", sinColor:true},
@@ -77,7 +77,7 @@ function abrirWhatsApp(texto){
 
 /* ---------- selector de colores ---------- */
 // partes de color de un producto (la mayoría tiene una sola)
-const partesDe = p => p.sinColor ? [] : (p.partes || [{k:"", nombre:"Color", color:p.color}]);
+const partesDe = p => p.sinColor ? [] : (p.partes || (p._pt = p._pt || [{k:"", nombre:"Color", color:p.color, enFoto:p.enFoto}]));
 const fondoDe = n => { const c = COLORES.find(x => x[0] === n) || COLORES[0]; return c[2] || c[1]; };
 const FLECHA = `<svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`;
 function swatches(p, parte, donde){
@@ -152,7 +152,7 @@ async function fotoEnColor(p){
   for(let i = 0; i < a.length; i += 4){
     if(a[i+3] < 90) continue;   // la sombrita del piso se queda igual
     const q = parteDe(i), tn = tono[q]; if(!tn) continue;   // esa parte sigue en su color original
-    const k = (.299*a[i] + .587*a[i+1] + .114*a[i+2]) / ref[q], px = (i / 4) % W, py = Math.floor(i / 4 / W);
+    const k = 1 + ((.299*a[i] + .587*a[i+1] + .114*a[i+2]) / ref[q] - 1) * (p.contraste || 1), px = (i / 4) % W, py = Math.floor(i / 4 / W);
     let out;
     if(tn.metal){
       // metalizado: más contraste y un brillo en diagonal, con la rampa oscuro → medio → claro del metal
