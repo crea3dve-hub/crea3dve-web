@@ -70,9 +70,31 @@ function leerCliente(form){
 }
 const nuevoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
 // anota el pedido en la hoja (aunque la persona no termine de enviar el WhatsApp)
-function avisarCaja(datos, esperar){
-  const body = JSON.stringify(Object.assign({accion:"pedidoWeb", id:nuevoId()}, datos));
+/* ---------- enviar pedidos a la hoja sin que se pierdan ---------- */
+// Se guarda una copia en el teléfono y se manda por dos vías. Si no llegó (mala señal, se cerró la página),
+// se vuelve a mandar la próxima vez que abran crea3dve.com. La hoja ignora los repetidos (mismo ID).
+const PEND_KEY = "crea3d-pendientes";
+function pendientes(){ try{ return JSON.parse(localStorage.getItem(PEND_KEY)) || []; }catch(e){ return []; } }
+function guardarPend(l){ try{ localStorage.setItem(PEND_KEY, JSON.stringify(l.slice(-15))); }catch(e){} }
+function mandarCaja(body){
+  let ok = false;
+  try{ if(navigator.sendBeacon && body.length < 60000) ok = navigator.sendBeacon(CAJA_API, new Blob([body], {type:"text/plain;charset=utf-8"})); }catch(e){}
   const p = fetch(CAJA_API, {method:"POST", mode:"no-cors", keepalive: body.length < 60000, body}).catch(()=>{});
+  return p;
+}
+function enviarPedido(obj){
+  const body = JSON.stringify(obj);
+  if(body.length < 60000){ const l = pendientes(); l.push({t: Date.now(), n: 0, body}); guardarPend(l); }
+  return mandarCaja(body);
+}
+// al abrir la página: reintenta los pedidos de los últimos 3 días (máx. 3 veces cada uno)
+setTimeout(() => {
+  const ahora = Date.now(), l = pendientes().filter(x => ahora - x.t < 3*864e5 && x.n < 3);
+  l.forEach(x => { if(ahora - x.t > 60e3){ x.n++; mandarCaja(x.body); } });
+  guardarPend(l);
+}, 2500);
+function avisarCaja(datos, esperar){
+  const p = enviarPedido(Object.assign({accion:"pedidoWeb", id:nuevoId()}, datos));
   return esperar ? p : null;
 }
 function abrirWhatsApp(texto){
