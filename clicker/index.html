@@ -653,7 +653,7 @@ function render(){
     const t = b.dataset.c;
     if(t==="otro"){ agregarOtro(); return; }
     if(st.charms.length < MAX_CHARMS){ const used = st.charms.filter(c=>c.t===t).map(c=>c.c);
-      const pal = ["Amarillo","Celeste","Fucsia","Verde claro","Morado metalizado","Blanco","Naranja","Rojo"]; const c = t==="pelota" ? charmInfo(t).color : (pal.find(p=>!used.includes(p)) || charmInfo(t).color);
+      const pal = ["Amarillo","Celeste","Fucsia","Verde claro","Morado metalizado","Blanco","Naranja","Rojo"].filter(p=>!FIL_AGOTADO.has(p)); const c = t==="pelota" ? charmInfo(t).color : (pal.find(p=>!used.includes(p)) || charmInfo(t).color);
       st.charms.push({t, c}); render(); } });
   $("charmlist").innerHTML = st.charms.map((ch,i)=>{ const x = charmInfo(ch.t);
     return `<div class="crow"><svg viewBox="0 0 44 44">${charmIcon(ch.t, hex(ch.c))}</svg>
@@ -803,7 +803,7 @@ function randomize(){
   lastRand = sig; st.mixTiles=null; st.mixLegs=null;
   // aro y charms: solo cambia el color, no lo que la persona escogió
   st.aros.forEach(x=>{ const a = AROS.find(y=>y.id===x.t); if(a) x.c = pick(a.colores)[0]; });
-  const CH = ["Amarillo","Celeste","Fucsia","Verde claro","Morado metalizado","Blanco","Naranja","Rojo","Azul"];
+  const CH = ["Amarillo","Celeste","Fucsia","Verde claro","Morado metalizado","Blanco","Naranja","Rojo","Azul"].filter(c=>!FIL_AGOTADO.has(c));
   st.charms.forEach(c=>{ c.c = pick(CH.filter(x=>!st.tiles.includes(x)).concat(CH).slice(0,CH.length)); });
   render();
 }
@@ -1053,7 +1053,11 @@ $("sh-del").onclick=()=>{ const ks = keys(); ks.splice(st.sel,1); st.tiles.splic
 $("sh-done").onclick = closeSheet;
 document.addEventListener("keydown", e=>{ if(e.key==="Escape" && sheetOpen) closeSheet(); });
 window.__openSheet = openSheet;
-if(fromLink){ $("fromlink").hidden = false; }
+if(fromLink){ $("fromlink").hidden = false;
+  // si el diseño del link tiene un color que ya se agotó, se cambia por uno disponible (y se avisa)
+  const usados = [st.base, ...st.tiles, ...st.legs, ...st.charms.map(c=>c.c)], ag = [...new Set(usados.filter(c=>FIL_AGOTADO.has(c)))];
+  if(ag.length){ sinAgotados(); render();
+    $("fromlink").textContent += ` El color ${ag.map(c=>c.toLowerCase()).join(" y ")} está agotado, lo cambiamos por rojo: puedes escoger otro.`; } }
 window.__render = render;
 </script>
 <script>
