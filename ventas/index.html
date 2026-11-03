@@ -930,8 +930,30 @@ details[open] > summary{margin-bottom:4px}
   const PRECIO_IMP = { 'X1C': 2015, 'A1': 890, 'A1 mini': 850 };
   let kAj = {}; try { kAj = JSON.parse(leer('c3_calc') || '{}') || {}; } catch (e) { kAj = {}; }
   const guardarAj = () => guardar('c3_calc', JSON.stringify(kAj));
+  // El perfil vive en la hoja (Configuración) para que sea igual en el teléfono y en la computadora
+  const calcHoja = () => { const c = datos && datos.config; return c && c.calc && typeof c.calc === 'object' ? c.calc : null; };
+  const ajCalc = () => calcHoja() || kAj;
+  const CLAVE_PERFIL = /^(p|v|r|w|kwh|h|t|kg)_|^(mult|multM|errB|errP)$/;
+  let calcPend = {}, calcTimer = null;
+  function guardarCalc(patch, texto, impresora, yaMismo) {
+    const aplicar = o => Object.keys(patch).forEach(k => { if (patch[k] === null) delete o[k]; else o[k] = patch[k]; });
+    aplicar(kAj); guardarAj();
+    const h = calcHoja();
+    if (!h) { if (texto) avisar(texto); return; }          // puente viejo: queda solo en este equipo
+    aplicar(h); Object.assign(calcPend, patch);
+    clearTimeout(calcTimer);
+    const mandar = () => { const c = calcPend; calcPend = {}; if (Object.keys(c).length) { cola.push({ accion: 'guardarPerfil', calc: c, impresora: impresora || '', id: idNuevo() }); guardarCola(); vaciarCola(); } };
+    if (yaMismo) { mandar(); if (texto) avisar(texto + ' ✓'); } else calcTimer = setTimeout(mandar, 1500);
+  }
+  // Una sola vez: sube a la hoja lo que tenías guardado en este equipo
+  function subirPerfilLocal() {
+    const h = calcHoja(); if (!h || kAj._subido) return;
+    const patch = {}; Object.keys(kAj).forEach(k => { if (CLAVE_PERFIL.test(k) && !(k in h) && kAj[k] !== null) patch[k] = kAj[k]; });
+    kAj._subido = 1; guardarAj();
+    if (Object.keys(patch).length) guardarCalc(patch, '', '', true);
+  }
   function ajustesDe(imp, fil) {
-    const c = conf(), a = kAj;
+    const c = conf(), a = ajCalc();
     const porHora = c.impresoras[imp] || 0;
     const precioImp = PRECIO_IMP[imp] || Math.round(porHora * 3000);
     return {
@@ -965,7 +987,7 @@ details[open] > summary{margin-bottom:4px}
     }
     if (document.activeElement !== $('#kMultP')) $('#kMultP').value = A.mult;
     if (document.activeElement !== $('#kMultMay')) $('#kMultMay').value = A.multM;
-    if (document.activeElement !== $('#kErr')) $('#kErr').value = Math.round(($('#kPers').value === '1' ? (kAj.errP ?? 0.5) : (kAj.errB ?? 0.25)) * 100);
+    if (document.activeElement !== $('#kErr')) $('#kErr').value = Math.round(($('#kPers').value === '1' ? (ajCalc().errP ?? 0.5) : (ajCalc().errB ?? 0.25)) * 100);
     marcarMult();
   }
   function marcarMult() {
@@ -1041,18 +1063,19 @@ details[open] > summary{margin-bottom:4px}
   }
   Object.keys(PERF).forEach(sel => $(sel).addEventListener('input', () => { perfilSucio = true; pintarPerfilTxt(); calcular(); }));
   $('#kPerfGuardar').addEventListener('click', () => {
-    Object.entries(PERF).forEach(([sel, key]) => { const v = parseFloat($(sel).value); if (v >= 0) kAj[key()] = v; });
-    guardarAj(); perfilSucio = false; pintarPerfilTxt(); $('#kPerfil').open = false; avisar('Perfil de la ' + $('#kImp').value + ' guardado');
+    const patch = {}; Object.entries(PERF).forEach(([sel, key]) => { const v = parseFloat($(sel).value); if (v >= 0) patch[key()] = v; });
+    perfilSucio = false; guardarCalc(patch, 'Perfil de la ' + $('#kImp').value + ' guardado', $('#kImp').value, true);
+    pintarPerfilTxt(); $('#kPerfil').open = false;
   });
   ['#kMultP', '#kMultMay'].forEach(sel => $(sel).addEventListener('input', () => {
-    const v = parseFloat($(sel).value); if (v >= 0) { kAj[sel === '#kMultP' ? 'mult' : 'multM'] = v; guardarAj(); } marcarMult(); calcular(); }));
+    const v = parseFloat($(sel).value); if (v >= 0) guardarCalc({ [sel === '#kMultP' ? 'mult' : 'multM']: v }); marcarMult(); calcular(); }));
   $('#kImpBtns').addEventListener('click', e => { const b = e.target.closest('[data-imp]'); if (!b) return;
     $('#kImp').value = b.dataset.imp; document.querySelectorAll('#kImpBtns button').forEach(x => x.setAttribute('aria-pressed', x === b));
     kAj.imp = b.dataset.imp; guardarAj(); ponerAjustes(); calcular(); });
-  $('#kErr').addEventListener('input', () => { const v = parseFloat($('#kErr').value); if (v >= 0) { kAj[$('#kPers').value === '1' ? 'errP' : 'errB'] = v / 100; guardarAj(); } calcular(); });
+  $('#kErr').addEventListener('input', () => { const v = parseFloat($('#kErr').value); if (v >= 0) guardarCalc({ [$('#kPers').value === '1' ? 'errP' : 'errB']: v / 100 }); calcular(); });
   ['#kImp', '#kFil'].forEach(sel => $(sel).addEventListener('change', () => { kAj.imp = $('#kImp').value; kAj.fil = $('#kFil').value; guardarAj(); ponerAjustes(); calcular(); }));
-  $('#kMult').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; $('#kMultP').value = b.dataset.m; kAj.mult = +b.dataset.m; guardarAj(); marcarMult(); precioTocado = false; calcular(); });
-  $('#kMultM').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; $('#kMultMay').value = b.dataset.m; kAj.multM = +b.dataset.m; guardarAj(); marcarMult(); calcular(); });
+  $('#kMult').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; $('#kMultP').value = b.dataset.m; guardarCalc({ mult: +b.dataset.m }); marcarMult(); precioTocado = false; calcular(); });
+  $('#kMultM').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; $('#kMultMay').value = b.dataset.m; guardarCalc({ multM: +b.dataset.m }); marcarMult(); calcular(); });
   $('#irCalc').addEventListener('click', () => irA('calcular'));
   $('#kUsar').addEventListener('click', () => {
     if (kSug === null) return;
@@ -1094,8 +1117,9 @@ details[open] > summary{margin-bottom:4px}
     ponerAjustes(); $('#kT').value = x.minTrabajo || $('#kT').value; pintarPerfilTxt(); precioTocado = false; calcular();
   }
   $('#kReset').addEventListener('click', () => {
-    const imp = $('#kImp').value; ['p_', 'v_', 'r_', 'w_', 'kwh_', 'h_', 't_'].forEach(k => delete kAj[k + imp]); delete kAj['kg_' + $('#kFil').value];
-    delete kAj.kwh; delete kAj.hora; guardarAj(); ponerAjustes(); calcular(); avisar('Perfil de la ' + imp + ' como en la hoja'); });
+    const imp = $('#kImp').value, patch = { ['kg_' + $('#kFil').value]: null };
+    ['p_', 'v_', 'r_', 'w_', 'kwh_', 'h_', 't_'].forEach(k => { patch[k + imp] = null; });
+    delete kAj.kwh; delete kAj.hora; guardarCalc(patch, 'Perfil de la ' + imp + ' como en la hoja', imp, true); ponerAjustes(); calcular(); });
   let kCosto = null;
   function actualizarGanancia() {
     const p = parseFloat($('#otroPrecio').value), t = $('#kGan');
@@ -2119,6 +2143,9 @@ details[open] > summary{margin-bottom:4px}
     if (bt) bt.dataset.badge = nWeb || '';
     if (document.activeElement !== $('#txtPago')) $('#txtPago').value = datosPago();
     pintarProductos(); pintarCarrito(); pintarPedidos(); pintarInventario(); pintarGastos(); pintarPorPagar(); pintarResumen(); pintarClientes(); pintarCatalogo();
+    // perfil de cotización: si llegó de la hoja uno más nuevo, se muestra (sin pisar lo que estés editando)
+    subirPerfilLocal();
+    if ($('#kImpBtns').children.length && !perfilSucio && $('#tab-calcular').hidden) { ponerAjustes(); calcular(); }
     recordatorioDiario();
   }
 
