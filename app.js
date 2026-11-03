@@ -259,6 +259,25 @@ if(TABS) TABS.addEventListener("click", e => { const b = e.target.closest(".tab"
 if(GRID) GRID.addEventListener("click", e => { const b = e.target.closest("[data-quiero]"); if(b) abrirProducto(PRODUCTOS.find(p => p.id === b.dataset.quiero)); });
 pintarTabs(); pintarProductos();
 
+/* ---------- productos nuevos guardados desde la calculadora (vienen de la hoja; solo los que tienen nombre web) ---------- */
+function sumarDeLaHoja(lista){
+  let hubo = false;
+  (lista || []).forEach((x, i) => {
+    if(!x || !x.nombre || !(x.precio > 0)) return;
+    if(PRODUCTOS.some(p => p.hoja === x.hoja || p.nombre.toLowerCase() === String(x.nombre).toLowerCase())) return;
+    const p = {id:"h" + i + "-" + String(x.hoja).replace(/[^a-z0-9]+/gi, "").slice(0, 20), cat: CATEGORIAS.includes(x.cat) ? x.cat : "Casa",
+      nombre: x.nombre, hoja: x.hoja, precio: Number(x.precio), img: null, desc: x.desc || "", color: "Blanco", sinColor: true};
+    PRODUCTOS.push(p); elegido[p.id] = {}; hubo = true;
+  });
+  if(hubo && GRID && !SOLO_DESTACADOS){ pintarTabs(); pintarProductos(); }
+}
+if(GRID && !SOLO_DESTACADOS){
+  try{ sumarDeLaHoja(JSON.parse(localStorage.getItem("crea3d-catalogo") || "[]")); }catch(e){}
+  fetch(CAJA_API + "?catalogo=1").then(r => r.json()).then(j => {
+    if(j && j.ok && Array.isArray(j.productos)){ try{ localStorage.setItem("crea3d-catalogo", JSON.stringify(j.productos)); }catch(e){} sumarDeLaHoja(j.productos); }
+  }).catch(() => {});
+}
+
 /* ---------- ventanita ---------- */
 const dlg = $("#dlg"), fd = $("#f-dlg");
 let modo = null;   // {tipo:"Producto", p} o {tipo:"Evento"}

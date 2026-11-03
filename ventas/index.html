@@ -121,8 +121,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-o
 nav.tabs{position:fixed;left:12px;right:12px;margin:0 auto;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:10;max-width:560px;
   background:var(--surface);
   border:1px solid var(--line);border-radius:22px;box-shadow:0 10px 30px rgba(20,23,18,.14);padding:6px !important;gap:4px;
-  display:grid;grid-template-columns:repeat(6,1fr);padding-bottom:env(safe-area-inset-bottom,0px)}
-nav.tabs button{border:0;background:transparent;padding:8px 2px 7px;font-size:11px;font-weight:700;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:16px;cursor:pointer;transition:background .15s,color .15s}
+  display:grid;grid-template-columns:repeat(7,1fr);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav.tabs button{border:0;background:transparent;padding:8px 1px 7px;font-size:10px;letter-spacing:-.1px;font-weight:700;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:16px;cursor:pointer;transition:background .15s,color .15s}
 nav.tabs button svg{width:22px;height:22px}
 nav.tabs button{position:relative}
 nav.tabs button[data-badge]:not([data-badge=""])::after{content:attr(data-badge);position:absolute;top:2px;right:calc(50% - 22px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--warn);color:#fff;font-size:11px;line-height:18px;text-align:center}
@@ -179,6 +179,16 @@ details[open] > summary{margin-bottom:4px}
 .kres .stat{padding:5px 0}
 .kres .sug{display:flex;justify-content:space-between;align-items:baseline;margin-top:6px;font-weight:800;font-size:18px}
 .ktit{display:block;margin:12px 0 2px;font-size:13px}
+.cat-item{background:var(--surface);border:1px solid var(--line);border-radius:14px;margin-bottom:8px;overflow:hidden}
+.cat-item summary{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 14px;cursor:pointer;list-style:none}
+.cat-item summary::-webkit-details-marker{display:none}
+.cat-item summary b{font-size:14px;line-height:1.25}
+.cat-item summary .pr{font-weight:800;white-space:nowrap}
+.cat-item summary small{display:block;font-weight:500;color:var(--muted);font-size:11px;margin-top:2px}
+.cat-ficha{padding:0 14px 12px;font-size:13px}
+.cat-ficha .stat{padding:6px 0}
+.cat-ficha .acc{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.web-si{color:var(--brand-ink);background:var(--brand-soft);border-radius:8px;padding:1px 6px;font-size:11px;font-weight:700}
 .kins{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 12px}
 .kins summary{display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-weight:700;font-size:14px;list-style:none}
 .kins summary::-webkit-details-marker{display:none}
@@ -413,10 +423,23 @@ details[open] > summary{margin-bottom:4px}
   </section>
 
   <!-- RESUMEN -->
+  <section id="tab-catalogo" data-tab hidden>
+    <h2>Catálogo</h2>
+    <input id="buscaCat" type="search" placeholder="🔍 Buscar producto" autocomplete="off" style="margin:0 0 10px">
+    <div id="listaCat"></div>
+  </section>
   <section id="tab-calcular" data-tab hidden>
     <h2>Calculadora 3D</h2>
       <div class="card calc" style="margin-top:0">
       <p class="chico" style="margin:0 0 4px">Costo real de la impresión y precio sugerido al detal y al mayor.</p>
+      <b class="ktit">Producto</b>
+      <label for="kNom">Nombre del producto (interno)</label><input id="kNom" autocomplete="off" placeholder="Ej: Pulpo flexible + estrella">
+      <label for="kWeb">Nombre para la página web <span class="chico">(déjalo vacío si no sale en la web)</span></label><input id="kWeb" autocomplete="off" placeholder="Ej: Pulpo articulado">
+      <label for="kLink">Link de impresión <span class="chico">(solo para ti, no sale en la web)</span></label><input id="kLink" type="url" inputmode="url" autocomplete="off" placeholder="https://makerworld.com/…">
+      <details class="kajustes" id="kWebMas"><summary>🌐 Para la web: categoría y descripción</summary>
+        <label for="kCat">Categoría en la web</label><select id="kCat"><option>Casa</option><option>Oficina</option><option>Llaveros</option><option>Fidgets</option><option>Para negocios</option></select>
+        <label for="kDesc">Descripción corta</label><input id="kDesc" maxlength="200" autocomplete="off" placeholder="Ej: Se mueve en todas direcciones. Varios colores.">
+      </details>
       <b class="ktit">Pieza</b>
       <div class="dos">
         <div><label for="kHh">Horas de impresión</label><input id="kHh" type="number" inputmode="numeric" min="0" placeholder="0"></div>
@@ -479,7 +502,11 @@ details[open] > summary{margin-bottom:4px}
       </details>
       <div id="kRes" class="kres" hidden></div>
     </div>
-    <button class="btn primario ancho" id="kUsar" style="margin-top:12px" hidden>Usar el precio de detal en una venta</button>
+    <div class="dos" style="margin-top:12px">
+      <button class="btn primario" id="kGuardar">💾 Guardar producto</button>
+      <button class="btn" id="kUsar" hidden>Usar en una venta</button>
+    </div>
+    <p class="chico" id="kGuardarTxt" style="margin:6px 0 0">Se guarda en tu hoja (Productos e Inventario), aparece para vender aquí y, si tiene nombre para la web, en crea3dve.com.</p>
   </section>
   <section id="tab-resumen" data-tab hidden>
     <h2>Cómo va el negocio</h2>
@@ -514,6 +541,7 @@ details[open] > summary{margin-bottom:4px}
   <button role="tab" data-ir="vender" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6 5 3H2"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/></svg>Vender</button>
   <button role="tab" data-ir="pedidos" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Pedidos</button>
   <button role="tab" data-ir="inventario" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>Inventario</button>
+  <button role="tab" data-ir="catalogo" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Catálogo</button>
   <button role="tab" data-ir="calcular" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M8 6h8"/><path d="M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h.01M12 19h4"/></svg>Calcular</button>
   <button role="tab" data-ir="gastos" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 15h3"/></svg>Gastos</button>
   <button role="tab" data-ir="resumen" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Resumen</button>
@@ -1005,6 +1033,37 @@ details[open] > summary{margin-bottom:4px}
     setTimeout(() => $('#otroNombre').scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
     if (!$('#otroNombre').value) $('#otroNombre').focus();
   });
+  // Guardar el producto calculado (hoja + página de ventas + web si tiene nombre web)
+  $('#kGuardar').addEventListener('click', async () => {
+    const nom = $('#kNom').value.trim();
+    if (!nom) { avisar('Ponle nombre al producto arriba', true); $('#kNom').focus(); return; }
+    if (kSug === null) { avisar('Primero pon las horas y los gramos', true); return; }
+    const n = id => Math.max(0, parseFloat($(id).value) || 0);
+    const detalle = INSUMOS.filter(([id]) => kInsQ[id]).map(([id, nm]) => kInsQ[id] + ' ' + nm).concat(n('#kIns') ? ['otro ' + fmt(n('#kIns'))] : []).join(', ');
+    const mayor = Math.ceil(kCosto * (n('#kMultMay') || 1.4) / 0.5 - 1e-9) * 0.5;
+    const cuerpo = { accion: 'guardarProducto', nombre: nom, nombreWeb: $('#kWeb').value.trim(), link: $('#kLink').value.trim(),
+      categoria: $('#kCat').value, descripcion: $('#kDesc').value.trim(), filamento: $('#kFil').value, impresora: $('#kImp').value,
+      gramos: n('#kG'), horas: n('#kHh') + n('#kMin') / 60, minTrabajo: n('#kT'), insumos: +costoInsumos().toFixed(3),
+      propio: $('#kPers').value === '1', precio: kSug, mayor,
+      nota: 'Calculadora: ' + (n('#kHh') ? n('#kHh') + ' h ' : '') + (n('#kMin') ? n('#kMin') + ' min' : '') + ' · error ' + n('#kErr') + '%' + (detalle ? ' · insumos: ' + detalle : '') };
+    $('#kGuardar').disabled = true;
+    try { if (await accion(cuerpo, 'Producto guardado')) $('#kGuardarTxt').textContent = '✓ Guardado: ' + nom + (cuerpo.nombreWeb ? ' · sale en la web como "' + cuerpo.nombreWeb + '"' : ''); }
+    finally { $('#kGuardar').disabled = false; }
+  });
+  // Pasa un producto del catálogo a la calculadora para revisarlo o cambiarlo
+  function cargarEnCalc(x) {
+    irA('calcular');
+    $('#kNom').value = x.nombre; $('#kWeb').value = x.web || ''; $('#kLink').value = x.link || '';
+    if (x.categoria) $('#kCat').value = x.categoria; $('#kDesc').value = x.descripcion || '';
+    if (x.impresora && [...$('#kImp').options].some(o => o.value === x.impresora)) $('#kImp').value = x.impresora;
+    if (x.filamento && [...$('#kFil').options].some(o => o.value === x.filamento)) $('#kFil').value = x.filamento;
+    const hh = Math.floor(x.horas || 0), mm = Math.round(((x.horas || 0) - hh) * 60);
+    $('#kHh').value = hh || ''; $('#kMin').value = mm || ''; $('#kG').value = x.gramos || ''; $('#kT').value = x.minTrabajo || 5;
+    $('#kPers').value = x.propio ? '1' : '0';
+    document.querySelectorAll('#kDis button').forEach(b => b.setAttribute('aria-pressed', b.dataset.dis === $('#kPers').value));
+    kInsQ = {}; $('#kIns').value = x.insumoCosto ? x.insumoCosto.toFixed(2) : '';
+    ponerAjustes(); precioTocado = false; calcular();
+  }
   $('#kReset').addEventListener('click', () => { kAj = {}; guardarAj(); ponerAjustes(); calcular(); avisar('Ajustes de la hoja'); });
   let kCosto = null;
   function actualizarGanancia() {
@@ -1989,6 +2048,37 @@ details[open] > summary{margin-bottom:4px}
 
   $('#btnPago').addEventListener('click', () => { guardar('c3_pago', $('#txtPago').value.trim()); avisar('Datos de pago guardados'); $('#cardPago').open = false; });
 
+  /* ---------- Catálogo: todos los productos con su ficha ---------- */
+  const horasTxt = h => { const hh = Math.floor(h), mm = Math.round((h - hh) * 60); return h ? (hh ? hh + ' h ' : '') + (mm ? mm + ' min' : '') : '—'; };
+  let catAbierto = null;
+  function pintarCatalogo() {
+    const lista = datos.catalogo || [];
+    const st = n => (datos.productos || []).find(p => p.nombre === n);
+    const sinT = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const q = sinT($('#buscaCat').value.trim());
+    const fila = (a, b) => `<div class="stat"><span>${a}</span><b>${b}</b></div>`;
+    $('#listaCat').innerHTML = !lista.length ? '<p class="vacio">Para ver el catálogo, actualiza el puente de Apps Script (te lo pasó Claude).</p>'
+      : lista.filter(x => !q || sinT(x.nombre + ' ' + x.web).includes(q)).map((x, i) => { const s = st(x.nombre);
+        return `<details class="cat-item" data-cat="${esc(x.nombre)}"${catAbierto === x.nombre ? ' open' : ''}>
+          <summary><span><b>${esc(x.nombre)}</b><small>${x.web ? '<span class="web-si">🌐 web</span> ' + esc(x.web) : 'Solo interno'}</small></span><span class="pr">${x.precio ? fmt(x.precio) : '—'}</span></summary>
+          <div class="cat-ficha">
+            ${fila('Precio al detal', x.precio ? fmt(x.precio) : '—')}${fila('Precio al mayor', x.mayor ? fmt(x.mayor) : '—')}
+            ${fila('Costo real', x.costo ? fmt(x.costo) : '—')}${x.precio && x.costo ? fila('Te quedan', fmt(x.precio - x.costo)) : ''}
+            ${fila('Tiempo de impresión', horasTxt(x.horas))}${fila('Gramos', x.gramos ? x.gramos.toLocaleString('es-VE') + ' g' : '—')}
+            ${fila('Impresora · filamento', esc((x.impresora || '—') + ' · ' + (x.filamento || '—')))}
+            ${fila('Diseño', x.propio ? 'Propio' : 'Bambu / MakerWorld')}${fila('Insumos', x.insumoCosto ? fmt(x.insumoCosto) + (x.insumo ? ' · ' + esc(x.insumo) : '') : '—')}
+            ${s ? fila('En inventario', s.disponibles + ' disponibles') : ''}
+            ${x.web ? fila('En la web', esc(x.web) + (x.categoria ? ' · ' + esc(x.categoria) : '')) : ''}
+            ${x.nota ? `<p class="chico" style="margin:6px 0 0">${esc(x.nota)}</p>` : ''}
+            <div class="acc">
+              ${x.link ? `<a class="btn chico" href="${esc(x.link)}" target="_blank" rel="noopener">🔗 Link de impresión</a>` : '<span class="chico">Sin link de impresión</span>'}
+              <button type="button" class="btn chico" data-calc="${i}">🧮 Abrir en la calculadora</button>
+            </div>
+          </div></details>`; }).join('') || '<p class="vacio">No hay productos con ese nombre.</p>';
+    $('#listaCat').querySelectorAll('[data-calc]').forEach(b => b.onclick = () => { const x = lista.filter(y => !q || sinT(y.nombre + ' ' + y.web).includes(q))[+b.dataset.calc]; if (x) cargarEnCalc(x); });
+    $('#listaCat').querySelectorAll('details').forEach(d => d.addEventListener('toggle', () => { if (d.open) catAbierto = d.dataset.cat; else if (catAbierto === d.dataset.cat) catAbierto = null; }));
+  }
+  $('#buscaCat').addEventListener('input', () => pintarCatalogo());
   function pintarTodo() {
     if (!datos) return;
     if (!completos(datos)) return;   // nunca guardar ni pintar una respuesta incompleta
@@ -1997,7 +2087,7 @@ details[open] > summary{margin-bottom:4px}
     const nWeb = (datos.pedidosWeb || []).length, bt = document.querySelector('nav.tabs button[data-ir="pedidos"]');
     if (bt) bt.dataset.badge = nWeb || '';
     if (document.activeElement !== $('#txtPago')) $('#txtPago').value = datosPago();
-    pintarProductos(); pintarCarrito(); pintarPedidos(); pintarInventario(); pintarGastos(); pintarPorPagar(); pintarResumen(); pintarClientes();
+    pintarProductos(); pintarCarrito(); pintarPedidos(); pintarInventario(); pintarGastos(); pintarPorPagar(); pintarResumen(); pintarClientes(); pintarCatalogo();
     recordatorioDiario();
   }
 
