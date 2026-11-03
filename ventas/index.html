@@ -180,6 +180,18 @@ details[open] > summary{margin-bottom:4px}
 .kres .stat{padding:5px 0}
 .kres .sug{display:flex;justify-content:space-between;align-items:baseline;margin-top:6px;font-weight:800;font-size:18px}
 .ktit{display:block;margin:12px 0 2px;font-size:13px}
+.ksub{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0 12px;margin-top:10px}
+.ksub[open]{padding-bottom:12px}
+.ksub-t{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14.5px;padding:12px 0;cursor:pointer;list-style:none}
+.ksub-t::-webkit-details-marker{display:none}
+.ksub-t i{font-style:normal;width:22px;height:22px;border-radius:50%;background:var(--brand);color:var(--brand-ink);display:grid;place-items:center;font-size:12px;font-weight:800;flex:none}
+.ksub-t small{margin-left:auto;font-weight:600;color:var(--muted);font-size:12px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%}
+.ksub-t::after{content:"▾";color:var(--muted);font-size:13px;transition:transform .15s}
+.ksub[open] > .ksub-t::after{transform:rotate(180deg);margin-left:auto}
+#kInsBox[open] > .ksub-t::after{margin-left:0}
+.ksub[open] > .ksub-t small{display:none}
+.ksub > label:first-of-type{margin-top:0}
+#kInsBox[open] > .ksub-t small{display:block}
 .cat-item{background:var(--surface);border:1px solid var(--line);border-radius:14px;margin-bottom:8px;overflow:hidden}
 .cat-item summary{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 14px;cursor:pointer;list-style:none}
 .cat-item summary::-webkit-details-marker{display:none}
@@ -435,78 +447,83 @@ details[open] > summary{margin-bottom:4px}
     <h2>Calculadora 3D</h2>
       <div class="card calc" style="margin-top:0">
       <p class="chico" style="margin:0 0 4px">Costo real de la impresión y precio sugerido al detal y al mayor.</p>
-      <b class="ktit">Producto</b>
-      <label for="kNom">Nombre del producto (interno)</label><input id="kNom" autocomplete="off" placeholder="Ej: Pulpo flexible + estrella">
-      <label for="kWeb">Nombre para la página web <span class="chico">(déjalo vacío si no sale en la web)</span></label><input id="kWeb" autocomplete="off" placeholder="Ej: Pulpo articulado">
-      <label for="kLink">Link de impresión <span class="chico">(solo para ti, no sale en la web)</span></label><input id="kLink" type="url" inputmode="url" autocomplete="off" placeholder="https://makerworld.com/…">
-      <details class="kajustes" id="kWebMas"><summary>🌐 Para la web: categoría y descripción</summary>
-        <label for="kCat">Categoría en la web</label><select id="kCat"><option>Casa</option><option>Oficina</option><option>Llaveros</option><option>Fidgets</option><option>Para negocios</option></select>
-        <label for="kDesc">Descripción corta</label><input id="kDesc" maxlength="200" autocomplete="off" placeholder="Ej: Se mueve en todas direcciones. Varios colores.">
+      <details class="ksub" id="kSubProd"><summary class="ksub-t"><i>1</i><span>Producto</span><small id="kInfoProd"></small></summary>
+        <label for="kNom">Nombre del producto (interno)</label><input id="kNom" autocomplete="off" placeholder="Ej: Pulpo flexible + estrella">
+        <label for="kWeb">Nombre para la página web <span class="chico">(déjalo vacío si no sale en la web)</span></label><input id="kWeb" autocomplete="off" placeholder="Ej: Pulpo articulado">
+        <label for="kLink">Link de impresión <span class="chico">(solo para ti, no sale en la web)</span></label><input id="kLink" type="url" inputmode="url" autocomplete="off" placeholder="https://makerworld.com/…">
+        <details class="kajustes" id="kWebMas"><summary>🌐 Para la web: categoría y descripción</summary>
+          <label for="kCat">Categoría en la web</label><select id="kCat"><option>Casa</option><option>Oficina</option><option>Llaveros</option><option>Fidgets</option><option>Para negocios</option></select>
+          <label for="kDesc">Descripción corta</label><input id="kDesc" maxlength="200" autocomplete="off" placeholder="Ej: Se mueve en todas direcciones. Varios colores.">
+        </details>
       </details>
-      <b class="ktit">Pieza</b>
-      <label>Impresora</label>
-      <div class="segmento" role="group" aria-label="Impresora" id="kImpBtns"></div>
-      <select id="kImp" hidden></select>
-      <label for="kFil">Filamento</label><select id="kFil"></select>
-      <details class="kajustes kperfil" id="kPerfil">
-        <summary><span>⚙️ Perfil de cotización</span><small id="kPerfTxt"></small></summary>
-        <div class="dos">
-          <div><label for="kKg">Precio del filamento $/kg</label><input id="kKg" type="number" inputmode="decimal" min="0" step="0.01"></div>
-          <div><label for="kVida">Vida útil (horas)</label><input id="kVida" type="number" inputmode="numeric" min="1"></div>
-        </div>
-        <div class="dos">
-          <div><label for="kPrecioImp">Precio de la impresora $</label><input id="kPrecioImp" type="number" inputmode="decimal" min="0"></div>
-          <div><label for="kRep">Repuestos $ (en su vida útil)</label><input id="kRep" type="number" inputmode="decimal" min="0" value="0"></div>
-        </div>
-        <div class="dos">
-          <div><label for="kW">Consumo (W)</label><input id="kW" type="number" inputmode="numeric" min="0"></div>
-          <div><label for="kKwh">Precio del kWh $</label><input id="kKwh" type="number" inputmode="decimal" min="0" step="0.001" value="0"></div>
-        </div>
-        <div class="dos">
-          <div><label for="kT">Tu trabajo (min)</label><input id="kT" type="number" inputmode="numeric" min="0" value="5"></div>
-          <div><label for="kHora">Tu hora $</label><input id="kHora" type="number" inputmode="decimal" min="0" step="0.5"></div>
-        </div>
-        <p class="chico" style="margin:6px 0 0">Luz en $0 = no se cuenta (como la tienes ahora). Lo que cambies aquí se usa en este cálculo; para dejarlo fijo en esta impresora, guarda el perfil.</p>
-        <div class="dos" style="margin-top:8px">
-          <button type="button" class="btn primario" id="kPerfGuardar">💾 Guardar perfil</button>
-          <button type="button" class="btn" id="kReset">Volver a los de la hoja</button>
-        </div>
+      <details class="ksub" open><summary class="ksub-t"><i>2</i><span>Impresora y filamento</span><small id="kInfoImp"></small></summary>
+        <label>Impresora</label>
+        <div class="segmento" role="group" aria-label="Impresora" id="kImpBtns"></div>
+        <select id="kImp" hidden></select>
+        <label for="kFil">Filamento</label><select id="kFil"></select>
+        <details class="kajustes kperfil" id="kPerfil">
+          <summary><span>⚙️ Perfil de cotización</span><small id="kPerfTxt"></small></summary>
+          <div class="dos">
+            <div><label for="kKg">Precio del filamento $/kg</label><input id="kKg" type="number" inputmode="decimal" min="0" step="0.01"></div>
+            <div><label for="kVida">Vida útil (horas)</label><input id="kVida" type="number" inputmode="numeric" min="1"></div>
+          </div>
+          <div class="dos">
+            <div><label for="kPrecioImp">Precio de la impresora $</label><input id="kPrecioImp" type="number" inputmode="decimal" min="0"></div>
+            <div><label for="kRep">Repuestos $ (en su vida útil)</label><input id="kRep" type="number" inputmode="decimal" min="0" value="0"></div>
+          </div>
+          <div class="dos">
+            <div><label for="kW">Consumo (W)</label><input id="kW" type="number" inputmode="numeric" min="0"></div>
+            <div><label for="kKwh">Precio del kWh $</label><input id="kKwh" type="number" inputmode="decimal" min="0" step="0.001" value="0"></div>
+          </div>
+          <div class="dos">
+            <div><label for="kT">Tu trabajo (min)</label><input id="kT" type="number" inputmode="numeric" min="0" value="5"></div>
+            <div><label for="kHora">Tu hora $</label><input id="kHora" type="number" inputmode="decimal" min="0" step="0.5"></div>
+          </div>
+          <p class="chico" style="margin:6px 0 0">Luz en $0 = no se cuenta (como la tienes ahora). Lo que cambies aquí se usa en este cálculo; para dejarlo fijo en esta impresora, guarda el perfil.</p>
+          <div class="dos" style="margin-top:8px">
+            <button type="button" class="btn primario" id="kPerfGuardar">💾 Guardar perfil</button>
+            <button type="button" class="btn" id="kReset">Volver a los de la hoja</button>
+          </div>
+        </details>
       </details>
-      <div class="dos">
-        <div><label for="kHh">Horas de impresión</label><input id="kHh" type="number" inputmode="numeric" min="0" placeholder="0"></div>
-        <div><label for="kMin">Minutos</label><input id="kMin" type="number" inputmode="numeric" min="0" placeholder="0"></div>
-      </div>
-      <div class="dos">
-        <div><label for="kG">Gramos de filamento</label><input id="kG" type="number" inputmode="decimal" min="0" placeholder="0"></div>
-        <div><label for="kErr">Margen de error %</label><input id="kErr" type="number" inputmode="decimal" min="0" max="90"></div>
-      </div>
-      <p class="chico" style="margin:6px 0 0">Copia de Bambu los gramos y el tiempo.</p>
-      <label style="margin-top:10px">¿De quién es el diseño?</label>
-      <div class="segmento" role="group" aria-label="De quién es el diseño" id="kDis">
-        <button type="button" data-dis="0" aria-pressed="true">Bambu · 25%</button>
-        <button type="button" data-dis="1" aria-pressed="false">Propio · 50%</button>
-      </div>
-      <select id="kPers" hidden><option value="0">Bambu</option><option value="1">Propio</option></select>
-      <details class="kins" id="kInsBox">
-        <summary><span>Insumos</span><b id="kInsTot"></b></summary>
-        <div id="kInsLista"></div>
-        <div class="kins-row"><span>Otro insumo $</span><input id="kIns" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0"></div>
-        <button type="button" class="btn chico" id="kInsReset" style="margin-top:6px">Volver a 1 bolsa + 1 sticker</button>
+      <details class="ksub" id="kSubPieza"><summary class="ksub-t"><i>3</i><span>La pieza</span><small id="kInfoPieza"></small></summary>
+        <div class="dos">
+          <div><label for="kHh">Horas de impresión</label><input id="kHh" type="number" inputmode="numeric" min="0" placeholder="0"></div>
+          <div><label for="kMin">Minutos</label><input id="kMin" type="number" inputmode="numeric" min="0" placeholder="0"></div>
+        </div>
+        <div class="dos">
+          <div><label for="kG">Gramos de filamento</label><input id="kG" type="number" inputmode="decimal" min="0" placeholder="0"></div>
+          <div><label for="kErr">Margen de error %</label><input id="kErr" type="number" inputmode="decimal" min="0" max="90"></div>
+        </div>
+        <p class="chico" style="margin:6px 0 0">Copia de Bambu los gramos y el tiempo.</p>
+        <label style="margin-top:10px">¿De quién es el diseño?</label>
+        <div class="segmento" role="group" aria-label="De quién es el diseño" id="kDis">
+          <button type="button" data-dis="0" aria-pressed="true">Bambu · 25%</button>
+          <button type="button" data-dis="1" aria-pressed="false">Propio · 50%</button>
+        </div>
+        <select id="kPers" hidden><option value="0">Bambu</option><option value="1">Propio</option></select>
       </details>
-      <b class="ktit">Ganancia al detal</b>
-      <div class="chips kmult" id="kMult">
-        <button type="button" data-m="1.75">×1,75</button><button type="button" data-m="2">×2</button><button type="button" data-m="2.5">×2,5</button>
-        <button type="button" data-m="3">×3</button><button type="button" data-m="4">×4</button>
-      </div>
-      <b class="ktit">Ganancia al mayor</b>
-      <div class="chips kmult" id="kMultM">
-        <button type="button" data-m="1.3">×1,3</button><button type="button" data-m="1.4">×1,4</button><button type="button" data-m="1.5">×1,5</button><button type="button" data-m="1.75">×1,75</button>
-      </div>
-      <div class="dos" style="margin-top:6px">
-        <div><label for="kMultP">Detal × (otro valor)</label><input id="kMultP" type="number" inputmode="decimal" min="1" step="0.05" value="1.75"></div>
-        <div><label for="kMultMay">Mayor × (otro valor)</label><input id="kMultMay" type="number" inputmode="decimal" min="1" step="0.05" value="1.4"></div>
-      </div>
-      <p class="chico" style="margin:6px 0 0">Detal: ×1,75 tu precio normal · ×2,5–3 piezas especiales · ×4 piezas chicas. Mayor: ×1,4 (12 o más) · ×1,3 pedidos muy grandes.</p>
+      <details class="ksub" id="kInsBox"><summary class="ksub-t"><i>4</i><span>Insumos</span><small id="kInsTot"></small></summary>
+          <div id="kInsLista"></div>
+          <div class="kins-row"><span>Otro insumo $</span><input id="kIns" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0"></div>
+          <button type="button" class="btn chico" id="kInsReset" style="margin-top:6px">Volver a 1 bolsa + 1 sticker</button>
+      </details>
+      <details class="ksub" open><summary class="ksub-t"><i>5</i><span>Ganancia</span><small id="kInfoGan"></small></summary>
+        <b class="ktit" style="margin-top:4px">Al detal</b>
+        <div class="chips kmult" id="kMult">
+          <button type="button" data-m="1.75">×1,75</button><button type="button" data-m="2">×2</button><button type="button" data-m="2.5">×2,5</button>
+          <button type="button" data-m="3">×3</button><button type="button" data-m="4">×4</button>
+        </div>
+        <b class="ktit">Al mayor</b>
+        <div class="chips kmult" id="kMultM">
+          <button type="button" data-m="1.3">×1,3</button><button type="button" data-m="1.4">×1,4</button><button type="button" data-m="1.5">×1,5</button><button type="button" data-m="1.75">×1,75</button>
+        </div>
+        <div class="dos" style="margin-top:6px">
+          <div><label for="kMultP">Detal × (otro valor)</label><input id="kMultP" type="number" inputmode="decimal" min="1" step="0.05" value="1.75"></div>
+          <div><label for="kMultMay">Mayor × (otro valor)</label><input id="kMultMay" type="number" inputmode="decimal" min="1" step="0.05" value="1.4"></div>
+        </div>
+        <p class="chico" style="margin:6px 0 0">Detal: ×1,75 tu precio normal · ×2,5–3 piezas especiales · ×4 piezas chicas. Mayor: ×1,4 (12 o más) · ×1,3 pedidos muy grandes.</p>
+      </details>
       <div id="kRes" class="kres" hidden></div>
     </div>
     <div class="dos" style="margin-top:12px">
@@ -1018,7 +1035,18 @@ details[open] > summary{margin-bottom:4px}
   $('#kDis').addEventListener('click', e => { const b = e.target.closest('[data-dis]'); if (!b) return;
     $('#kPers').value = b.dataset.dis; document.querySelectorAll('#kDis button').forEach(x => x.setAttribute('aria-pressed', x === b));
     $('#kErr').blur(); ponerAjustes(true); calcular(); });
+  // Resumen de cada tarjeta cerrada, para ver lo que tiene sin abrirla
+  function pintarInfo() {
+    const num = x => String(x).replace('.', ','), v = id => parseFloat($(id).value) || 0;
+    $('#kInfoProd').textContent = $('#kNom').value.trim() || 'Sin nombre';
+    $('#kInfoImp').textContent = $('#kImp').value + ' · ' + $('#kFil').value;
+    const h = v('#kHh'), m = v('#kMin'), g = v('#kG');
+    $('#kInfoPieza').textContent = (h || m || g) ? [h ? h + ' h' : '', m ? m + ' min' : '', g ? num(g) + ' g' : '', $('#kPers').value === '1' ? 'propio' : 'Bambu'].filter(Boolean).join(' · ') : 'Toca para llenar';
+    $('#kInfoGan').textContent = '×' + num(v('#kMultP')) + ' detal · ×' + num(v('#kMultMay')) + ' mayor';
+  }
+  ['#kNom', '#kHh', '#kMin', '#kG'].forEach(sel => $(sel).addEventListener('input', pintarInfo));
   function calcular() {
+    pintarInfo();
     const c = conf(), imp = $('#kImp').value, fil = $('#kFil').value;
     const n = id => Math.max(0, parseFloat($(id).value) || 0);
     pintarInsumos();
