@@ -121,7 +121,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-o
 nav.tabs{position:fixed;left:12px;right:12px;margin:0 auto;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:10;max-width:560px;
   background:var(--surface);
   border:1px solid var(--line);border-radius:22px;box-shadow:0 10px 30px rgba(20,23,18,.14);padding:6px !important;gap:4px;
-  display:grid;grid-template-columns:repeat(5,1fr);padding-bottom:env(safe-area-inset-bottom,0px)}
+  display:grid;grid-template-columns:repeat(6,1fr);padding-bottom:env(safe-area-inset-bottom,0px)}
 nav.tabs button{border:0;background:transparent;padding:8px 2px 7px;font-size:11px;font-weight:700;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:16px;cursor:pointer;transition:background .15s,color .15s}
 nav.tabs button svg{width:22px;height:22px}
 nav.tabs button{position:relative}
@@ -185,6 +185,7 @@ details[open] > summary{margin-bottom:4px}
 .kres .cobrar{margin-top:8px;padding:12px;border-radius:12px;background:var(--ink);color:var(--bg)}
 .kres .cobrar small{display:block;font-size:11px;font-weight:700;letter-spacing:.5px;opacity:.8}
 .kres .cobrar b{font-size:26px}
+.kres .cobrar.mayor{background:var(--brand);color:var(--brand-ink)}
 .kres .cobrar span{display:block;font-size:12px;opacity:.85;margin-top:2px}
 .cargando{opacity:.6;pointer-events:none}
 </style>
@@ -242,61 +243,10 @@ details[open] > summary{margin-bottom:4px}
       <div class="grid-prod" id="gridProductos"></div>
     </details>
     <details class="card" style="margin-top:10px">
-      <summary>🧮 Calculadora 3D · otro producto (a la medida, presupuesto…)</summary>
+      <summary>➕ Otro producto (a la medida, presupuesto…)</summary>
       <label for="otroNombre">Qué es</label>
       <input id="otroNombre" placeholder="Ej: Organizador de joyas">
-      <div class="calc">
-        <b style="font-size:15px">🧮 Calculadora 3D</b>
-        <p class="chico" style="margin:2px 0 8px">Costo real de la impresión y precio sugerido.</p>
-        <b class="ktit">Pieza</b>
-        <div class="dos">
-          <div><label for="kHh">Horas de impresión</label><input id="kHh" type="number" inputmode="numeric" min="0" placeholder="0"></div>
-          <div><label for="kMin">Minutos</label><input id="kMin" type="number" inputmode="numeric" min="0" placeholder="0"></div>
-        </div>
-        <div class="dos">
-          <div><label for="kG">Gramos de filamento</label><input id="kG" type="number" inputmode="decimal" min="0" placeholder="0"></div>
-          <div><label for="kIns">Insumos extra $</label><input id="kIns" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0"></div>
-        </div>
-        <p class="chico" style="margin:6px 0 0">Copia de Bambu los gramos y el tiempo. Insumos: switch, aro, NFC, imán, bolsa…</p>
-        <b class="ktit">Margen de ganancia</b>
-        <div class="chips kmult" id="kMult">
-          <button type="button" data-m="1.4">×1,4</button><button type="button" data-m="1.75">×1,75</button><button type="button" data-m="2">×2</button>
-          <button type="button" data-m="2.5">×2,5</button><button type="button" data-m="3">×3</button><button type="button" data-m="4">×4</button>
-        </div>
-        <div class="dos" style="margin-top:6px">
-          <div><label for="kMultP">Multiplicador</label><input id="kMultP" type="number" inputmode="decimal" min="1" step="0.05" value="1.75"></div>
-          <div class="chico" style="align-self:end;padding-bottom:8px">×1,4 mayor · ×1,75 tu precio normal · ×2,5–3 piezas especiales · ×4 llaveros y piezas chicas</div>
-        </div>
-        <details class="kajustes">
-          <summary>⚙️ Ajustes (impresora, filamento, luz, fallos)</summary>
-          <div class="dos">
-            <div><label for="kImp">Impresora</label><select id="kImp"></select></div>
-            <div><label for="kFil">Filamento</label><select id="kFil"></select></div>
-          </div>
-          <div class="dos">
-            <div><label for="kKg">Precio del filamento $/kg</label><input id="kKg" type="number" inputmode="decimal" min="0" step="0.01"></div>
-            <div><label for="kVida">Vida útil (horas)</label><input id="kVida" type="number" inputmode="numeric" min="1"></div>
-          </div>
-          <div class="dos">
-            <div><label for="kPrecioImp">Precio de la impresora $</label><input id="kPrecioImp" type="number" inputmode="decimal" min="0"></div>
-            <div><label for="kRep">Repuestos $ (en su vida útil)</label><input id="kRep" type="number" inputmode="decimal" min="0" value="0"></div>
-          </div>
-          <div class="dos">
-            <div><label for="kW">Consumo (W)</label><input id="kW" type="number" inputmode="numeric" min="0"></div>
-            <div><label for="kKwh">Precio del kWh $</label><input id="kKwh" type="number" inputmode="decimal" min="0" step="0.001" value="0"></div>
-          </div>
-          <div class="dos">
-            <div><label for="kPers">Tipo de pieza</label><select id="kPers"><option value="0">General</option><option value="1">Personalizada</option></select></div>
-            <div><label for="kErr">Margen de error %</label><input id="kErr" type="number" inputmode="decimal" min="0" max="90"></div>
-          </div>
-          <div class="dos">
-            <div><label for="kT">Tu trabajo (min)</label><input id="kT" type="number" inputmode="numeric" min="0" value="5"></div>
-            <div><label for="kHora">Tu hora $</label><input id="kHora" type="number" inputmode="decimal" min="0" step="0.5"></div>
-          </div>
-          <p class="chico" style="margin:6px 0 0">Luz en $0 = no se cuenta (como la tienes ahora). Estos ajustes se guardan en este teléfono. <button type="button" class="btn chico" id="kReset" style="margin-left:4px">Volver a los de la hoja</button></p>
-        </details>
-        <div id="kRes" class="kres" hidden></div>
-      </div>
+      <p class="chico" style="margin:10px 0 0">¿No sabes el precio? <button type="button" class="btn chico" id="irCalc">🧮 Calcúlalo aquí</button></p>
       <div class="dos">
         <div><label for="otroPrecio">Precio c/u $</label><input id="otroPrecio" type="number" inputmode="decimal" step="0.01" min="0"></div>
         <div><label for="otroCant">Cantidad</label><input id="otroCant" type="number" inputmode="numeric" min="1" value="1"></div>
@@ -450,6 +400,66 @@ details[open] > summary{margin-bottom:4px}
   </section>
 
   <!-- RESUMEN -->
+  <section id="tab-calcular" data-tab hidden>
+    <h2>Calculadora 3D</h2>
+      <div class="card calc" style="margin-top:0">
+      <p class="chico" style="margin:0 0 4px">Costo real de la impresión y precio sugerido al detal y al mayor.</p>
+      <b class="ktit">Pieza</b>
+      <div class="dos">
+        <div><label for="kHh">Horas de impresión</label><input id="kHh" type="number" inputmode="numeric" min="0" placeholder="0"></div>
+        <div><label for="kMin">Minutos</label><input id="kMin" type="number" inputmode="numeric" min="0" placeholder="0"></div>
+      </div>
+      <div class="dos">
+        <div><label for="kG">Gramos de filamento</label><input id="kG" type="number" inputmode="decimal" min="0" placeholder="0"></div>
+        <div><label for="kIns">Insumos extra $</label><input id="kIns" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0"></div>
+      </div>
+      <p class="chico" style="margin:6px 0 0">Copia de Bambu los gramos y el tiempo. Insumos: switch, aro, NFC, imán, bolsa…</p>
+      <b class="ktit">Ganancia al detal</b>
+      <div class="chips kmult" id="kMult">
+        <button type="button" data-m="1.75">×1,75</button><button type="button" data-m="2">×2</button><button type="button" data-m="2.5">×2,5</button>
+        <button type="button" data-m="3">×3</button><button type="button" data-m="4">×4</button>
+      </div>
+      <b class="ktit">Ganancia al mayor</b>
+      <div class="chips kmult" id="kMultM">
+        <button type="button" data-m="1.3">×1,3</button><button type="button" data-m="1.4">×1,4</button><button type="button" data-m="1.5">×1,5</button><button type="button" data-m="1.75">×1,75</button>
+      </div>
+      <div class="dos" style="margin-top:6px">
+        <div><label for="kMultP">Detal × (otro valor)</label><input id="kMultP" type="number" inputmode="decimal" min="1" step="0.05" value="1.75"></div>
+        <div><label for="kMultMay">Mayor × (otro valor)</label><input id="kMultMay" type="number" inputmode="decimal" min="1" step="0.05" value="1.4"></div>
+      </div>
+      <p class="chico" style="margin:6px 0 0">Detal: ×1,75 tu precio normal · ×2,5–3 piezas especiales · ×4 piezas chicas. Mayor: ×1,4 (12 o más) · ×1,3 pedidos muy grandes.</p>
+      <details class="kajustes">
+        <summary>⚙️ Ajustes (impresora, filamento, luz, fallos)</summary>
+        <div class="dos">
+          <div><label for="kImp">Impresora</label><select id="kImp"></select></div>
+          <div><label for="kFil">Filamento</label><select id="kFil"></select></div>
+        </div>
+        <div class="dos">
+          <div><label for="kKg">Precio del filamento $/kg</label><input id="kKg" type="number" inputmode="decimal" min="0" step="0.01"></div>
+          <div><label for="kVida">Vida útil (horas)</label><input id="kVida" type="number" inputmode="numeric" min="1"></div>
+        </div>
+        <div class="dos">
+          <div><label for="kPrecioImp">Precio de la impresora $</label><input id="kPrecioImp" type="number" inputmode="decimal" min="0"></div>
+          <div><label for="kRep">Repuestos $ (en su vida útil)</label><input id="kRep" type="number" inputmode="decimal" min="0" value="0"></div>
+        </div>
+        <div class="dos">
+          <div><label for="kW">Consumo (W)</label><input id="kW" type="number" inputmode="numeric" min="0"></div>
+          <div><label for="kKwh">Precio del kWh $</label><input id="kKwh" type="number" inputmode="decimal" min="0" step="0.001" value="0"></div>
+        </div>
+        <div class="dos">
+          <div><label for="kPers">Tipo de pieza</label><select id="kPers"><option value="0">General</option><option value="1">Personalizada</option></select></div>
+          <div><label for="kErr">Margen de error %</label><input id="kErr" type="number" inputmode="decimal" min="0" max="90"></div>
+        </div>
+        <div class="dos">
+          <div><label for="kT">Tu trabajo (min)</label><input id="kT" type="number" inputmode="numeric" min="0" value="5"></div>
+          <div><label for="kHora">Tu hora $</label><input id="kHora" type="number" inputmode="decimal" min="0" step="0.5"></div>
+        </div>
+        <p class="chico" style="margin:6px 0 0">Luz en $0 = no se cuenta (como la tienes ahora). Estos ajustes se guardan en este teléfono. <button type="button" class="btn chico" id="kReset" style="margin-left:4px">Volver a los de la hoja</button></p>
+      </details>
+      <div id="kRes" class="kres" hidden></div>
+    </div>
+    <button class="btn primario ancho" id="kUsar" style="margin-top:12px" hidden>Usar el precio de detal en una venta</button>
+  </section>
   <section id="tab-resumen" data-tab hidden>
     <h2>Cómo va el negocio</h2>
     <div class="card" id="cardHoy">
@@ -483,6 +493,7 @@ details[open] > summary{margin-bottom:4px}
   <button role="tab" data-ir="vender" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6 5 3H2"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/></svg>Vender</button>
   <button role="tab" data-ir="pedidos" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Pedidos</button>
   <button role="tab" data-ir="inventario" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>Inventario</button>
+  <button role="tab" data-ir="calcular" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M8 6h8"/><path d="M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h.01M12 19h4"/></svg>Calcular</button>
   <button role="tab" data-ir="gastos" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 15h3"/></svg>Gastos</button>
   <button role="tab" data-ir="resumen" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Resumen</button>
 </nav>
@@ -867,6 +878,7 @@ details[open] > summary{margin-bottom:4px}
       kwh: a.kwh ?? (c.electricidad ? 0 : 0),
       hora: a.hora ?? c.hora,
       mult: a.mult ?? (1 + c.ganancia),
+      multM: a.multM ?? 1.4,
     };
   }
   function llenarCalc() {
@@ -880,12 +892,14 @@ details[open] > summary{margin-bottom:4px}
     $('#kKg').value = A.kg; $('#kPrecioImp').value = A.precioImp; $('#kVida').value = A.vida; $('#kRep').value = A.rep;
     $('#kW').value = A.w; $('#kKwh').value = A.kwh; $('#kHora').value = A.hora;
     if (document.activeElement !== $('#kMultP')) $('#kMultP').value = A.mult;
+    if (document.activeElement !== $('#kMultMay')) $('#kMultMay').value = A.multM;
     if (document.activeElement !== $('#kErr')) $('#kErr').value = Math.round(($('#kPers').value === '1' ? (kAj.errP ?? c.fallosPersonalizado) : (kAj.err ?? c.fallos)) * 100);
     marcarMult();
   }
   function marcarMult() {
-    const m = parseFloat($('#kMultP').value);
+    const m = parseFloat($('#kMultP').value), mm = parseFloat($('#kMultMay').value);
     document.querySelectorAll('#kMult button').forEach(b => b.setAttribute('aria-pressed', Math.abs(+b.dataset.m - m) < 1e-9));
+    document.querySelectorAll('#kMultM button').forEach(b => b.setAttribute('aria-pressed', Math.abs(+b.dataset.m - mm) < 1e-9));
   }
   function calcular() {
     const c = conf(), imp = $('#kImp').value, fil = $('#kFil').value;
@@ -900,29 +914,44 @@ details[open] > summary{margin-bottom:4px}
     const fallos = (mat + luz + desg) * (err >= 1 ? 0 : 1 / (1 - err) - 1);
     const trab = n('#kT') / 60 * n('#kHora');
     const costo = mat + luz + desg + fallos + trab + ins + (c.gastoFijo || 0);
-    const mult = n('#kMultP') || (1 + c.ganancia);
+    const mult = n('#kMultP') || (1 + c.ganancia), multM = n('#kMultMay') || 1.4;
     const r = c.redondeo || 0.5;
     kSug = Math.ceil(costo * mult / r - 1e-9) * r;
+    const may = Math.ceil(costo * multM / r - 1e-9) * r;
+    const bs = v => datos && datos.tasa ? ' · ' + fmtBs(v * datos.tasa.valor) : '';
     const fila = (a, b) => `<div class="stat"><span>${a}</span><b>${b}</b></div>`;
     $('#kRes').hidden = false;
     $('#kRes').innerHTML = fila('Material (' + g + ' g)', fmt(mat)) + (n('#kKwh') ? fila('Luz', fmt(luz)) : '') + fila('Desgaste de la máquina', fmt(desg))
       + fila('Margen de error (' + Math.round(err * 100) + '%)', fmt(fallos)) + fila('Tu trabajo', fmt(trab)) + (ins ? fila('Insumos', fmt(ins)) : '')
       + fila('<b>Costo total</b>', fmt(costo))
-      + `<div class="cobrar"><small>TOTAL A COBRAR · ×${String(mult).replace('.', ',')}</small><b>${fmt(kSug)}</b>`
-      + `<span>Te quedan ${fmt(kSug - costo)} por pieza${datos && datos.tasa ? ' · ' + fmtBs(kSug * datos.tasa.valor) : ''}</span></div>`;
+      + `<div class="cobrar"><small>PRECIO AL DETAL · ×${String(mult).replace('.', ',')}</small><b>${fmt(kSug)}</b>`
+      + `<span>Te quedan ${fmt(kSug - costo)} por pieza${bs(kSug)}</span></div>`
+      + `<div class="cobrar mayor"><small>PRECIO AL MAYOR · ×${String(multM).replace('.', ',')}</small><b>${fmt(may)}</b>`
+      + `<span>Te quedan ${fmt(may - costo)} por pieza${bs(may)}</span></div>`;
+    $('#kUsar').hidden = false;
     kCosto = costo;
     if (!precioTocado) $('#otroPrecio').value = kSug.toFixed(2);
     actualizarGanancia();
   }
   // guardar cada ajuste que cambies (por impresora o por filamento)
   const AJ = { '#kKg': () => 'kg_' + $('#kFil').value, '#kPrecioImp': () => 'p_' + $('#kImp').value, '#kVida': () => 'v_' + $('#kImp').value,
-    '#kRep': () => 'r_' + $('#kImp').value, '#kW': () => 'w_' + $('#kImp').value, '#kKwh': () => 'kwh', '#kHora': () => 'hora', '#kMultP': () => 'mult' };
+    '#kRep': () => 'r_' + $('#kImp').value, '#kW': () => 'w_' + $('#kImp').value, '#kKwh': () => 'kwh', '#kHora': () => 'hora', '#kMultP': () => 'mult', '#kMultMay': () => 'multM' };
   Object.entries(AJ).forEach(([sel, key]) => $(sel).addEventListener('input', () => {
-    const v = parseFloat($(sel).value); if (v >= 0) { kAj[key()] = v; guardarAj(); } if (sel === '#kMultP') marcarMult(); calcular(); }));
+    const v = parseFloat($(sel).value); if (v >= 0) { kAj[key()] = v; guardarAj(); } if (sel === '#kMultP' || sel === '#kMultMay') marcarMult(); calcular(); }));
   $('#kErr').addEventListener('input', () => { const v = parseFloat($('#kErr').value); if (v >= 0) { kAj[$('#kPers').value === '1' ? 'errP' : 'err'] = v / 100; guardarAj(); } calcular(); });
   ['#kImp', '#kFil'].forEach(sel => $(sel).addEventListener('change', () => { kAj.imp = $('#kImp').value; kAj.fil = $('#kFil').value; guardarAj(); ponerAjustes(); calcular(); }));
   $('#kPers').addEventListener('change', () => { ponerAjustes(); calcular(); });
   $('#kMult').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; $('#kMultP').value = b.dataset.m; kAj.mult = +b.dataset.m; guardarAj(); marcarMult(); precioTocado = false; calcular(); });
+  $('#kMultM').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; $('#kMultMay').value = b.dataset.m; kAj.multM = +b.dataset.m; guardarAj(); marcarMult(); calcular(); });
+  $('#irCalc').addEventListener('click', () => irA('calcular'));
+  $('#kUsar').addEventListener('click', () => {
+    if (kSug === null) return;
+    irA('vender');
+    const d = $('#otroNombre').closest('details'); if (d) d.open = true;
+    precioTocado = true; $('#otroPrecio').value = kSug.toFixed(2); actualizarGanancia();
+    setTimeout(() => $('#otroNombre').scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+    if (!$('#otroNombre').value) $('#otroNombre').focus();
+  });
   $('#kReset').addEventListener('click', () => { kAj = {}; guardarAj(); ponerAjustes(); calcular(); avisar('Ajustes de la hoja'); });
   let kCosto = null;
   function actualizarGanancia() {
