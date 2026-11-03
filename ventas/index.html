@@ -1005,7 +1005,7 @@ details[open] > summary{margin-bottom:4px}
   let kInsQ = Object.assign({}, INS_BASE);
   function costoInsumos() { return INSUMOS.reduce((t, [id, , c]) => t + (kInsQ[id] || 0) * c, 0) + (Math.max(0, parseFloat($('#kIns').value) || 0)); }
   function pintarInsumos() {
-    $('#kInsLista').innerHTML = INSUMOS.map(([id, nom, c]) => { const q = kInsQ[id] || 0;
+    $('#kInsLista').innerHTML = INSUMOS.slice().sort((a, b) => alfa(a[1], b[1])).map(([id, nom, c]) => { const q = kInsQ[id] || 0;
       return `<div class="kins-row${q ? ' on' : ''}"><span>${esc(nom)}<small>${fmt(c)} c/u${q ? ' · ' + fmt(q * c) : ''}</small></span>
         <span class="kq"><button type="button" data-ins="${id}" data-d="-1" aria-label="Menos ${esc(nom)}">−</button><b>${q}</b><button type="button" data-ins="${id}" data-d="1" aria-label="Más ${esc(nom)}">+</button></span></div>`; }).join('');
     const n = INSUMOS.reduce((t, [id]) => t + (kInsQ[id] || 0), 0) + (parseFloat($('#kIns').value) > 0 ? 1 : 0);
@@ -2134,9 +2134,16 @@ details[open] > summary{margin-bottom:4px}
     $('#listaCat').querySelectorAll('details').forEach(d => d.addEventListener('toggle', () => { if (d.open) catAbierto = d.dataset.cat; else if (catAbierto === d.dataset.cat) catAbierto = null; }));
   }
   $('#buscaCat').addEventListener('input', () => pintarCatalogo());
+  // Todo en orden alfabético (sin importar tildes ni mayúsculas)
+  function alfa(a, b) { return String(a || '').localeCompare(String(b || ''), 'es', { sensitivity: 'base', numeric: true }); }
+  function ordenarDatos() {
+    if (datos.productos) datos.productos.sort((a, b) => alfa(a.nombre, b.nombre));
+    if (datos.catalogo) datos.catalogo.sort((a, b) => alfa(a.nombre, b.nombre));
+  }
   function pintarTodo() {
     if (!datos) return;
     if (!completos(datos)) return;   // nunca guardar ni pintar una respuesta incompleta
+    ordenarDatos();
     try { guardar('c3_datos', JSON.stringify(datos)); } catch (e) {}
     $('#txtTasa').textContent = datos.tasa ? 'BCV ' + datos.tasa.valor.toLocaleString('es-VE', { maximumFractionDigits: 2 }) : '';
     const nWeb = (datos.pedidosWeb || []).length, bt = document.querySelector('nav.tabs button[data-ir="pedidos"]');
