@@ -237,11 +237,12 @@ details[open] > summary{margin-bottom:4px}
       <b style="display:block;margin-top:12px">Extras y clickers de objeto</b>
       <div class="grid-extra" id="gridExtras"></div>
     </div>
-    <details class="card" id="cardTodos">
-      <summary>➕ Otros productos (soportes, floreros, joyero…)</summary>
-      <input id="buscaProd" placeholder="Buscar producto" autocomplete="off" style="margin:8px 0">
+    <div class="card" id="cardTodos">
+      <b style="display:block">Otros productos</b>
+      <input id="buscaProd" type="search" placeholder="🔍 Buscar producto" autocomplete="off" style="margin:8px 0">
       <div class="grid-prod" id="gridProductos"></div>
-    </details>
+      <button type="button" class="btn ancho" id="verMasProd" style="margin-top:8px" hidden></button>
+    </div>
     <details class="card" style="margin-top:10px">
       <summary>➕ Otro producto (a la medida, presupuesto…)</summary>
       <label for="otroNombre">Qué es</label>
@@ -266,7 +267,7 @@ details[open] > summary{margin-bottom:4px}
       <div class="chips" id="chipsDesc" style="margin:4px 0 0;flex-wrap:wrap">
         <button type="button" data-d="0" aria-pressed="true">Sin descuento</button>
         <button type="button" data-d="0.1" aria-pressed="false">10%</button>
-        <button type="button" data-d="0.2" aria-pressed="false">20% familia</button>
+        <button type="button" data-d="0.15" aria-pressed="false">15%</button>
         <button type="button" data-d="1" aria-pressed="false">🎁 Regalo</button>
       </div>
       <p class="chico" id="txtDesc" style="margin:6px 0 0" hidden></p>
@@ -835,12 +836,21 @@ details[open] > summary{margin-bottom:4px}
     if (agregarProducto(b.dataset.x, 1, g)) { pintarCarrito(); avisar('+ ' + nombreCorto(b.dataset.x) + (g ? ' (para el clicker ' + numClicker(g) + ')' : '')); }
   });
   $('#buscaProd').addEventListener('input', pintarProductos);
+  let verTodosProd = false;
+  $('#verMasProd').addEventListener('click', () => { verTodosProd = !verTodosProd; pintarProductos(); });
   function pintarProductos() {
     $('#gridExtras').innerHTML = datos.productos.filter(p => esExtra(p.nombre)).map(p =>
       `<button data-x="${esc(p.nombre)}" >${esc(nombreCorto(p.nombre))}<span>${fmt(p.precio)}</span></button>`).join('');
-    const q = ($('#buscaProd').value || '').trim().toLowerCase();
-    $('#gridProductos').innerHTML = datos.productos.map((p, i) => ({ p, i }))
-      .filter(({ p }) => !esLetra(p.nombre) && !esExtra(p.nombre) && !/incluid[oa] en el precio/i.test(p.nombre) && (!q || p.nombre.toLowerCase().includes(q)))
+    const sinTilde = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const q = sinTilde(($('#buscaProd').value || '').trim());
+    const todos = datos.productos.map((p, i) => ({ p, i }))
+      .filter(({ p }) => !esLetra(p.nombre) && !esExtra(p.nombre) && !/incluid[oa] en el precio/i.test(p.nombre) && (!q || sinTilde(p.nombre).includes(q)));
+    // se ven 4; la flecha "Ver más" muestra el resto (al buscar se ven todos los que coinciden)
+    const LIM = 4, lista = (q || verTodosProd) ? todos : todos.slice(0, LIM);
+    const vm = $('#verMasProd');
+    vm.hidden = !!q || todos.length <= LIM;
+    vm.textContent = verTodosProd ? 'Ver menos ▴' : `Ver más ▾ (${todos.length - LIM} más)`;
+    $('#gridProductos').innerHTML = lista
       .map(({ p, i }) => `
       <button class="prod" data-i="${i}">
         <b>${esc(p.nombre)}</b>

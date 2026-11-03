@@ -267,7 +267,7 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
         <div class="aros" id="charmcards"></div>
         <div id="charmlist"></div>
         <div id="otrobox" hidden>
-          <span class="label">Charms personalizados <span class="notice">(uno por casilla · $1,00 c/u)</span></span>
+          <span class="label">Charms personalizados <span class="notice">(uno por casilla · $1,50 c/u)</span></span>
           <div id="otrolist"></div>
           <button class="btn addotro" id="addotro" type="button">＋ Agregar otro charm personalizado</button>
           <p class="hint">Te los diseñamos y te confirmamos el precio por WhatsApp.</p>
@@ -371,7 +371,7 @@ const FIL_AGOTADO = new Set(["Fucsia"]);
 const CADC = {"Blanco":"#F4F4F2", "Celeste":"#9CC7E8", "Azul":"#1F4FB8", "Verde":"#2E8B3E", "Verde limón":"#A6D84A", "Verde menta":"#7FC4A4", "Amarillo":"#F2D33A", "Naranja":"#F07A2A", "Rojo":"#D9262E", "Fucsia":"#E0306F", "Rosado":"#F49AC1"};   // colores de la cadenita
    // cadenita de colores en vez de la plateada
    // aro de llavero en vez de la cadena de bolitas
-const PRECIO_OTRO = 1.00;   // charm personalizado ("Otro charm"), precio fijo
+const PRECIO_OTRO = 1.50;   // charm personalizado ("Otro charm"), precio fijo
 const CHARMS = [   // charms impresos en 3D (cada uno del color que el cliente escoja)
   {id:"carita", nombre:"Carita feliz", precio:0.50, color:"Amarillo"},
   {id:"flor",   nombre:"Flor",         precio:1.00, color:"Celeste"},
@@ -648,7 +648,7 @@ function render(){
   // charms
   const full = st.charms.length >= MAX_CHARMS;
   $("charmcards").innerHTML = CHARMS.map(x=>`<button class="aro" type="button" data-c="${x.id}" ${full?"disabled":""}><svg viewBox="0 0 44 44">${charmIcon(x.id, hex(x.color))}</svg>${x.nombre}<small>${money(x.precio)} c/u</small></button>`).join("")
-    + `<button class="aro" type="button" data-c="otro" aria-pressed="${st.otro.length>0}"><svg viewBox="0 0 44 44">${charmIcon("otro")}</svg>Otro charm${st.otro.length>1?` ×${st.otro.length}`:""}<small>$1,00 c/u · dinos cuál</small></button>`;
+    + `<button class="aro" type="button" data-c="otro" aria-pressed="${st.otro.length>0}"><svg viewBox="0 0 44 44">${charmIcon("otro")}</svg>Otro charm${st.otro.length>1?` ×${st.otro.length}`:""}<small>$1,50 c/u · dinos cuál</small></button>`;
   $("charmcards").querySelectorAll(".aro").forEach(b=>b.onclick=()=>{
     const t = b.dataset.c;
     if(t==="otro"){ agregarOtro(); return; }
