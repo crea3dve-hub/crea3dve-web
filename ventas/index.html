@@ -61,6 +61,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-o
 .segmento{display:grid;grid-template-columns:1fr 1fr;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px}
 .segmento button{border:0;background:transparent;border-radius:9px;padding:10px;font-weight:700;color:var(--muted)}
 .segmento button[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink)}
+#kImpBtns{grid-template-columns:repeat(3,1fr)}
 .rapido .nums{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .rapido .nums button{border:1px solid var(--line);background:var(--surface);border-radius:14px;font-size:24px;font-weight:800;padding:12px 0;cursor:pointer}
 .rapido .nums button:active,.grid-extra button:active{transform:scale(.96);background:var(--brand);color:var(--brand-ink)}
@@ -204,6 +205,8 @@ details[open] > summary{margin-bottom:4px}
 .kmult{flex-wrap:wrap;margin:4px 0 0}
 .kajustes{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
 .kajustes summary{cursor:pointer;font-size:13px;font-weight:700}
+.kperfil summary{display:flex;flex-direction:column;gap:2px}
+.kperfil summary small{font-weight:500;color:var(--muted);font-size:11.5px;line-height:1.35}
 .kres .cobrar{margin-top:8px;padding:12px;border-radius:12px;background:var(--ink);color:var(--bg)}
 .kres .cobrar small{display:block;font-size:11px;font-weight:700;letter-spacing:.5px;opacity:.8}
 .kres .cobrar b{font-size:26px}
@@ -441,6 +444,34 @@ details[open] > summary{margin-bottom:4px}
         <label for="kDesc">Descripción corta</label><input id="kDesc" maxlength="200" autocomplete="off" placeholder="Ej: Se mueve en todas direcciones. Varios colores.">
       </details>
       <b class="ktit">Pieza</b>
+      <label>Impresora</label>
+      <div class="segmento" role="group" aria-label="Impresora" id="kImpBtns"></div>
+      <select id="kImp" hidden></select>
+      <label for="kFil">Filamento</label><select id="kFil"></select>
+      <details class="kajustes kperfil" id="kPerfil">
+        <summary><span>⚙️ Perfil de cotización</span><small id="kPerfTxt"></small></summary>
+        <div class="dos">
+          <div><label for="kKg">Precio del filamento $/kg</label><input id="kKg" type="number" inputmode="decimal" min="0" step="0.01"></div>
+          <div><label for="kVida">Vida útil (horas)</label><input id="kVida" type="number" inputmode="numeric" min="1"></div>
+        </div>
+        <div class="dos">
+          <div><label for="kPrecioImp">Precio de la impresora $</label><input id="kPrecioImp" type="number" inputmode="decimal" min="0"></div>
+          <div><label for="kRep">Repuestos $ (en su vida útil)</label><input id="kRep" type="number" inputmode="decimal" min="0" value="0"></div>
+        </div>
+        <div class="dos">
+          <div><label for="kW">Consumo (W)</label><input id="kW" type="number" inputmode="numeric" min="0"></div>
+          <div><label for="kKwh">Precio del kWh $</label><input id="kKwh" type="number" inputmode="decimal" min="0" step="0.001" value="0"></div>
+        </div>
+        <div class="dos">
+          <div><label for="kT">Tu trabajo (min)</label><input id="kT" type="number" inputmode="numeric" min="0" value="5"></div>
+          <div><label for="kHora">Tu hora $</label><input id="kHora" type="number" inputmode="decimal" min="0" step="0.5"></div>
+        </div>
+        <p class="chico" style="margin:6px 0 0">Luz en $0 = no se cuenta (como la tienes ahora). Lo que cambies aquí se usa en este cálculo; para dejarlo fijo en esta impresora, guarda el perfil.</p>
+        <div class="dos" style="margin-top:8px">
+          <button type="button" class="btn primario" id="kPerfGuardar">💾 Guardar perfil</button>
+          <button type="button" class="btn" id="kReset">Volver a los de la hoja</button>
+        </div>
+      </details>
       <div class="dos">
         <div><label for="kHh">Horas de impresión</label><input id="kHh" type="number" inputmode="numeric" min="0" placeholder="0"></div>
         <div><label for="kMin">Minutos</label><input id="kMin" type="number" inputmode="numeric" min="0" placeholder="0"></div>
@@ -476,30 +507,6 @@ details[open] > summary{margin-bottom:4px}
         <div><label for="kMultMay">Mayor × (otro valor)</label><input id="kMultMay" type="number" inputmode="decimal" min="1" step="0.05" value="1.4"></div>
       </div>
       <p class="chico" style="margin:6px 0 0">Detal: ×1,75 tu precio normal · ×2,5–3 piezas especiales · ×4 piezas chicas. Mayor: ×1,4 (12 o más) · ×1,3 pedidos muy grandes.</p>
-      <details class="kajustes">
-        <summary>⚙️ Ajustes (impresora, filamento, luz, fallos)</summary>
-        <div class="dos">
-          <div><label for="kImp">Impresora</label><select id="kImp"></select></div>
-          <div><label for="kFil">Filamento</label><select id="kFil"></select></div>
-        </div>
-        <div class="dos">
-          <div><label for="kKg">Precio del filamento $/kg</label><input id="kKg" type="number" inputmode="decimal" min="0" step="0.01"></div>
-          <div><label for="kVida">Vida útil (horas)</label><input id="kVida" type="number" inputmode="numeric" min="1"></div>
-        </div>
-        <div class="dos">
-          <div><label for="kPrecioImp">Precio de la impresora $</label><input id="kPrecioImp" type="number" inputmode="decimal" min="0"></div>
-          <div><label for="kRep">Repuestos $ (en su vida útil)</label><input id="kRep" type="number" inputmode="decimal" min="0" value="0"></div>
-        </div>
-        <div class="dos">
-          <div><label for="kW">Consumo (W)</label><input id="kW" type="number" inputmode="numeric" min="0"></div>
-          <div><label for="kKwh">Precio del kWh $</label><input id="kKwh" type="number" inputmode="decimal" min="0" step="0.001" value="0"></div>
-        </div>
-        <div class="dos">
-          <div><label for="kT">Tu trabajo (min)</label><input id="kT" type="number" inputmode="numeric" min="0" value="5"></div>
-          <div><label for="kHora">Tu hora $</label><input id="kHora" type="number" inputmode="decimal" min="0" step="0.5"></div>
-        </div>
-        <p class="chico" style="margin:6px 0 0">Luz en $0 = no se cuenta (como la tienes ahora). Estos ajustes se guardan en este teléfono. <button type="button" class="btn chico" id="kReset" style="margin-left:4px">Volver a los de la hoja</button></p>
-      </details>
       <div id="kRes" class="kres" hidden></div>
     </div>
     <div class="dos" style="margin-top:12px">
@@ -933,22 +940,29 @@ details[open] > summary{margin-bottom:4px}
       vida: a['v_' + imp] ?? (porHora ? Math.round(precioImp / porHora / 100) * 100 : 3000),
       rep: a['r_' + imp] ?? 0,
       w: a['w_' + imp] ?? (W_IMP[imp] || 100),
-      kwh: a.kwh ?? (c.electricidad ? 0 : 0),
-      hora: a.hora ?? c.hora,
+      kwh: a['kwh_' + imp] ?? a.kwh ?? 0,
+      hora: a['h_' + imp] ?? a.hora ?? c.hora,
+      t: a['t_' + imp] ?? 5,
       mult: a.mult ?? (1 + c.ganancia),
       multM: a.multM ?? 1.4,
     };
   }
+  let perfilSucio = false;
   function llenarCalc() {
     const c = conf(), imp = $('#kImp').value || kAj.imp || 'A1', fil = $('#kFil').value || kAj.fil || 'PLA';
     $('#kImp').innerHTML = Object.keys(c.impresoras).map(k => `<option${k === imp ? ' selected' : ''}>${esc(k)}</option>`).join('');
+    $('#kImpBtns').innerHTML = Object.keys(c.impresoras).map(k => `<button type="button" data-imp="${esc(k)}" aria-pressed="${k === imp}">${esc(k)}</button>`).join('');
     $('#kFil').innerHTML = Object.keys(c.filamentos).map(k => `<option${k === fil ? ' selected' : ''}>${esc(k)}</option>`).join('');
     ponerAjustes(); pintarInsumos();
   }
-  function ponerAjustes() {
+  function ponerAjustes(soloMargen) {
     const c = conf(), A = ajustesDe($('#kImp').value, $('#kFil').value);
+    document.querySelectorAll('#kImpBtns button').forEach(b => b.setAttribute('aria-pressed', b.dataset.imp === $('#kImp').value));
+    if (!soloMargen) {
     $('#kKg').value = A.kg; $('#kPrecioImp').value = A.precioImp; $('#kVida').value = A.vida; $('#kRep').value = A.rep;
-    $('#kW').value = A.w; $('#kKwh').value = A.kwh; $('#kHora').value = A.hora;
+    $('#kW').value = A.w; $('#kKwh').value = A.kwh; $('#kHora').value = A.hora; $('#kT').value = A.t;
+    perfilSucio = false; pintarPerfilTxt();
+    }
     if (document.activeElement !== $('#kMultP')) $('#kMultP').value = A.mult;
     if (document.activeElement !== $('#kMultMay')) $('#kMultMay').value = A.multM;
     if (document.activeElement !== $('#kErr')) $('#kErr').value = Math.round(($('#kPers').value === '1' ? (kAj.errP ?? 0.5) : (kAj.errB ?? 0.25)) * 100);
@@ -981,7 +995,7 @@ details[open] > summary{margin-bottom:4px}
   // diseño de Bambu (25% de error) o propio (50%); el % se puede cambiar y se recuerda para cada uno
   $('#kDis').addEventListener('click', e => { const b = e.target.closest('[data-dis]'); if (!b) return;
     $('#kPers').value = b.dataset.dis; document.querySelectorAll('#kDis button').forEach(x => x.setAttribute('aria-pressed', x === b));
-    $('#kErr').blur(); ponerAjustes(); calcular(); });
+    $('#kErr').blur(); ponerAjustes(true); calcular(); });
   function calcular() {
     const c = conf(), imp = $('#kImp').value, fil = $('#kFil').value;
     const n = id => Math.max(0, parseFloat($(id).value) || 0);
@@ -1015,11 +1029,26 @@ details[open] > summary{margin-bottom:4px}
     if (!precioTocado) $('#otroPrecio').value = kSug.toFixed(2);
     actualizarGanancia();
   }
-  // guardar cada ajuste que cambies (por impresora o por filamento)
-  const AJ = { '#kKg': () => 'kg_' + $('#kFil').value, '#kPrecioImp': () => 'p_' + $('#kImp').value, '#kVida': () => 'v_' + $('#kImp').value,
-    '#kRep': () => 'r_' + $('#kImp').value, '#kW': () => 'w_' + $('#kImp').value, '#kKwh': () => 'kwh', '#kHora': () => 'hora', '#kMultP': () => 'mult', '#kMultMay': () => 'multM' };
-  Object.entries(AJ).forEach(([sel, key]) => $(sel).addEventListener('input', () => {
-    const v = parseFloat($(sel).value); if (v >= 0) { kAj[key()] = v; guardarAj(); } if (sel === '#kMultP' || sel === '#kMultMay') marcarMult(); calcular(); }));
+  // Perfil de cotización por impresora: lo que cambies se usa en el cálculo; "Guardar perfil" lo deja fijo
+  const PERF = { '#kKg': () => 'kg_' + $('#kFil').value, '#kPrecioImp': () => 'p_' + $('#kImp').value, '#kVida': () => 'v_' + $('#kImp').value,
+    '#kRep': () => 'r_' + $('#kImp').value, '#kW': () => 'w_' + $('#kImp').value, '#kKwh': () => 'kwh_' + $('#kImp').value,
+    '#kHora': () => 'h_' + $('#kImp').value, '#kT': () => 't_' + $('#kImp').value };
+  function pintarPerfilTxt() {
+    const v = id => parseFloat($(id).value) || 0, num = x => String(x).replace('.', ',');
+    $('#kPerfTxt').textContent = `${$('#kImp').value} · ${$('#kFil').value} $${num(v('#kKg'))}/kg · máquina $${num(v('#kPrecioImp'))} en ${v('#kVida')} h · `
+      + (v('#kKwh') ? `luz ${v('#kW')} W a $${num(v('#kKwh'))}/kWh` : 'luz no se cuenta') + ` · tu trabajo ${v('#kT')} min a $${num(v('#kHora'))}/h`
+      + (perfilSucio ? ' · ✏️ cambios sin guardar' : '');
+  }
+  Object.keys(PERF).forEach(sel => $(sel).addEventListener('input', () => { perfilSucio = true; pintarPerfilTxt(); calcular(); }));
+  $('#kPerfGuardar').addEventListener('click', () => {
+    Object.entries(PERF).forEach(([sel, key]) => { const v = parseFloat($(sel).value); if (v >= 0) kAj[key()] = v; });
+    guardarAj(); perfilSucio = false; pintarPerfilTxt(); $('#kPerfil').open = false; avisar('Perfil de la ' + $('#kImp').value + ' guardado');
+  });
+  ['#kMultP', '#kMultMay'].forEach(sel => $(sel).addEventListener('input', () => {
+    const v = parseFloat($(sel).value); if (v >= 0) { kAj[sel === '#kMultP' ? 'mult' : 'multM'] = v; guardarAj(); } marcarMult(); calcular(); }));
+  $('#kImpBtns').addEventListener('click', e => { const b = e.target.closest('[data-imp]'); if (!b) return;
+    $('#kImp').value = b.dataset.imp; document.querySelectorAll('#kImpBtns button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    kAj.imp = b.dataset.imp; guardarAj(); ponerAjustes(); calcular(); });
   $('#kErr').addEventListener('input', () => { const v = parseFloat($('#kErr').value); if (v >= 0) { kAj[$('#kPers').value === '1' ? 'errP' : 'errB'] = v / 100; guardarAj(); } calcular(); });
   ['#kImp', '#kFil'].forEach(sel => $(sel).addEventListener('change', () => { kAj.imp = $('#kImp').value; kAj.fil = $('#kFil').value; guardarAj(); ponerAjustes(); calcular(); }));
   $('#kMult').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; $('#kMultP').value = b.dataset.m; kAj.mult = +b.dataset.m; guardarAj(); marcarMult(); precioTocado = false; calcular(); });
@@ -1058,13 +1087,15 @@ details[open] > summary{margin-bottom:4px}
     if (x.impresora && [...$('#kImp').options].some(o => o.value === x.impresora)) $('#kImp').value = x.impresora;
     if (x.filamento && [...$('#kFil').options].some(o => o.value === x.filamento)) $('#kFil').value = x.filamento;
     const hh = Math.floor(x.horas || 0), mm = Math.round(((x.horas || 0) - hh) * 60);
-    $('#kHh').value = hh || ''; $('#kMin').value = mm || ''; $('#kG').value = x.gramos || ''; $('#kT').value = x.minTrabajo || 5;
+    $('#kHh').value = hh || ''; $('#kMin').value = mm || ''; $('#kG').value = x.gramos || '';
     $('#kPers').value = x.propio ? '1' : '0';
     document.querySelectorAll('#kDis button').forEach(b => b.setAttribute('aria-pressed', b.dataset.dis === $('#kPers').value));
     kInsQ = {}; $('#kIns').value = x.insumoCosto ? x.insumoCosto.toFixed(2) : '';
-    ponerAjustes(); precioTocado = false; calcular();
+    ponerAjustes(); $('#kT').value = x.minTrabajo || $('#kT').value; pintarPerfilTxt(); precioTocado = false; calcular();
   }
-  $('#kReset').addEventListener('click', () => { kAj = {}; guardarAj(); ponerAjustes(); calcular(); avisar('Ajustes de la hoja'); });
+  $('#kReset').addEventListener('click', () => {
+    const imp = $('#kImp').value; ['p_', 'v_', 'r_', 'w_', 'kwh_', 'h_', 't_'].forEach(k => delete kAj[k + imp]); delete kAj['kg_' + $('#kFil').value];
+    delete kAj.kwh; delete kAj.hora; guardarAj(); ponerAjustes(); calcular(); avisar('Perfil de la ' + imp + ' como en la hoja'); });
   let kCosto = null;
   function actualizarGanancia() {
     const p = parseFloat($('#otroPrecio').value), t = $('#kGan');
@@ -1095,7 +1126,7 @@ details[open] > summary{margin-bottom:4px}
     try { await navigator.clipboard.writeText(msg); avisar('Mensaje copiado, pégalo en WhatsApp'); }
     catch (e) { prompt('Copia este mensaje:', msg); }
   });
-  function limpiarCalc() { ['#kG', '#kHh', '#kMin', '#kIns'].forEach(s => { $(s).value = ''; }); $('#kT').value = '5'; $('#kPers').value = '0'; document.querySelectorAll('#kDis button').forEach(x => x.setAttribute('aria-pressed', x.dataset.dis === '0')); kInsQ = Object.assign({}, INS_BASE); pintarInsumos(); ponerAjustes(); precioTocado = false; kCosto = null; $('#kRes').hidden = true; $('#kGan').hidden = true; }
+  function limpiarCalc() { ['#kG', '#kHh', '#kMin', '#kIns'].forEach(s => { $(s).value = ''; }); $('#kPers').value = '0'; document.querySelectorAll('#kDis button').forEach(x => x.setAttribute('aria-pressed', x.dataset.dis === '0')); kInsQ = Object.assign({}, INS_BASE); pintarInsumos(); ponerAjustes(); precioTocado = false; kCosto = null; $('#kRes').hidden = true; $('#kGan').hidden = true; }
   $('#btnAgregarOtro').addEventListener('click', () => {
     const n = $('#otroNombre').value.trim(); const pr = parseFloat($('#otroPrecio').value);
     const c = Math.max(1, parseInt($('#otroCant').value || '1', 10));
