@@ -192,6 +192,13 @@ details[open] > summary{margin-bottom:4px}
 .ksub[open] > .ksub-t small{display:none}
 .ksub > label:first-of-type{margin-top:0}
 #kInsBox[open] > .ksub-t small{display:block}
+.k3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.kplaca{border-top:1px solid var(--line);padding-top:6px;margin-top:6px}
+.kplaca:first-of-type{border-top:0;margin-top:0;padding-top:0}
+#kPlacas .kplaca{border-top:1px solid var(--line);padding-top:6px;margin-top:6px}
+.kplaca-t{display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.kplaca-t button{border:0;background:none;color:var(--muted);font-size:13px;cursor:pointer;padding:4px 0}
+.ktotplacas{margin-top:8px;background:var(--bg);border-radius:10px;padding:8px 10px;font-size:13px;font-weight:700}
 .cat-item{background:var(--surface);border:1px solid var(--line);border-radius:14px;margin-bottom:8px;overflow:hidden}
 .cat-item summary{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 14px;cursor:pointer;list-style:none}
 .cat-item summary::-webkit-details-marker{display:none}
@@ -487,15 +494,21 @@ details[open] > summary{margin-bottom:4px}
         </details>
       </details>
       <details class="ksub" id="kSubPieza"><summary class="ksub-t"><i>3</i><span>La pieza</span><small id="kInfoPieza"></small></summary>
-        <div class="dos">
-          <div><label for="kHh">Horas de impresión</label><input id="kHh" type="number" inputmode="numeric" min="0" placeholder="0"></div>
-          <div><label for="kMin">Minutos</label><input id="kMin" type="number" inputmode="numeric" min="0" placeholder="0"></div>
+        <div class="kplaca"><div class="kplaca-t"><b>Placa 1</b></div>
+          <div class="k3">
+            <div><label for="kHh">Horas</label><input id="kHh" type="number" inputmode="numeric" min="0" placeholder="0"></div>
+            <div><label for="kMin">Minutos</label><input id="kMin" type="number" inputmode="numeric" min="0" placeholder="0"></div>
+            <div><label for="kG">Gramos</label><input id="kG" type="number" inputmode="decimal" min="0" placeholder="0"></div>
+          </div>
         </div>
+        <div id="kPlacas"></div>
+        <button type="button" class="btn chico" id="kAddPlaca" style="margin-top:8px">＋ Añadir placa</button>
+        <div class="ktotplacas" id="kTotPlacas" hidden></div>
+        <p class="chico" style="margin:6px 0 0">Copia de Bambu las horas, minutos y gramos de cada placa.</p>
         <div class="dos">
-          <div><label for="kG">Gramos de filamento</label><input id="kG" type="number" inputmode="decimal" min="0" placeholder="0"></div>
           <div><label for="kErr">Margen de error %</label><input id="kErr" type="number" inputmode="decimal" min="0" max="90"></div>
+          <div></div>
         </div>
-        <p class="chico" style="margin:6px 0 0">Copia de Bambu los gramos y el tiempo.</p>
         <label style="margin-top:10px">¿De quién es el diseño?</label>
         <div class="segmento" role="group" aria-label="De quién es el diseño" id="kDis">
           <button type="button" data-dis="0" aria-pressed="true">Bambu · 25%</button>
@@ -1035,13 +1048,39 @@ details[open] > summary{margin-bottom:4px}
   $('#kDis').addEventListener('click', e => { const b = e.target.closest('[data-dis]'); if (!b) return;
     $('#kPers').value = b.dataset.dis; document.querySelectorAll('#kDis button').forEach(x => x.setAttribute('aria-pressed', x === b));
     $('#kErr').blur(); ponerAjustes(true); calcular(); });
+  // Varias placas de impresión: se suman horas y gramos de todas
+  const nv = x => parseFloat(x && x.value) || 0;
+  function placasExtra() { return [...document.querySelectorAll('#kPlacas .kplaca')].map(d => ({ h: nv(d.querySelector('[data-ph]')), m: nv(d.querySelector('[data-pm]')), g: nv(d.querySelector('[data-pg]')) })); }
+  function placas() { return [{ h: nv($('#kHh')), m: nv($('#kMin')), g: nv($('#kG')) }].concat(placasExtra()); }
+  const totHoras = () => placas().reduce((t, p) => t + p.h + p.m / 60, 0);
+  const totGramos = () => placas().reduce((t, p) => t + p.g, 0);
+  const horasTexto = h => { const hh = Math.floor(h + 1e-9), mm = Math.round((h - hh) * 60); return [hh ? hh + ' h' : '', mm ? mm + ' min' : ''].filter(Boolean).join(' ') || '0 min'; };
+  function numerarPlacas() {
+    document.querySelectorAll('#kPlacas .kplaca').forEach((d, i) => { d.querySelector('b').textContent = 'Placa ' + (i + 2); });
+    const n = 1 + placasExtra().length, t = $('#kTotPlacas');
+    t.hidden = n < 2;
+    t.textContent = `Total ${n} placas: ${horasTexto(totHoras())} · ${String(+totGramos().toFixed(2)).replace('.', ',')} g`;
+  }
+  function agregarPlaca(p) {
+    const d = document.createElement('div'); d.className = 'kplaca';
+    d.innerHTML = `<div class="kplaca-t"><b></b><button type="button" data-quitar aria-label="Quitar placa">✕ Quitar</button></div>
+      <div class="k3"><div><label>Horas</label><input data-ph type="number" inputmode="numeric" min="0" placeholder="0"></div>
+      <div><label>Minutos</label><input data-pm type="number" inputmode="numeric" min="0" placeholder="0"></div>
+      <div><label>Gramos</label><input data-pg type="number" inputmode="decimal" min="0" placeholder="0"></div></div>`;
+    if (p) { d.querySelector('[data-ph]').value = p.h || ''; d.querySelector('[data-pm]').value = p.m || ''; d.querySelector('[data-pg]').value = p.g || ''; }
+    $('#kPlacas').appendChild(d); numerarPlacas(); return d;
+  }
+  $('#kAddPlaca').addEventListener('click', () => { agregarPlaca().querySelector('[data-ph]').focus(); calcular(); });
+  $('#kPlacas').addEventListener('input', calcular);
+  $('#kPlacas').addEventListener('click', e => { const b = e.target.closest('[data-quitar]'); if (!b) return; b.closest('.kplaca').remove(); numerarPlacas(); calcular(); });
   // Resumen de cada tarjeta cerrada, para ver lo que tiene sin abrirla
   function pintarInfo() {
     const num = x => String(x).replace('.', ','), v = id => parseFloat($(id).value) || 0;
     $('#kInfoProd').textContent = $('#kNom').value.trim() || 'Sin nombre';
     $('#kInfoImp').textContent = $('#kImp').value + ' · ' + $('#kFil').value;
-    const h = v('#kHh'), m = v('#kMin'), g = v('#kG');
-    $('#kInfoPieza').textContent = (h || m || g) ? [h ? h + ' h' : '', m ? m + ' min' : '', g ? num(g) + ' g' : '', $('#kPers').value === '1' ? 'propio' : 'Bambu'].filter(Boolean).join(' · ') : 'Toca para llenar';
+    numerarPlacas();
+    const h = totHoras(), g = totGramos(), np = placas().length;
+    $('#kInfoPieza').textContent = (h || g) ? [np > 1 ? np + ' placas' : '', h ? horasTexto(h) : '', g ? num(+g.toFixed(2)) + ' g' : '', $('#kPers').value === '1' ? 'propio' : 'Bambu'].filter(Boolean).join(' · ') : 'Toca para llenar';
     $('#kInfoGan').textContent = '×' + num(v('#kMultP')) + ' detal · ×' + num(v('#kMultMay')) + ' mayor';
   }
   ['#kNom', '#kHh', '#kMin', '#kG'].forEach(sel => $(sel).addEventListener('input', pintarInfo));
@@ -1050,7 +1089,7 @@ details[open] > summary{margin-bottom:4px}
     const c = conf(), imp = $('#kImp').value, fil = $('#kFil').value;
     const n = id => Math.max(0, parseFloat($(id).value) || 0);
     pintarInsumos();
-    const g = n('#kG'), h = n('#kHh') + n('#kMin') / 60, ins = costoInsumos();
+    const g = totGramos(), h = totHoras(), ins = costoInsumos();
     if (!g && !h) { $('#kRes').hidden = true; kSug = null; kCosto = null; actualizarGanancia(); return; }
     const mat = g * n('#kKg') / 1000;
     const luz = h * n('#kW') / 1000 * n('#kKwh');
@@ -1067,7 +1106,7 @@ details[open] > summary{margin-bottom:4px}
     const bs = v => datos && datos.tasa ? ' · ' + fmtBs(v * datos.tasa.valor) : '';
     const fila = (a, b) => `<div class="stat"><span>${a}</span><b>${b}</b></div>`;
     $('#kRes').hidden = false;
-    $('#kRes').innerHTML = fila('Material (' + g + ' g)', fmt(mat)) + (n('#kKwh') ? fila('Luz', fmt(luz)) : '') + fila('Desgaste de la máquina', fmt(desg))
+    $('#kRes').innerHTML = fila('Material (' + String(+g.toFixed(2)).replace('.', ',') + ' g)', fmt(mat)) + (n('#kKwh') ? fila('Luz', fmt(luz)) : '') + fila('Desgaste de la máquina', fmt(desg))
       + fila('Margen de error (' + Math.round(err * 100) + '%)', fmt(fallos)) + fila('Tu trabajo', fmt(trab)) + (ins ? fila('Insumos', fmt(ins)) : '')
       + fila('<b>Costo total</b>', fmt(costo))
       + `<div class="cobrar"><small>PRECIO AL DETAL · ×${String(mult).replace('.', ',')}</small><b>${fmt(kSug)}</b>`
@@ -1123,9 +1162,9 @@ details[open] > summary{margin-bottom:4px}
     const mayor = Math.ceil(kCosto * (n('#kMultMay') || 1.4) / 0.5 - 1e-9) * 0.5;
     const cuerpo = { accion: 'guardarProducto', nombre: nom, nombreWeb: $('#kWeb').value.trim(), link: $('#kLink').value.trim(),
       categoria: $('#kCat').value, descripcion: $('#kDesc').value.trim(), filamento: $('#kFil').value, impresora: $('#kImp').value,
-      gramos: n('#kG'), horas: n('#kHh') + n('#kMin') / 60, minTrabajo: n('#kT'), insumos: +costoInsumos().toFixed(3),
+      gramos: +totGramos().toFixed(2), horas: +totHoras().toFixed(4), minTrabajo: n('#kT'), insumos: +costoInsumos().toFixed(3),
       propio: $('#kPers').value === '1', precio: kSug, mayor,
-      nota: 'Calculadora: ' + (n('#kHh') ? n('#kHh') + ' h ' : '') + (n('#kMin') ? n('#kMin') + ' min' : '') + ' · error ' + n('#kErr') + '%' + (detalle ? ' · insumos: ' + detalle : '') };
+      nota: 'Calculadora: ' + (placas().length > 1 ? placas().length + ' placas (' + placas().map(p => horasTexto(p.h + p.m / 60) + ' ' + p.g + ' g').join(' + ') + ') = ' : '') + horasTexto(totHoras()) + ' · error ' + n('#kErr') + '%' + (detalle ? ' · insumos: ' + detalle : '') };
     $('#kGuardar').disabled = true;
     try { if (await accion(cuerpo, 'Producto guardado')) $('#kGuardarTxt').textContent = '✓ Guardado: ' + nom + (cuerpo.nombreWeb ? ' · sale en la web como "' + cuerpo.nombreWeb + '"' : ''); }
     finally { $('#kGuardar').disabled = false; }
@@ -1138,7 +1177,7 @@ details[open] > summary{margin-bottom:4px}
     if (x.impresora && [...$('#kImp').options].some(o => o.value === x.impresora)) $('#kImp').value = x.impresora;
     if (x.filamento && [...$('#kFil').options].some(o => o.value === x.filamento)) $('#kFil').value = x.filamento;
     const hh = Math.floor(x.horas || 0), mm = Math.round(((x.horas || 0) - hh) * 60);
-    $('#kHh').value = hh || ''; $('#kMin').value = mm || ''; $('#kG').value = x.gramos || '';
+    $('#kPlacas').innerHTML = ''; $('#kHh').value = hh || ''; $('#kMin').value = mm || ''; $('#kG').value = x.gramos || '';
     $('#kPers').value = x.propio ? '1' : '0';
     document.querySelectorAll('#kDis button').forEach(b => b.setAttribute('aria-pressed', b.dataset.dis === $('#kPers').value));
     kInsQ = {}; $('#kIns').value = x.insumoCosto ? x.insumoCosto.toFixed(2) : '';
@@ -1178,7 +1217,7 @@ details[open] > summary{margin-bottom:4px}
     try { await navigator.clipboard.writeText(msg); avisar('Mensaje copiado, pégalo en WhatsApp'); }
     catch (e) { prompt('Copia este mensaje:', msg); }
   });
-  function limpiarCalc() { ['#kG', '#kHh', '#kMin', '#kIns'].forEach(s => { $(s).value = ''; }); $('#kPers').value = '0'; document.querySelectorAll('#kDis button').forEach(x => x.setAttribute('aria-pressed', x.dataset.dis === '0')); kInsQ = Object.assign({}, INS_BASE); pintarInsumos(); ponerAjustes(); precioTocado = false; kCosto = null; $('#kRes').hidden = true; $('#kGan').hidden = true; }
+  function limpiarCalc() { ['#kG', '#kHh', '#kMin', '#kIns'].forEach(s => { $(s).value = ''; }); $('#kPlacas').innerHTML = ''; $('#kPers').value = '0'; document.querySelectorAll('#kDis button').forEach(x => x.setAttribute('aria-pressed', x.dataset.dis === '0')); kInsQ = Object.assign({}, INS_BASE); pintarInsumos(); ponerAjustes(); precioTocado = false; kCosto = null; $('#kRes').hidden = true; $('#kGan').hidden = true; }
   $('#btnAgregarOtro').addEventListener('click', () => {
     const n = $('#otroNombre').value.trim(); const pr = parseFloat($('#otroPrecio').value);
     const c = Math.max(1, parseInt($('#otroCant').value || '1', 10));
