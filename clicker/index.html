@@ -367,14 +367,14 @@ const LINK_PAGINA = "https://crea3dve.com/";   // dominio de la página (el conf
 const PRECIO_LETRA = 1.50;           // cada letra: tecla + switch + su parte de la base (base y cadena incluidas)
 const PRECIO_LLAVERO = 0.50, PRECIO_COLORES = 0.50;
 // Filamentos que se acabaron: se ven tachados y no se pueden escoger (bórralos de aquí cuando vuelvan)
-const FIL_AGOTADO = new Set(["Fucsia"]);
+const FIL_AGOTADO = new Set(["Fucsia","Celeste"]);
 const CADC = {"Blanco":"#F4F4F2", "Celeste":"#9CC7E8", "Azul":"#1F4FB8", "Verde":"#2E8B3E", "Verde limón":"#A6D84A", "Verde menta":"#7FC4A4", "Amarillo":"#F2D33A", "Naranja":"#F07A2A", "Rojo":"#D9262E", "Fucsia":"#E0306F", "Rosado":"#F49AC1"};   // colores de la cadenita
    // cadenita de colores en vez de la plateada
    // aro de llavero en vez de la cadena de bolitas
 const PRECIO_OTRO = 1.50;   // charm personalizado ("Otro charm"), precio fijo
 const CHARMS = [   // charms impresos en 3D (cada uno del color que el cliente escoja)
   {id:"carita", nombre:"Carita feliz", precio:0.50, color:"Amarillo"},
-  {id:"flor",   nombre:"Flor",         precio:1.00, color:"Celeste"},
+  {id:"flor",   nombre:"Flor",         precio:1.00, color:"Amarillo"},
   {id:"pelota", nombre:"Pelota de fútbol", precio:0.50, color:"Negro"},   // blanca con el dibujo del color escogido
 ];
 const MAX_CHARMS = 6;
