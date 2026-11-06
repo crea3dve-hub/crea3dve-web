@@ -89,6 +89,14 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-o
 .pill.Pagado{background:var(--blue-soft);color:var(--blue)}
 .pill.Entregado{background:var(--brand-soft);color:var(--ink)}
 .pill.Cancelado{background:var(--warn-soft);color:var(--warn)}
+.pill.Abono{background:#E3F0FF;color:#1F5FAD}
+.abonos{background:var(--brand-soft);border-radius:12px;padding:10px 12px;margin:0 0 10px;font-size:14px}
+.abonos .ab-lin{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:3px 0}
+.abonos .ab-lin button{border:0;background:none;color:var(--muted);font-size:15px;padding:2px 6px;cursor:pointer}
+.abonos .ab-tot{display:flex;justify-content:space-between;font-weight:800;border-top:1px solid var(--line);margin-top:6px;padding-top:6px}
+.ab-form{border:1px solid var(--line);border-radius:12px;padding:12px;margin:0 0 10px;display:grid;gap:8px}
+.ab-form .rapidos{display:flex;gap:6px;flex-wrap:wrap}
+.ab-form .eq{font-size:14px;font-weight:700}
 .pedido-cab{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
 .pedido-cab .num{font-weight:800}
 .chico{font-size:13px;color:var(--muted)}
@@ -615,7 +623,7 @@ details[open] > summary{margin-bottom:4px}
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261106021535';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261106145407';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -688,7 +696,7 @@ details[open] > summary{margin-bottom:4px}
     vaciarCola();
     return true;
   }
-  const puedeRepintar = () => !editando && !webAbierto && !editProd && !editPC && !compraPC && !editG && !pagarG && !agregandoA &&
+  const puedeRepintar = () => !editando && !abonoAbierto && !webAbierto && !editProd && !editPC && !compraPC && !editG && !pagarG && !agregandoA &&
     !(document.activeElement && /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName));
   // Envía; si no hay señal, lo guarda en el teléfono para reintentar
   async function accion(cuerpo, okTexto) {
@@ -1431,6 +1439,7 @@ details[open] > summary{margin-bottom:4px}
     pintarPedidos();
   });
   let editando = null;
+  let abonoAbierto = null;   // número del pedido al que se le está anotando un abono
   // "¿Pidió varios iguales?": multiplica las cantidades originales del pedido y muestra el total
   function aplicarIguales(card) {
     const n = Math.max(1, Math.min(500, Math.round(+card.querySelector('[data-iguales]').value || 1)));
@@ -1680,6 +1689,10 @@ details[open] > summary{margin-bottom:4px}
   const ESTADO_TXT = { Pedido: 'Sin pagar · por entregar', Pagado: 'Pagado · por entregar', Entregado: 'Entregado', Cancelado: 'Cancelado' };
   // entregado pero sin método de pago = todavía debe
   const debe = p => p.estado === 'Entregado' && !p.metodo && p.total > 0;
+  // abonos: lo que ya pagó por partes y lo que falta
+  const abonado = p => Math.round((p.abonado || 0) * 100) / 100;
+  const falta = p => Math.max(0, Math.round((p.total - abonado(p)) * 100) / 100);
+  const conAbono = p => abonado(p) > 0 && (p.estado === 'Pedido' || debe(p));
   const PILL_TXT = { Pedido: 'Sin pagar', Pagado: 'Por entregar', Entregado: 'Entregado', Cancelado: 'Cancelado' };
   const esRegalo = p => p.total === 0 && p.items.some(i => !esIncluido(i) && i.producto !== 'Delivery');
   /* ---------- Mandar la nota por WhatsApp ---------- */
@@ -1735,6 +1748,107 @@ details[open] > summary{margin-bottom:4px}
     const a = e.target.closest('[data-wa]'); if (a) { marcarEnviada(a.dataset.wa); setTimeout(() => { pintarEnviar(); pintarPedidos(); }, 300); return; }
     const s2 = e.target.closest('[data-saltar]'); if (s2) { marcarEnviada(s2.dataset.saltar); pintarEnviar(); pintarPedidos(); }
   });
+  /* ---------- Abonos (pagos por partes) ---------- */
+  const fmtBsN = v => v.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' Bs';
+  function cajaAbonos(p) {
+    const ab = p.abonos || [];
+    if (!ab.length) return '';
+    const pendiente = p.estado === 'Pedido' || debe(p);
+    return `<div class="abonos"><b>💵 Pagos</b>
+      ${ab.map(a => `<div class="ab-lin"><span>${esc(a.fecha)} · <b>${fmt(a.monto)}</b>${a.moneda === 'Bs' && a.bs ? ' (' + fmtBsN(a.bs) + ')' : ''}${a.metodo ? ' · ' + esc(a.metodo) : ''}${a.nota ? ' · ' + esc(a.nota) : ''}</span>
+        ${a.fila ? `<button type="button" data-ab-del="${a.fila}" data-ab-num="${esc(p.numero)}" aria-label="Borrar este pago">✕</button>` : ''}</div>`).join('')}
+      <div class="ab-tot"><span>${pendiente ? 'Falta' : 'Pagó'}</span><span>${pendiente ? fmt(falta(p)) : fmt(abonado(p))}</span></div>
+      ${pendiente && datos.tasa && falta(p) ? `<div class="chico" style="text-align:right">${fmtBs(falta(p) * datos.tasa.valor)} a tasa BCV de hoy</div>` : ''}
+    </div>`;
+  }
+  function formAbono(p) {
+    const L = datos.listas, tasa = datos.tasa ? datos.tasa.valor : '';
+    const resto = abonoResto === p.numero;
+    return `<div class="ab-form" data-abf="${esc(p.numero)}">
+      <b>${resto ? 'Pagó lo que faltaba' : '¿Cuánto pagó?'}</b>
+      <div class="rapidos">
+        ${abonado(p) ? '' : `<button type="button" class="btn chico" data-ab-pct="0.5">La mitad · ${fmt(p.total / 2)}</button>`}
+        <button type="button" class="btn chico" data-ab-pct="1">Todo lo que falta · ${fmt(falta(p))}</button>
+      </div>
+      <div class="dos">
+        <div><label>Moneda</label><select data-ab="moneda"><option value="$">Dólares ($)</option><option value="Bs">Bolívares (Bs)</option></select></div>
+        <div><label data-ab-lbl>Monto en $</label><input data-ab="monto" type="number" inputmode="decimal" step="0.01" min="0" value="${resto ? falta(p) : ''}"></div>
+      </div>
+      <div class="dos" data-ab-bs hidden>
+        <div><label>Tasa (Bs por $)</label><input data-ab="tasa" type="number" inputmode="decimal" step="0.01" min="0" value="${tasa}"></div>
+        <div><label>Equivale a</label><div class="eq" data-ab-eq style="padding:10px 0">—</div></div>
+      </div>
+      <div class="dos">
+        <div><label>¿Cómo pagó?</label><select data-ab="metodo">${L.metodosVenta.map(m => `<option>${esc(m)}</option>`).join('')}</select></div>
+        <div><label>Nota <span class="chico">(opcional)</span></label><input data-ab="nota" maxlength="200" placeholder="Ej: ref. 1234"></div>
+      </div>
+      <p class="chico" data-ab-resumen style="margin:0"></p>
+      <div class="acciones"><button type="button" class="btn chico primario" data-ab-ok>Guardar pago</button><button type="button" class="btn chico" data-ab-x>Cancelar</button></div>
+    </div>`;
+  }
+  let abonoResto = null;
+  // lee el formulario: monto en dólares (si pagó en Bs se convierte con la tasa)
+  function leerAbono(f) {
+    const v = k => f.querySelector(`[data-ab="${k}"]`).value;
+    const moneda = v('moneda'), monto = parseFloat(String(v('monto')).replace(',', '.')) || 0, tasa = parseFloat(String(v('tasa')).replace(',', '.')) || 0;
+    const usd = moneda === 'Bs' ? (tasa ? monto / tasa : 0) : monto;
+    return { moneda, monto, tasa, usd: Math.round(usd * 100) / 100, metodo: v('metodo'), nota: v('nota').trim() };
+  }
+  function pintarFormAbono(f) {
+    const p = datos.ventas.find(v => v.numero === f.dataset.abf); if (!p) return;
+    const a = leerAbono(f), bs = a.moneda === 'Bs';
+    f.querySelector('[data-ab-bs]').hidden = !bs;
+    f.querySelector('[data-ab-lbl]').textContent = bs ? 'Monto en Bs' : 'Monto en $';
+    f.querySelector('[data-ab-eq]').textContent = bs ? (a.tasa ? fmt(a.usd) : 'pon la tasa') : '';
+    const queda = Math.max(0, Math.round((falta(p) - a.usd) * 100) / 100);
+    f.querySelector('[data-ab-resumen]').innerHTML = a.usd > 0 ? (queda <= 0.01 ? '✅ Con esto queda <b>todo pagado</b>.' : `Después de este pago le faltará <b>${fmt(queda)}</b>.`) : '';
+  }
+  $('#listaPedidos').addEventListener('input', e => { const f = e.target.closest('[data-abf]'); if (f) pintarFormAbono(f); });
+  $('#listaPedidos').addEventListener('change', e => {
+    const f = e.target.closest('[data-abf]'); if (!f) return;
+    // al cambiar a bolívares, el monto escrito en $ pasa a Bs (y al revés)
+    if (e.target.dataset.ab === 'moneda') {
+      const inp = f.querySelector('[data-ab="monto"]'), t = parseFloat(f.querySelector('[data-ab="tasa"]').value) || 0, m = parseFloat(inp.value) || 0;
+      if (m && t) inp.value = e.target.value === 'Bs' ? (m * t).toFixed(2) : (m / t).toFixed(2);
+    }
+    pintarFormAbono(f);
+  });
+  $('#listaPedidos').addEventListener('click', e => {
+    const ab = e.target.closest('[data-abono]');
+    if (ab) { abonoAbierto = ab.dataset.abono; abonoResto = ab.dataset.resto ? ab.dataset.abono : null; pintarPedidos();
+      const f = document.querySelector(`[data-abf="${CSS.escape(abonoAbierto)}"]`); if (f) { pintarFormAbono(f); f.querySelector('[data-ab="monto"]').focus(); } return; }
+    const del = e.target.closest('[data-ab-del]');
+    if (del) {
+      if (!confirm('¿Borrar este pago?')) return;
+      const p = datos.ventas.find(v => v.numero === del.dataset.abNum), fila = +del.dataset.abDel;
+      if (p) { p.abonos = (p.abonos || []).filter(a => a.fila !== fila); p.abonado = p.abonos.reduce((s, a) => s + a.monto, 0); pintarPedidos(); }
+      accionFondo({ accion: 'borrarAbono', numero: del.dataset.abNum, fila }, 'Pago borrado');
+      return;
+    }
+    const f = e.target.closest('[data-abf]'); if (!f) return;
+    const p = datos.ventas.find(v => v.numero === f.dataset.abf); if (!p) return;
+    if (e.target.closest('[data-ab-x]')) { abonoAbierto = null; pintarPedidos(); return; }
+    const pct = e.target.closest('[data-ab-pct]');
+    if (pct) {
+      const usd = +pct.dataset.abPct === 1 ? falta(p) : Math.round(p.total * +pct.dataset.abPct * 100) / 100;
+      const bs = f.querySelector('[data-ab="moneda"]').value === 'Bs', t = parseFloat(f.querySelector('[data-ab="tasa"]').value) || 0;
+      f.querySelector('[data-ab="monto"]').value = bs && t ? (usd * t).toFixed(2) : usd;
+      pintarFormAbono(f); return;
+    }
+    if (e.target.closest('[data-ab-ok]')) {
+      const a = leerAbono(f);
+      if (!(a.usd > 0)) return avisar(a.moneda === 'Bs' && !a.tasa ? 'Pon la tasa del día' : 'Escribe cuánto pagó', true);
+      const completo = a.usd >= falta(p) - 0.01;
+      // se ve al instante y se guarda en la hoja por detrás
+      p.abonos = (p.abonos || []).concat([{ fecha: 'hoy', monto: a.usd, moneda: a.moneda, bs: a.moneda === 'Bs' ? a.monto : 0, metodo: a.metodo, nota: a.nota }]);
+      p.abonado = abonado(p) + a.usd;
+      if (completo) { p.metodo = a.metodo; if (p.estado === 'Pedido') p.estado = 'Pagado'; }
+      abonoAbierto = null; pintarPedidos(); pintarResumen();
+      accionFondo({ accion: 'abono', numero: p.numero, monto: a.usd, moneda: a.moneda, bs: a.moneda === 'Bs' ? a.monto : null,
+        tasa: a.moneda === 'Bs' ? a.tasa : (datos.tasa ? datos.tasa.valor : null), metodo: a.metodo, nota: a.nota, completo },
+        completo ? p.numero + ': pagado completo' : p.numero + ': abono de ' + fmt(a.usd) + ' · falta ' + fmt(falta(p)));
+    }
+  });
   function pintarPedidos() {
     pintarEnviar();
     pintarWeb();
@@ -1743,8 +1857,11 @@ details[open] > summary{margin-bottom:4px}
     $('#listaPedidos').innerHTML = lista.map(p => {
       const botones = [];
       const regalo = esRegalo(p);
-      if (p.estado === 'Pedido' && !regalo) botones.push(`<button class="btn chico primario" data-num="${esc(p.numero)}" data-e="Pagado">Ya pagó</button>`);
-      if (debe(p)) botones.push(`<button class="btn chico primario" data-num="${esc(p.numero)}" data-e="Entregado" data-pide="1">Ya pagó</button>`);
+      const porCobrar = (p.estado === 'Pedido' || debe(p)) && !regalo;
+      if (porCobrar && conAbono(p)) botones.push(`<button class="btn chico primario" data-abono="${esc(p.numero)}" data-resto="1">Pagó lo que falta (${fmt(falta(p))})</button>`);
+      else if (p.estado === 'Pedido' && !regalo) botones.push(`<button class="btn chico primario" data-num="${esc(p.numero)}" data-e="Pagado">Ya pagó todo</button>`);
+      else if (debe(p)) botones.push(`<button class="btn chico primario" data-num="${esc(p.numero)}" data-e="Entregado" data-pide="1">Ya pagó todo</button>`);
+      if (porCobrar) botones.push(`<button class="btn chico" data-abono="${esc(p.numero)}">💵 Pagó una parte</button>`);
       if (p.estado === 'Pedido' || p.estado === 'Pagado') botones.push(`<button class="btn chico" data-num="${esc(p.numero)}" data-e="Entregado">Entregado</button>`);
       if (p.estado === 'Entregado') botones.push(`<button class="btn chico" data-num="${esc(p.numero)}" data-e="${p.metodo || regalo ? 'Pagado' : 'Pedido'}" data-sin-preguntar="1">↩︎ Todavía no lo entrego</button>`);
       if (p.estado !== 'Cancelado' && p.estado !== 'Entregado') botones.push(`<button class="btn chico peligro" data-num="${esc(p.numero)}" data-e="Cancelado">Cancelar</button>`);
@@ -1755,10 +1872,12 @@ details[open] > summary{margin-bottom:4px}
       if (editando === p.numero) return editorPedido(p);
       return `<div class="card">
         <div class="pedido-cab"><div><span class="num">${esc(p.numero)}</span> · ${esc(p.cliente || 'Sin nombre')}<div class="chico">${esc(p.fecha)} · ${esc(p.canal)}${p.metodo ? ' · ' + esc(p.metodo) : ''}</div></div>
-        <div style="text-align:right"><span class="pill ${esc(p.estado)}">${esc(debe(p) ? 'Entregado · debe' : PILL_TXT[p.estado] || p.estado || '—')}</span><div style="font-weight:800;margin-top:4px">${regalo ? '🎁 Regalo' : fmt(p.total)}</div></div></div>
+        <div style="text-align:right"><span class="pill ${conAbono(p) ? 'Abono' : esc(p.estado)}">${esc(conAbono(p) ? (debe(p) ? 'Entregado · ' : '') + 'Abonó ' + Math.round(abonado(p) / p.total * 100) + '%' : debe(p) ? 'Entregado · debe' : PILL_TXT[p.estado] || p.estado || '—')}</span><div style="font-weight:800;margin-top:4px">${regalo ? '🎁 Regalo' : fmt(p.total)}</div></div></div>
         <ul class="lista-items">${p.items.map(i => `<li>${i.cantidad} × ${esc(i.producto)}</li>`).join('')}</ul>
         ${p.diseno ? detalleWeb(p.diseno, p.items) : ''}
         ${p.nota ? `<p class="chico" style="margin:4px 0 8px">📝 ${esc(p.nota)}</p>` : ''}
+        ${cajaAbonos(p)}
+        ${abonoAbierto === p.numero ? formAbono(p) : ''}
         ${botones.length ? `<div class="acciones">${botones.join('')}</div>` : ''}
       </div>`;
     }).join('') || '<p class="vacio">Nada por aquí.</p>';
@@ -1781,7 +1900,8 @@ details[open] > summary{margin-bottom:4px}
     const nombre = (p.cliente || '').replace(/^Cliente\s.*$/, '').split(' ')[0];
     const t = `¡Hola${nombre ? ' ' + nombre : ''}! 😊 Este es tu pedido ${p.numero} de Crea3d:\n\n` +
       items.map(i => `• ${i.cantidad} × ${nombreCorto(i.producto)} — ${fmt(i.total)}`).join('\n') +
-      `\n\n*Total: ${fmt(total)}*` + (datos.tasa ? ` (${fmtBs(total * datos.tasa.valor)} a tasa BCV de hoy)` : '') +
+      `\n\n*Total: ${fmt(total)}*` + (abonado(p) ? `\nYa pagaste: ${fmt(abonado(p))}\n*Falta: ${fmt(falta(p))}*` : '') +
+      (datos.tasa ? ` (${fmtBs((abonado(p) ? falta(p) : total) * datos.tasa.valor)} a tasa BCV de hoy)` : '') +
       `\n\n*Datos de pago:*\n${datosPago()}\n\nCuando pagues, mándame el comprobante por aquí y te confirmo 🙌`;
     if (navigator.share) { try { await navigator.share({ text: t }); return; } catch (e) { if (e.name === 'AbortError') return; } }
     try { await navigator.clipboard.writeText(t); avisar('Mensaje copiado. Pégalo en WhatsApp.'); }
@@ -1798,7 +1918,7 @@ details[open] > summary{margin-bottom:4px}
     const sinPagar = (p.estado === 'Pedido' || debe(p)) && !regalo;
     if (sinPagar && faltanDatosPago()) return;
     const lineasPago = sinPagar ? datosPago().split('\n').map(l => l.trim()).filter(Boolean) : [];
-    const W = 1080, filaH = 74, H = 810 + items.length * filaH + (datos.tasa ? 60 : 0) + extras.length * 45 + (sinPagar ? 170 + lineasPago.length * 44 : 0);
+    const W = 1080, filaH = 74, H = 810 + items.length * filaH + (datos.tasa ? 60 : 0) + extras.length * 45 + (sinPagar ? 170 + lineasPago.length * 44 : 0) + (sinPagar && abonado(p) ? 110 : 0);
     const c = document.createElement('canvas'); c.width = W; c.height = H;
     const x = c.getContext('2d');
     const verde = '#5CBA2E', tinta = '#141712', gris = '#5E6659', linea = '#DDE3D6';
@@ -1833,7 +1953,11 @@ details[open] > summary{margin-bottom:4px}
     const total = items.reduce((a, i) => a + i.total, 0);
     y += 80;
     txt('TOTAL', 64, y, '800 44px ' + ff, tinta); txt(regalo ? 'Es un regalo 💚' : fmt(total), W - 64, y, '800 44px ' + ff, tinta, 'right');
-    if (datos.tasa && !regalo) { y += 52; txt(fmtBs(total * datos.tasa.valor) + ' · tasa BCV ' + datos.tasa.valor.toLocaleString('es-VE', { maximumFractionDigits: 2 }), W - 64, y, '400 26px ' + ff, gris, 'right'); }
+    if (sinPagar && abonado(p)) {
+      y += 55; txt('Ya pagó', 64, y, '600 32px ' + ff, gris); txt(fmt(abonado(p)), W - 64, y, '600 32px ' + ff, gris, 'right');
+      y += 55; txt('FALTA', 64, y, '800 40px ' + ff, '#D33A2C'); txt(fmt(falta(p)), W - 64, y, '800 40px ' + ff, '#D33A2C', 'right');
+    }
+    if (datos.tasa && !regalo) { y += 52; txt(fmtBs((sinPagar && abonado(p) ? falta(p) : total) * datos.tasa.valor) + ' · tasa BCV ' + datos.tasa.valor.toLocaleString('es-VE', { maximumFractionDigits: 2 }), W - 64, y, '400 26px ' + ff, gris, 'right'); }
     // sello PAGADO o PENDIENTE DE PAGO
     const rojo = '#D33A2C';
     x.save(); x.translate(250, y + 85); x.rotate(-0.12);
