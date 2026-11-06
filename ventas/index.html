@@ -138,6 +138,9 @@ nav.tabs button:hover{color:var(--ink)}
 .barra-total[hidden]{display:none}
 .grupo-clicker{border:1px solid var(--line);border-radius:14px;padding:4px 12px 2px;margin:8px 0}
 .grupo-clicker.activo{border-color:var(--brand);box-shadow:0 0 0 2px color-mix(in srgb, var(--brand) 35%, transparent)}
+.iguales-v{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(92,186,46,.12);border-radius:10px;padding:6px 10px;margin:6px 0 8px;font-size:14px}
+.iguales-v small{color:var(--muted)}
+.iguales-v input{width:56px;text-align:center;font-weight:700;padding:6px 4px}
 .grupo-cab{display:flex;justify-content:space-between;align-items:center;padding:8px 0 2px;font-size:15px;cursor:pointer}
 .grupo-cab span{font-size:13px;color:var(--muted)} .grupo-cab span b{font-size:16px;color:var(--ink)}
 #carrito .linea.sangria:last-child{border-bottom:0}
@@ -1253,21 +1256,25 @@ details[open] > summary{margin-bottom:4px}
   const esBase = n => n.startsWith('Base de clicker');
   const esIncluidoN = n => /incluid[oa] en el precio/i.test(n);
   // "1 base de 4 · 4 letras · 2 charms · 1 aro": lo que tienes que preparar
+  // varios clickers iguales: cada clicker del carrito puede repetirse (veces[grupo] = cuántos iguales)
+  const veces = {};
+  const qt = c => c.cantidad * (c.grupo ? (veces[c.grupo] || 1) : 1);
   function resumenCarrito() {
     if (!carrito.length) return '';
-    const cuenta = f => carrito.filter(c => f(c.producto)).reduce((n, c) => n + c.cantidad, 0);
+    const cuenta = f => carrito.filter(c => f(c.producto)).reduce((n, c) => n + qt(c), 0);
     const pl = (n, uno, varios) => n + ' ' + (n === 1 ? uno : varios);
-    const bases = carrito.filter(c => esBase(c.producto)).flatMap(c => Array(c.cantidad).fill((c.producto.match(/(\d+) tecla/) || [])[1])).filter(Boolean);
+    const bases = carrito.filter(c => esBase(c.producto)).flatMap(c => Array(qt(c)).fill((c.producto.match(/(\d+) tecla/) || [])[1])).filter(Boolean);
     const partes = [];
     const lista = xs => xs.length > 1 ? xs.slice(0, -1).join(', ') + ' y ' + xs[xs.length - 1] : xs[0];
-    if (bases.length) partes.push(bases.length === 1 ? 'base de ' + bases[0] : bases.length + ' bases (de ' + lista(bases) + ')');
+    const tam = [...new Set(bases)];
+    if (bases.length) partes.push(bases.length === 1 ? 'base de ' + bases[0] : tam.length === 1 ? bases.length + ' bases de ' + tam[0] : bases.length + ' bases (de ' + lista(tam.map(t => { const k = bases.filter(x => x === t).length; return k > 1 ? k + '×' + t : t; })) + ')');
     const l = cuenta(esLetra); if (l) partes.push(pl(l, 'letra', 'letras'));
     const o = cuenta(esObjeto); if (o) partes.push(pl(o, 'clicker de objeto', 'clickers de objeto'));
     const ch = cuenta(n => /^Charm/.test(n)); if (ch) partes.push(pl(ch, 'charm', 'charms'));
     const a = cuenta(n => /^Aro/.test(n)); if (a) partes.push(pl(a, 'aro', 'aros'));
     const m = cuenta(n => /^(Corazón con|Flor con)/.test(n)); if (m) partes.push(pl(m, 'dije de metal', 'dijes de metal'));
     const otros = carrito.filter(c => !esBase(c.producto) && !esIncluidoN(c.producto) && !esLetra(c.producto) && !esObjeto(c.producto) && !/^(Charm|Aro|Corazón con|Flor con)/.test(c.producto));
-    otros.forEach(c => partes.push(c.cantidad + ' × ' + nombreCorto(c.producto)));
+    otros.forEach(c => partes.push(qt(c) + ' × ' + nombreCorto(c.producto)));
     return '🧩 ' + partes.join(' · ');
   }
   $('#carrito').addEventListener('click', e => {
@@ -1297,19 +1304,21 @@ details[open] > summary{margin-bottom:4px}
       const grupos = [...new Set(carrito.filter(c => c.grupo).map(c => c.grupo))];
       let html = grupos.map((g, k) => {
         const its = carrito.map((c, i) => ({ c, i })).filter(x => x.c.grupo === g);
-        const subt = its.reduce((s2, x) => s2 + x.c.cantidad * (Number(x.c.precio) || 0), 0);
+        const uno = its.reduce((s2, x) => s2 + x.c.cantidad * (Number(x.c.precio) || 0), 0), n = veces[g] || 1;
         const sel = g === grupoActual && grupos.length > 1;
         return `<div class="grupo-clicker${sel ? ' activo' : ''}" data-g="${g}">
-          <div class="grupo-cab"><b>🔑 Clicker ${k + 1}</b><span>${sel ? 'lo que toques va aquí · ' : ''}<b>${fmt(subt)}</b></span></div>
-          ${its.map(x => linea(x.c, x.i, true)).join('')}</div>`;
+          <div class="grupo-cab"><b>🔑 Clicker ${k + 1}</b><span>${sel ? 'lo que toques va aquí · ' : ''}<b>${fmt(uno * n)}</b></span></div>
+          ${its.map(x => linea(x.c, x.i, true)).join('')}
+          <div class="iguales-v"><span><b>¿Cuántos iguales?</b>${n > 1 ? `<br><small>${n} × ${fmt(uno)}</small>` : ''}</span>
+            <span class="cant"><button data-v="-" data-vg="${g}" aria-label="Uno menos">−</button><input data-vin="${g}" type="number" inputmode="numeric" min="1" max="500" value="${n}" aria-label="Cuántos iguales"><button data-v="+" data-vg="${g}" aria-label="Uno más">+</button></span></div></div>`;
       }).join('');
       const sueltos = carrito.map((c, i) => ({ c, i })).filter(x => !x.c.grupo);
       if (sueltos.length) html += (grupos.length ? '<div class="grupo-cab" style="margin-top:8px"><b>Aparte</b></div>' : '') + sueltos.map(x => linea(x.c, x.i, false)).join('');
       box.innerHTML = html;
     }
     const del = montoDelivery();
-    const sub = carrito.reduce((s, c) => s + c.cantidad * c.precio, 0);
-    const conDesc = carrito.reduce((s, c) => s + c.cantidad * conDescuento(c.precio), 0);
+    const sub = carrito.reduce((s, c) => s + qt(c) * c.precio, 0);
+    const conDesc = carrito.reduce((s, c) => s + qt(c) * conDescuento(c.precio), 0);
     const extraV = parseFloat($('#vExtra').value) > 0 ? parseFloat($('#vExtra').value) : 0;
     const total = conDesc + (delQuien === 'cliente' ? del : 0) + extraV;
     $('#txtDesc').hidden = !descuento || !carrito.length;
@@ -1318,7 +1327,7 @@ details[open] > summary{margin-bottom:4px}
       : `Antes ${fmt(sub)} · descuento ${Math.round(descuento * 100)}%: <b>−${fmt(sub - conDesc)}</b>`;
     $('#txtTotal').title = del && delQuien === 'cliente' ? 'Incluye delivery' : '';
     $('#txtTotal').textContent = fmt(total);
-    const nArt = carrito.reduce((n, c) => n + (/incluid[oa] en el precio/i.test(c.producto) ? 0 : c.cantidad), 0);
+    const nArt = carrito.reduce((n, c) => n + (/incluid[oa] en el precio/i.test(c.producto) ? 0 : qt(c)), 0);
     $('#btCant').textContent = nArt + (nArt === 1 ? ' artículo' : ' artículos');
     $('#btTotal').textContent = fmt(total);
     actualizarBarra();
@@ -1334,7 +1343,12 @@ details[open] > summary{margin-bottom:4px}
     else if (c.grupo) ajustarBase(c.grupo);
     pintarCarrito();
   });
+  $('#carrito').addEventListener('click', e => {
+    const b = e.target.closest('button[data-v]'); if (!b) return;
+    const g = +b.dataset.vg; veces[g] = Math.max(1, Math.min(500, (veces[g] || 1) + (b.dataset.v === '+' ? 1 : -1))); pintarCarrito();
+  });
   $('#carrito').addEventListener('change', e => {
+    if (e.target.dataset.vin) { const g = +e.target.dataset.vin; veces[g] = Math.max(1, Math.min(500, Math.round(+e.target.value || 1))); pintarCarrito(); return; }
     const i = e.target.dataset.p; if (i == null) return;
     const v = parseFloat(e.target.value); carrito[+i].precio = v >= 0 ? v : 0; carrito[+i].manual = true; pintarCarrito();
   });
@@ -1366,14 +1380,14 @@ details[open] > summary{margin-bottom:4px}
       metodo: descuento === 1 ? '' : metodoV(),
       // sin método de pago = no ha pagado: si se lo llevó queda "Entregado · debe", si no, "Sin pagar"
       estado: (descuento === 1 || (modo === 'bazar' && !metodoV())) && $('#vEstado').value === 'Pagado' ? 'Pedido' : $('#vEstado').value,
-      items: carrito.map(c => ({ producto: c.producto, cantidad: c.cantidad, precio: conDescuento(c.precio), precioManual: c.otro || descuento > 0 || c.precio !== c.base })),
+      items: carrito.map(c => ({ producto: c.producto, cantidad: qt(c), precio: conDescuento(c.precio), precioManual: c.otro || descuento > 0 || c.precio !== c.base })),
       datosCliente: Object.fromEntries(CAMPOS_CLIENTE.map(([k, sel]) => [k, $(sel).value.trim()])),
       fecha: $('#vFecha').value || hoyISO(),
     };
     const del = montoDelivery();
     if (del && delQuien === 'cliente') cuerpo.items.push({ producto: 'Delivery', cantidad: 1, precio: del, precioManual: true });
     // cada tecla (letra) y cada clicker de objeto lleva un switch: se descuenta solo del inventario
-    const nSw = carrito.reduce((n, c) => n + (esLetra(c.producto) || esObjeto(c.producto) ? c.cantidad : 0), 0);
+    const nSw = carrito.reduce((n, c) => n + (esLetra(c.producto) || esObjeto(c.producto) ? qt(c) : 0), 0);
     const SW = 'Switch para clicker (sueltos, incluido en el precio)';
     if (nSw && datos.productos.some(x => x.nombre === SW) && !carrito.some(c => c.producto === SW))
       cuerpo.items.push({ producto: SW, cantidad: nSw, precio: 0, precioManual: descuento === 1 });
@@ -1391,8 +1405,8 @@ details[open] > summary{margin-bottom:4px}
 
   async function guardarAgregado() {
     const p = datos.ventas.find(v => v.numero === agregandoA); if (!p) return terminarAgregar(false);
-    const items = carrito.map(c => ({ producto: c.producto, cantidad: c.cantidad, precio: conDescuento(c.precio), precioManual: c.otro || descuento > 0 || c.precio !== c.base }));
-    const nSw = carrito.reduce((n, c) => n + (esLetra(c.producto) || esObjeto(c.producto) ? c.cantidad : 0), 0);
+    const items = carrito.map(c => ({ producto: c.producto, cantidad: qt(c), precio: conDescuento(c.precio), precioManual: c.otro || descuento > 0 || c.precio !== c.base }));
+    const nSw = carrito.reduce((n, c) => n + (esLetra(c.producto) || esObjeto(c.producto) ? qt(c) : 0), 0);
     const SW = 'Switch para clicker (sueltos, incluido en el precio)';
     if (nSw && datos.productos.some(x => x.nombre === SW) && !carrito.some(c => c.producto === SW)) items.push({ producto: SW, cantidad: nSw, precio: 0 });
     const ok = await accion({ accion: 'venta', numero: p.numero, cliente: p.cliente, canal: p.canal, metodo: p.metodo, estado: p.estado,
