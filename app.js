@@ -34,7 +34,7 @@ const PRODUCTOS = [
    partes:[{k:"pantalla", nombre:"Pantalla", color:"Blanco"}, {k:"base", nombre:"Base", color:"Blanco"}], corte:.718},
   {id:"soporte",   cat:"Oficina", destacado:true, nombre:"Soporte de teléfono", hoja:"Soporte de teléfono ondulado", precio:7.50, img:"/img/soporte-telefono.webp",
    desc:"Para el escritorio o la mesa de noche. Varios colores.", color:"Blanco"},
-  {id:"nfc-ig",    cat:"Llaveros", destacado:true, nombre:"Llavero NFC personalizado", hoja:"Llavero NFC Instagram", precio:5.00, img:"/img/llavero-nfc.webp",
+  {id:"nfc-ig",    cat:"Llaveros", destacado:true, nombre:"Llavero NFC personalizado", hoja:"Llavero NFC personalizado", precio:5.00, img:"/img/llavero-nfc.webp",
    desc:"Acercas el teléfono y se abre el link que quieras: tu Instagram, WhatsApp, página web, menú o catálogo.", color:"Blanco", sinColor:true},
   {id:"fidget",    cat:"Fidgets", nombre:"Fidget estrella", hoja:"Fidget estrella", precio:null, img:null,
    desc:"Para tener en las manos y no parar de jugar. Varios colores.", color:"Blanco"},
