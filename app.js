@@ -11,7 +11,7 @@ const COLORES = [   // [nombre, color, (fondo del botón)] — los mismos de cre
   ["Dorado","#E2C233","linear-gradient(135deg, #FFF6A6 0%, #E2C233 38%, #9E8212 62%, #FFF6A6 100%)"],
   ["Mármol","#E7E6E2","radial-gradient(circle at 30% 35%, #9a9a9a 0 1.5px, transparent 2px), radial-gradient(circle at 65% 60%, #8c8c8c 0 1.5px, transparent 2px), radial-gradient(circle at 45% 75%, #a5a5a5 0 1px, transparent 1.5px), #E7E6E2"]
 ];
-const FIL_AGOTADO = new Set(["Fucsia","Celeste"]);
+const FIL_AGOTADO = new Set(["Fucsia","Celeste","Verde claro"]);
 const CATEGORIAS = ["Casa", "Oficina", "Llaveros", "Fidgets", "Para negocios"];
 // hoja: nombre exacto del producto en la hoja de ventas (para que se anote solo). precio: null = se cotiza.
 // sinColor: true = no se escoge color (se hace como en la foto o a pedido).
