@@ -615,6 +615,7 @@ details[open] > summary{margin-bottom:4px}
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
+  const VERSION_PAGINA = '20261106021535';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -2306,6 +2307,14 @@ details[open] > summary{margin-bottom:4px}
         if (y) setTimeout(() => scrollTo(0, y), 60);
       }
       iniciado = true;
+      // si se publicó una versión nueva de esta página, se recarga sola (solo cuando no estás escribiendo ni vendiendo)
+      setInterval(async () => {
+        try {
+          const v = (await (await fetch('/ventas/version.txt', { cache: 'no-store' })).text()).trim();
+          if (v && v !== VERSION_PAGINA && !cola.length && !editando && !webAbierto && !carrito.length &&
+              !(document.activeElement && /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))) location.reload();
+        } catch (e) {}
+      }, 120000);
       setInterval(() => { if (cola.length) vaciarCola(); else if (!document.hidden && !editando && !webAbierto && !editProd && !editPC && !compraPC && !editG && !pagarG && !(document.activeElement && /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))) recargar(true); }, 60000);
       window.addEventListener('online', vaciarCola);
     }
