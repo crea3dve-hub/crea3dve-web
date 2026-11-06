@@ -96,6 +96,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-o
 .copias{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px}
 .copias input{width:72px;text-align:center;font-weight:700}
 .copias .btn{min-width:44px;min-height:44px;font-size:20px;padding:0}
+.iguales{background:rgba(92,186,46,.12);border-radius:14px;padding:12px 14px;margin:12px 0 6px;display:flex;flex-direction:column;gap:4px}
 .web-cli{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(92,186,46,.12);border-radius:12px;padding:10px 12px;margin:8px 0}
 .web-foto{display:inline-block;margin:4px 0 8px;font-weight:700}
 .web-det{margin:4px 0 10px;display:grid;gap:8px}
@@ -1407,6 +1408,17 @@ details[open] > summary{margin-bottom:4px}
     pintarPedidos();
   });
   let editando = null;
+  // "¿Pidió varios iguales?": multiplica las cantidades originales del pedido y muestra el total
+  function aplicarIguales(card) {
+    const n = Math.max(1, Math.min(500, Math.round(+card.querySelector('[data-iguales]').value || 1)));
+    let tot = 0;
+    card.querySelectorAll('.ed-item').forEach(row => {
+      const q = row.querySelector('[data-q]'), pr = +row.querySelector('[data-p]').value || 0;
+      q.value = (+q.dataset.q0 || 0) * n; if (!row.classList.contains('quitado')) tot += (+q.value) * pr;
+    });
+    card.querySelector('[data-ig-total]').innerHTML = n > 1 ? `= <b>${fmt(tot)}</b> en total` : '';
+  }
+  document.addEventListener('input', e => { if (e.target.matches('.editor [data-iguales]')) aplicarIguales(e.target.closest('.editor')); });
   function editorPedido(p) {
     const L = datos.listas;
     const ops = (lista, v, vacio) => (vacio ? `<option value="">${vacio}</option>` : '') + lista.map(x => `<option${x === v ? ' selected' : ''}>${esc(x)}</option>`).join('');
@@ -1425,10 +1437,16 @@ details[open] > summary{margin-bottom:4px}
         <div><label>Cómo pagó</label><select data-f="metodo">${ops(L.metodosVenta, p.metodo, 'Todavía no paga')}</select></div>
       </div>
       <label>Comentario</label><input data-f="nota" value="${esc(p.nota || '')}" placeholder="Ej: pagó $10, lo retira el domingo…">
+      <div class="iguales">
+        <b>¿Pidió varios iguales?</b>
+        <span class="chico">Pon cuántos y todas las cantidades se multiplican solas.</span>
+        <div class="copias"><button type="button" class="btn chico" data-ig="-1" aria-label="Uno menos">−</button><input data-iguales type="number" inputmode="numeric" min="1" max="500" value="1" aria-label="Cuántos iguales"><button type="button" class="btn chico" data-ig="1" aria-label="Uno más">+</button>
+          <span class="chico" data-ig-total></span></div>
+      </div>
       <label>Productos</label>
       ${p.items.map((i, k) => `<div class="ed-item" data-k="${k}">
         <span class="nom">${esc(i.producto)}</span>
-        <input data-q type="number" inputmode="numeric" min="0" value="${i.cantidad}" aria-label="Cantidad">
+        <input data-q data-q0="${i.cantidad}" type="number" inputmode="numeric" min="0" value="${i.cantidad}" aria-label="Cantidad">
         <input data-p type="number" inputmode="decimal" step="0.01" min="0" value="${i.precio || (i.cantidad ? +(i.total / i.cantidad).toFixed(2) : 0)}" aria-label="Precio c/u">
         <button class="btn chico peligro" data-quitar aria-label="Quitar">✕</button>
       </div>`).join('')}
@@ -1839,6 +1857,7 @@ details[open] > summary{margin-bottom:4px}
       else if (e.target.closest('[data-guardar]')) guardarEdicion(card);
       else if (e.target.closest('[data-add-vender]')) empezarAgregar(card.dataset.ed);
       else if (e.target.closest('[data-add-delivery]')) agregarDelivery(card.dataset.ed);
+      else if (e.target.closest('[data-ig]')) { const inp = card.querySelector('[data-iguales]'); inp.value = Math.max(1, Math.min(500, (+inp.value || 1) + +e.target.closest('[data-ig]').dataset.ig)); aplicarIguales(card); }
       return;
     }
     const bc = e.target.closest('button[data-cobro]');
