@@ -93,6 +93,9 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-o
 .pedido-cab .num{font-weight:800}
 .chico{font-size:13px;color:var(--muted)}
 .lista-items{margin:8px 0 10px;padding:0;list-style:none;font-size:14px}
+.copias{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px}
+.copias input{width:72px;text-align:center;font-weight:700}
+.copias .btn{min-width:44px;min-height:44px;font-size:20px;padding:0}
 .web-cli{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(92,186,46,.12);border-radius:12px;padding:10px 12px;margin:8px 0}
 .web-foto{display:inline-block;margin:4px 0 8px;font-weight:700}
 .web-det{margin:4px 0 10px;display:grid;gap:8px}
@@ -1575,11 +1578,21 @@ details[open] > summary{margin-bottom:4px}
             <div><label>Teléfono</label><input data-wk="telefono" type="tel" value="${esc(w.telefono || '')}"></div>
           </div>
           <label>Nombre del cliente</label><input data-wk="cliente" placeholder="Como aparece en WhatsApp" value="${esc(w.nombre || '')}">
+          <label>¿Cuántos iguales pidió?</label>
+          <div class="copias"><button type="button" class="btn chico" data-cop="-1" aria-label="Uno menos">−</button><input data-wk="copias" type="number" inputmode="numeric" min="1" max="500" value="1" aria-label="Cantidad de iguales"><button type="button" class="btn chico" data-cop="1" aria-label="Uno más">+</button>
+            <span class="chico" data-cop-total>Total: <b>${fmt(w.total)}</b></span></div>
           <div class="acciones" style="margin-top:10px"><button class="btn chico primario" data-w-ok>Crear pedido</button><button class="btn chico" data-w-x>Cancelar</button></div>`
         : `<div class="acciones"><button class="btn chico primario" data-w-pasar>Pasar a pedido</button><button class="btn chico peligro" data-w-del>Descartar</button></div>`}
       </div>`).join('') + '<h3>Mis pedidos</h3>' : '';
   }
+  // cuántos clickers iguales: actualiza el total al momento
+  const copiasDe = card => Math.max(1, Math.min(500, Math.round(+card.querySelector('[data-wk="copias"]')?.value || 1)));
+  function pintarCopias(card) {
+    const w = (datos.pedidosWeb || []).find(x => x.fila === +card.dataset.w), n = copiasDe(card), t = card.querySelector('[data-cop-total]');
+    if (w && t) t.innerHTML = `Total: <b>${fmt(w.total * n)}</b>${n > 1 ? ` (${n} × ${fmt(w.total)})` : ''}`;
+  }
   $('#bandejaWeb').addEventListener('input', e => {
+    if (e.target.dataset.wk === 'copias') { pintarCopias(e.target.closest('[data-w]')); return; }
     if (e.target.dataset.wk !== 'cedula') return;
     const card = e.target.closest('[data-w]'), c = buscarPorCedula(e.target.value);
     if (c) { card.querySelector('[data-wk="cliente"]').value = c.nombre; if (c.telefono) card.querySelector('[data-wk="telefono"]').value = c.telefono; }
@@ -1588,6 +1601,8 @@ details[open] > summary{margin-bottom:4px}
     const card = e.target.closest('[data-w]'); if (!card) return;
     const fila = +card.dataset.w, w = (datos.pedidosWeb || []).find(x => x.fila === fila); if (!w) return;
     if (e.target.closest('[data-w-pasar]')) { webAbierto = fila; pintarWeb(); return; }
+    const cop = e.target.closest('[data-cop]');
+    if (cop) { const inp = card.querySelector('[data-wk="copias"]'); inp.value = Math.max(1, Math.min(500, copiasDe(card) + +cop.dataset.cop)); pintarCopias(card); return; }
     if (e.target.closest('[data-w-x]')) { webAbierto = null; pintarWeb(); return; }
     if (e.target.closest('[data-w-del]')) {
       if (!confirm('¿Descartar este pedido de la web?')) return;
@@ -1596,7 +1611,7 @@ details[open] > summary{margin-bottom:4px}
     }
     if (e.target.closest('[data-w-ok]')) {
       const v = k => card.querySelector(`[data-wk="${k}"]`).value.trim();
-      const cliW = v('cliente');
+      const cliW = v('cliente'), copias = copiasDe(card);
       const res = await accion({ accion: 'convertirWeb', fila, idWeb: w.id, cliente: cliW, datosCliente: { cedula: v('cedula'), telefono: v('telefono') } });
       if (res) {
         webAbierto = null;
@@ -1604,15 +1619,17 @@ details[open] > summary{margin-bottom:4px}
         const num = ((res.mensaje || '').match(/V-\d+/) || [])[0];
         if (num) {
           const extra = [];
+          // si pidió varios iguales: el pedido se crea con uno y aquí se suman los demás
+          if (copias > 1) w.items.forEach(i => extra.push({ producto: i.producto, cantidad: i.cantidad * (copias - 1), precio: i.precio, precioManual: true }));
           let sw = 0;
           w.items.forEach(i => {
-            if (esLetra(i.producto)) { const b = baseDe(i.cantidad); if (b) extra.push({ producto: b.nombre, cantidad: 1, precio: 0, precioManual: true }); sw += i.cantidad; }
-            else if (esObjeto(i.producto)) sw += i.cantidad;
+            if (esLetra(i.producto)) { const b = baseDe(i.cantidad); if (b) extra.push({ producto: b.nombre, cantidad: copias, precio: 0, precioManual: true }); sw += i.cantidad * copias; }
+            else if (esObjeto(i.producto)) sw += i.cantidad * copias;
           });
           const SW = 'Switch para clicker (sueltos, incluido en el precio)';
           if (sw && datos.productos.some(x => x.nombre === SW)) extra.push({ producto: SW, cantidad: sw, precio: 0, precioManual: true });
           if (extra.length) accionFondo({ accion: 'venta', numero: num, cliente: cliW || ('Web ' + (w.palabras || '')), canal: 'Página web',
-            metodo: '', estado: 'Pedido', items: extra }, 'Base y switches anotados en ' + num);
+            metodo: '', estado: 'Pedido', items: extra }, (copias > 1 ? copias + ' iguales · ' : '') + 'Base y switches anotados en ' + num);
         }
       }
     }
