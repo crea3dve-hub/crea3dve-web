@@ -111,6 +111,9 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-o
 .web-clk{border:1px solid var(--line);border-radius:12px;padding:8px 10px;display:grid;gap:6px}
 .web-clk .tit{font-weight:800;font-size:13px;color:var(--muted)}
 .teclas{display:flex;gap:4px;flex-wrap:wrap;padding:6px 6px 9px;border-radius:9px;width:max-content;max-width:100%}
+.tecla.hecha{opacity:.3}
+.imp-falta{display:inline-block;font-size:12.5px;font-weight:700;border-radius:999px;padding:3px 9px;margin:6px 0 2px;background:var(--amber-soft);color:var(--amber)}
+.imp-falta.ok{background:var(--brand-soft);color:var(--ink)}
 .tecla{width:30px;height:30px;border-radius:7px;display:grid;place-items:center;font:800 16px/1 "Nunito","Figtree",system-ui,sans-serif;box-shadow:inset 0 -3px 0 rgba(0,0,0,.16);border:1px solid rgba(0,0,0,.12)}
 .web-lin{font-size:13.5px;margin:0;padding:0;list-style:none;display:grid;gap:2px;overflow-wrap:anywhere}
 .web-txt{white-space:pre-wrap;font-size:13px;color:var(--muted);margin-top:6px;overflow-wrap:anywhere}
@@ -655,7 +658,7 @@ details[open] > summary{margin-bottom:4px}
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261107192351';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261107193222';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1625,7 +1628,7 @@ details[open] > summary{margin-bottom:4px}
   const sinAst = t => String(t || '').replace(/\*/g, '');
   // items: si el pedido ya es venta, solo se muestran los extras que siguen en la venta (si quitaste uno, no sale)
   const palabras = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\([^)]*\)/g, ' ').match(/[a-zñ]{3,}/g) || [];
-  function detalleWeb(texto, items) {
+  function detalleWeb(texto, items, numero) {
     let quedan = null;
     if (items) quedan = items.map(i => ({ w: palabras(i.producto), n: i.cantidad || 1 })).filter(x => x.w.length);
     const sigue = x => {
@@ -1646,11 +1649,15 @@ details[open] > summary{margin-bottom:4px}
         let enExtras = false;
         lineas.forEach(l => { if (/^Extras:/.test(l.trim())) { enExtras = true; return; } if (enExtras) { if (!l.trim() || /^(Subtotal|🔗|💰|📸)/.test(l.trim())) enExtras = false; else extras.push(sinAst(l.trim())); } });
         const otras = lineas.map(l => l.trim()).filter(l => /^(🔗|⛓|🔑|🎀)/.test(l) && !/crea3dve\.com/.test(l)).map(sinAst);
-        const tira = teclas.length ? `<div class="teclas" style="background:${hexDe(base && base[1])}">${teclas.map(m => {
+        // si es un pedido por entregar: las teclas ya impresas salen clarito y se dice cuántas faltan
+        const hecha = i => numero && ltHechas && ltHechas.has(numero + '-' + n + '-' + i);
+        const faltan = numero ? teclas.filter((m, i) => !hecha(i)).length : 0;
+        const tira = teclas.length ? `<div class="teclas" style="background:${hexDe(base && base[1])}">${teclas.map((m, i) => {
             const ch = SIMBOLO[m[1].trim().toLowerCase()] || m[1].trim();
-            return `<span class="tecla" title="tecla ${esc(m[2])} · letra ${esc(m[3])}" style="background:${hexDe(m[2])};color:${hexDe(m[3])}">${esc(ch)}</span>`; }).join('')}</div>` : '';
+            return `<span class="tecla${hecha(i) ? ' hecha' : ''}" title="tecla ${esc(m[2])} · letra ${esc(m[3])}${hecha(i) ? ' · ya impresa' : ''}" style="background:${hexDe(m[2])};color:${hexDe(m[3])}">${esc(ch)}</span>`; }).join('')}</div>` : '';
         return `<div class="web-clk">${bloques.length > 1 ? `<div class="tit">Clicker ${n + 1}</div>` : ''}
           ${tira}
+          ${numero && teclas.length ? `<span class="imp-falta${faltan ? '' : ' ok'}">${faltan ? '🖨️ Faltan ' + faltan + ' de ' + teclas.length + ' teclas por imprimir' : '✓ Todas las teclas impresas'}</span>` : ''}
           <ul class="web-lin">${base ? `<li>🧱 Base <b>${esc(base[1])}</b> · ${esc(sinAst(base[2]))}</li>` : ''}
             ${teclas.map((m, i) => `<li>${i + 1}. <b>${esc(m[1])}</b> → tecla ${esc(m[2])} · letra ${esc(m[3])}</li>`).join('')}
             ${extras.concat(otras).filter(sigue).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
@@ -1908,7 +1915,7 @@ details[open] > summary{margin-bottom:4px}
   /* ---------- Lista para imprimir: teclas de los pedidos por entregar, agrupadas por color ---------- */
   // Se arma solo al abrirla (no hace lenta la página). Lo marcado como impreso se guarda en este teléfono.
   const leerSet = k => { try { return new Set(JSON.parse(leer(k) || '[]')); } catch (e) { return new Set(); } };
-  let ltFuera = null, ltHechas = null, ltOcultar = false;
+  var ltFuera = null, ltHechas = null, ltOcultar = false;
   function datosLotes() {
     const peds = [], teclas = [], sinDiseno = [];
     datos.ventas.filter(p => p.estado === 'Pedido' || p.estado === 'Pagado').forEach(p => {
@@ -1927,7 +1934,7 @@ details[open] > summary{margin-bottom:4px}
       const enDiseno = lista.length, n = enDiseno && letras > enDiseno && letras % enDiseno === 0 ? letras / enDiseno : 1;
       lista.forEach(t => { t.n = n; teclas.push(t); });
       if (letras > enDiseno * n) sinDiseno.push(p.numero + ' · ' + (p.cliente || '') + ' · ' + (letras - enDiseno * n) + ' teclas más, sin diseño');
-      peds.push({ v: p.numero, c: (p.cliente || '').split(' ')[0], n: enDiseno * n });
+      peds.push({ v: p.numero, c: (p.cliente || '').split(' ')[0], n: enDiseno * n, ids: lista.map(t => t.id) });
     });
     return { peds, teclas, sinDiseno };
   }
@@ -1947,8 +1954,10 @@ details[open] > summary{margin-bottom:4px}
         <div class="lt-prog"><i style="width:${total ? Math.round(hechas / total * 100) : 0}%"></i></div></div>
         <button class="btn chico" type="button" data-lt-cerrar>✕ Cerrar</button></div>
       <p class="chico" id="ltEstado" style="margin:8px 0 0;font-weight:700">${ltEstadoTxt()}</p>
-      <p class="chico" style="margin:6px 0 0">Toca una tecla cuando ya la imprimiste. Toca un pedido para sacarlo o meterlo en la lista.</p>
-      <div class="lt-peds">${peds.map(x => `<button type="button" data-lt-ped="${esc(x.v)}" aria-pressed="${!ltFuera.has(x.v)}">${esc(x.v)} · ${esc(x.c)} · ${x.n}</button>`).join('')}</div>
+      <p class="chico" style="margin:6px 0 0">Toca una tecla cuando ya la imprimiste. Toca un pedido para ver cómo va.</p>
+      <div class="lt-peds">${peds.map(x => { const h = x.ids.filter(i => ltHechas.has(i)).length;
+        return `<button type="button" data-lt-ped="${esc(x.v)}" aria-pressed="${!ltFuera.has(x.v)}" aria-expanded="${ltVer === x.v}"${ltVer === x.v ? ' style="border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)"' : ''}>${esc(x.c)} · ${h === x.ids.length ? '✓ listo' : h + '/' + x.ids.length}</button>`; }).join('')}</div>
+      ${ltVer ? verPedidoLote(ltVer, teclas) : ''}
       <button type="button" class="btn chico" data-lt-ocultar style="margin-top:6px">${ltOcultar ? '👁 Mostrar también las que ya imprimí' : '🙈 Esconder las que ya imprimí'}</button>
       ${orden.map(t => `<section class="lt-grupo">
         <div class="lt-gcab"><span class="lt-sw" style="background:${fondo(t)}"></span><div><b>Tecla ${esc(t)}</b><span class="chico">${cuenta(grupos[t])} ${cuenta(grupos[t]) === 1 ? 'tecla' : 'teclas'}</span></div></div>
@@ -1963,13 +1972,14 @@ details[open] > summary{margin-bottom:4px}
   }
   // Lo marcado se guarda en Google (se ve igual en todos tus equipos). Se ve al instante y se manda por detrás,
   // juntando varios toques en un solo envío. Si no hay señal, queda en el teléfono y se manda después.
-  let ltPend = { hechas: {}, fuera: {} }; try { ltPend = JSON.parse(leer('c3_lote_pend') || '') || ltPend; } catch (e) {}
-  let ltEnviando = false, ltError = false, ltTimer = null;
+  var ltPend = { hechas: {}, fuera: {} }; try { ltPend = JSON.parse(leer('c3_lote_pend') || '') || ltPend; } catch (e) {}
+  var ltEnviando = false, ltError = false, ltTimer = null;
   function aplicarLote(l) {
     l = l || { hechas: [], fuera: ['V-0133', 'V-0120'] };
     ltHechas = new Set(l.hechas || []); ltFuera = new Set(l.fuera || []);
-    Object.entries(ltPend.hechas).forEach(([k, v]) => v ? ltHechas.add(k) : ltHechas.delete(k));
-    Object.entries(ltPend.fuera).forEach(([k, v]) => v ? ltFuera.add(k) : ltFuera.delete(k));
+    const pend = ltPend || { hechas: {}, fuera: {} };
+    Object.entries(pend.hechas).forEach(([k, v]) => v ? ltHechas.add(k) : ltHechas.delete(k));
+    Object.entries(pend.fuera).forEach(([k, v]) => v ? ltFuera.add(k) : ltFuera.delete(k));
   }
   const hayPend = () => Object.keys(ltPend.hechas).length + Object.keys(ltPend.fuera).length > 0;
   const ltEstadoTxt = () => ltEnviando || (hayPend() && !ltError) ? '⏳ Guardando…' : ltError ? '📴 Sin conexión: quedó en este teléfono y se guarda solo cuando vuelva la señal' : '✓ Guardado · lo ves igual en todos tus equipos';
@@ -2004,6 +2014,24 @@ details[open] > summary{margin-bottom:4px}
     } catch (e) {}
   }
   setTimeout(ltEnviar, 4000);   // si quedó algo sin mandar de antes
+  let ltVer = null;   // pedido abierto arriba de la lista
+  function verPedidoLote(v, teclas) {
+    const p = datos.ventas.find(x => x.numero === v); if (!p) return '';
+    const mias = teclas.filter(t => t.v === v), por = {};
+    mias.forEach(t => { const k = t.id.split('-').slice(-2, -1)[0]; (por[k] = por[k] || []).push(t); });
+    const h = mias.filter(t => ltHechas.has(t.id)).length, fuera = ltFuera.has(v);
+    const fondo = c => COLORES_FONDO[c] || hexDe(c);
+    return `<section class="lt-grupo" style="border-color:var(--ink)">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+        <div><b style="font-size:17px">${esc(p.cliente || 'Sin nombre')}</b><div class="chico">${esc(v)} · ${h === mias.length ? '✓ todas impresas' : h + ' de ' + mias.length + ' impresas · faltan ' + (mias.length - h)}</div></div>
+        <button type="button" class="btn chico" data-lt-vercerrar>✕</button></div>
+      <div class="lt-prog"><i style="width:${mias.length ? Math.round(h / mias.length * 100) : 0}%"></i></div>
+      ${Object.values(por).map(ks => `<div class="lt-sub"><div>${esc(ks[0].pal)}${ks[0].n > 1 ? ' · ×' + ks[0].n : ''}</div>
+        <div class="lt-keys">${ks.map(k => `<button type="button" class="lt-k" data-lt-k="${esc(k.id)}" aria-pressed="${ltHechas.has(k.id)}" aria-label="Tecla ${esc(k.t)}, letra ${esc(k.l)} ${esc(k.lc)}">
+          <span class="cap" style="background:${fondo(k.t)};color:${hexDe(k.lc)}">${esc(k.l)}</span><small>${esc(k.t)}</small></button>`).join('')}</div></div>`).join('')}
+      <button type="button" class="btn chico" data-lt-sacar="${esc(v)}" style="margin-top:12px">${fuera ? '➕ Volver a meterlo en la lista' : '➖ Sacarlo de la lista (ya está hecho)'}</button>
+    </section>`;
+  }
   const COLORES_FONDO = { 'plateado': 'linear-gradient(135deg,#F4F5F7,#C9CCD1 38%,#8E939A 62%,#F4F5F7)', 'morado metalizado': 'linear-gradient(135deg,#C7A6F2,#7E4FC0 38%,#4B2A80 62%,#C7A6F2)',
     'dorado': 'linear-gradient(135deg,#FFF6A6,#E2C233 38%,#9E8212 62%,#FFF6A6)' };
   $('#btnLotes').addEventListener('click', () => { aplicarLote(datos.lote); pintarLotes(); ltTraer(); $('#lotes').hidden = false; document.body.style.overflow = 'hidden'; $('#lotes').scrollTop = 0; });
@@ -2012,11 +2040,15 @@ details[open] > summary{margin-bottom:4px}
     if (e.target.closest('[data-lt-ocultar]')) { ltOcultar = !ltOcultar; pintarLotes(); return; }
     const k = e.target.closest('[data-lt-k]');
     if (k) { const id = k.dataset.ltK, sera = !ltHechas.has(id); sera ? ltHechas.add(id) : ltHechas.delete(id); ltCambio('hechas', id, sera); const y = $('#lotes').scrollTop; pintarLotes(); $('#lotes').scrollTop = y; return; }
-    const pd = e.target.closest('[data-lt-ped]');
-    if (pd) { const v = pd.dataset.ltPed, sera = !ltFuera.has(v); sera ? ltFuera.add(v) : ltFuera.delete(v); ltCambio('fuera', v, sera); const y = $('#lotes').scrollTop; pintarLotes(); $('#lotes').scrollTop = y; }
+    if (e.target.closest('[data-lt-vercerrar]')) { ltVer = null; pintarLotes(); return; }
+    const vp = e.target.closest('[data-lt-ped]');
+    if (vp) { ltVer = ltVer === vp.dataset.ltPed ? null : vp.dataset.ltPed; pintarLotes(); $('#lotes').scrollTop = 0; return; }
+    const pd = e.target.closest('[data-lt-sacar]');
+    if (pd) { const v = pd.dataset.ltSacar, sera = !ltFuera.has(v); sera ? ltFuera.add(v) : ltFuera.delete(v); ltCambio('fuera', v, sera); const y = $('#lotes').scrollTop; pintarLotes(); $('#lotes').scrollTop = y; }
   });
 
   function pintarPedidos() {
+    if ($('#lotes').hidden) aplicarLote(datos.lote);
     pintarEnviar();
     pintarWeb();
     const lista = datos.ventas.filter(p =>
@@ -2041,7 +2073,7 @@ details[open] > summary{margin-bottom:4px}
         <div class="pedido-cab"><div><span class="num">${esc(p.numero)}</span> · ${esc(p.cliente || 'Sin nombre')}<div class="chico">${esc(p.fecha)} · ${esc(p.canal)}${p.metodo ? ' · ' + esc(p.metodo) : ''}</div></div>
         <div style="text-align:right"><span class="pill ${conAbono(p) ? 'Abono' : esc(p.estado)}">${esc(conAbono(p) ? (debe(p) ? 'Entregado · ' : '') + 'Abonó ' + Math.round(abonado(p) / p.total * 100) + '%' : debe(p) ? 'Entregado · debe' : PILL_TXT[p.estado] || p.estado || '—')}</span><div style="font-weight:800;margin-top:4px">${regalo ? '🎁 Regalo' : fmt(p.total)}</div></div></div>
         <ul class="lista-items">${p.items.map(i => `<li>${i.cantidad} × ${esc(i.producto)}</li>`).join('')}</ul>
-        ${p.diseno ? detalleWeb(p.diseno, p.items) : ''}
+        ${p.diseno ? detalleWeb(p.diseno, p.items, p.estado === 'Pedido' || p.estado === 'Pagado' ? p.numero : null) : ''}
         ${p.nota ? `<p class="chico" style="margin:4px 0 8px">📝 ${esc(p.nota)}</p>` : ''}
         ${cajaAbonos(p)}
         ${abonoAbierto === p.numero ? formAbono(p) : ''}
