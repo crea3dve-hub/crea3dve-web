@@ -367,7 +367,7 @@ const LINK_PAGINA = "https://crea3dve.com/";   // dominio de la página (el conf
 const PRECIO_LETRA = 1.50;           // cada letra: tecla + switch + su parte de la base (base y cadena incluidas)
 const PRECIO_LLAVERO = 0.50, PRECIO_COLORES = 0.50;
 // Filamentos que se acabaron: se ven tachados y no se pueden escoger (bórralos de aquí cuando vuelvan)
-const FIL_AGOTADO = new Set(["Fucsia","Celeste","Verde claro"]);
+const FIL_AGOTADO = new Set(["Fucsia","Celeste","Verde claro","Rojo"]);
 const CADC = {"Blanco":"#F4F4F2", "Celeste":"#9CC7E8", "Azul":"#1F4FB8", "Verde":"#2E8B3E", "Verde limón":"#A6D84A", "Verde menta":"#7FC4A4", "Amarillo":"#F2D33A", "Naranja":"#F07A2A", "Rojo":"#D9262E", "Fucsia":"#E0306F", "Rosado":"#F49AC1"};   // colores de la cadenita
    // cadenita de colores en vez de la plateada
    // aro de llavero en vez de la cadena de bolitas
@@ -459,7 +459,8 @@ st.font = Math.min(Math.max(0, st.font|0), FONTS.length-1);
 st.base = ren(st.base); st.tiles = (st.tiles||[]).map(ren); st.legs = (st.legs||[]).map(ren);
 if(st.mixTiles) st.mixTiles = st.mixTiles.map(ren); if(st.mixLegs) st.mixLegs = st.mixLegs.map(ren);
 st.charms.forEach(c=>{ c.c = ren(c.c); });
-function sinAgotados(){ const f = c => FIL_AGOTADO.has(c) ? "Rojo" : c;   // un filamento agotado se cambia por uno disponible
+const REEMPLAZO = ["Rojo","Naranja","Azul","Negro"].find(c=>!FIL_AGOTADO.has(c));   // color que toma el lugar de uno agotado
+function sinAgotados(){ const f = c => FIL_AGOTADO.has(c) ? REEMPLAZO : c;   // un filamento agotado se cambia por uno disponible
   st.base = f(st.base); st.tiles = st.tiles.map(f); st.legs = st.legs.map(f); st.charms.forEach(c=>{ c.c = f(c.c); }); }
 // charms personalizados: una lista (antes era uno solo como texto)
 const listaOtros = v => Array.isArray(v) ? v.map(x=>String(x==null?"":x)) : (typeof v==="string" ? [v] : []);
@@ -1057,7 +1058,7 @@ if(fromLink){ $("fromlink").hidden = false;
   // si el diseño del link tiene un color que ya se agotó, se cambia por uno disponible (y se avisa)
   const usados = [st.base, ...st.tiles, ...st.legs, ...st.charms.map(c=>c.c)], ag = [...new Set(usados.filter(c=>FIL_AGOTADO.has(c)))];
   if(ag.length){ sinAgotados(); render();
-    $("fromlink").textContent += ` El color ${ag.map(c=>c.toLowerCase()).join(" y ")} está agotado, lo cambiamos por rojo: puedes escoger otro.`; } }
+    $("fromlink").textContent += ` El color ${ag.map(c=>c.toLowerCase()).join(" y ")} está agotado, lo cambiamos por ${REEMPLAZO.toLowerCase()}: puedes escoger otro.`; } }
 window.__render = render;
 </script>
 <script>
