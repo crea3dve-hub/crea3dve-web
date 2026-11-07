@@ -651,7 +651,7 @@ details[open] > summary{margin-bottom:4px}
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261107191237';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261107191915';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1904,11 +1904,7 @@ details[open] > summary{margin-bottom:4px}
     return { peds, teclas, sinDiseno };
   }
   function pintarLotes() {
-    if (!ltFuera) {
-      ltHechas = leerSet('c3_lote_hechas');
-      // la primera vez quedan fuera los de Maricarmen (CO) y Jenny (PIERO), que ya están hechos
-      ltFuera = leer('c3_lote_fuera') === null ? new Set(['V-0133', 'V-0120']) : leerSet('c3_lote_fuera');
-    }
+    if (!ltFuera) aplicarLote(datos.lote);
     const { peds, teclas, sinDiseno } = datosLotes();
     const activas = teclas.filter(t => !ltFuera.has(t.v));
     const total = activas.reduce((a, t) => a + t.n, 0), hechas = activas.filter(t => ltHechas.has(t.id)).reduce((a, t) => a + t.n, 0);
@@ -1922,7 +1918,8 @@ details[open] > summary{margin-bottom:4px}
         <div class="chico">${total - hechas} teclas por imprimir · ${hechas} listas</div>
         <div class="lt-prog"><i style="width:${total ? Math.round(hechas / total * 100) : 0}%"></i></div></div>
         <button class="btn chico" type="button" data-lt-cerrar>✕ Cerrar</button></div>
-      <p class="chico" style="margin:10px 0 0">Toca una tecla cuando ya la imprimiste. Toca un pedido para sacarlo o meterlo en la lista.</p>
+      <p class="chico" id="ltEstado" style="margin:8px 0 0;font-weight:700">${ltEstadoTxt()}</p>
+      <p class="chico" style="margin:6px 0 0">Toca una tecla cuando ya la imprimiste. Toca un pedido para sacarlo o meterlo en la lista.</p>
       <div class="lt-peds">${peds.map(x => `<button type="button" data-lt-ped="${esc(x.v)}" aria-pressed="${!ltFuera.has(x.v)}">${esc(x.v)} · ${esc(x.c)} · ${x.n}</button>`).join('')}</div>
       <button type="button" class="btn chico" data-lt-ocultar style="margin-top:6px">${ltOcultar ? '👁 Mostrar también las que ya imprimí' : '🙈 Esconder las que ya imprimí'}</button>
       ${orden.map(t => `<section class="lt-grupo">
@@ -1936,16 +1933,59 @@ details[open] > summary{margin-bottom:4px}
       ${sinDiseno.length ? `<div class="lt-aviso"><b>Sin diseño en la página</b> (pedidos por WhatsApp): ${sinDiseno.map(esc).join(' · ')}</div>` : ''}
     </div>`;
   }
+  // Lo marcado se guarda en Google (se ve igual en todos tus equipos). Se ve al instante y se manda por detrás,
+  // juntando varios toques en un solo envío. Si no hay señal, queda en el teléfono y se manda después.
+  let ltPend = { hechas: {}, fuera: {} }; try { ltPend = JSON.parse(leer('c3_lote_pend') || '') || ltPend; } catch (e) {}
+  let ltEnviando = false, ltError = false, ltTimer = null;
+  function aplicarLote(l) {
+    l = l || { hechas: [], fuera: ['V-0133', 'V-0120'] };
+    ltHechas = new Set(l.hechas || []); ltFuera = new Set(l.fuera || []);
+    Object.entries(ltPend.hechas).forEach(([k, v]) => v ? ltHechas.add(k) : ltHechas.delete(k));
+    Object.entries(ltPend.fuera).forEach(([k, v]) => v ? ltFuera.add(k) : ltFuera.delete(k));
+  }
+  const hayPend = () => Object.keys(ltPend.hechas).length + Object.keys(ltPend.fuera).length > 0;
+  const ltEstadoTxt = () => ltEnviando || (hayPend() && !ltError) ? '⏳ Guardando…' : ltError ? '📴 Sin conexión: quedó en este teléfono y se guarda solo cuando vuelva la señal' : '✓ Guardado · lo ves igual en todos tus equipos';
+  const ltPintarEstado = () => { const e = $('#ltEstado'); if (e) e.textContent = ltEstadoTxt(); };
+  function ltCambio(tipo, id, valor) {
+    ltPend[tipo][id] = valor ? 1 : 0; guardar('c3_lote_pend', JSON.stringify(ltPend));
+    ltError = false; clearTimeout(ltTimer); ltTimer = setTimeout(ltEnviar, 1200);
+  }
+  async function ltEnviar() {
+    if (ltEnviando || !hayPend() || !api) return;
+    ltEnviando = true; ltPintarEstado();
+    const mando = JSON.parse(JSON.stringify(ltPend));
+    try {
+      const j = await enviar({ accion: 'lote', hechas: mando.hechas, fuera: mando.fuera });
+      // quita de pendientes solo lo que ya se mandó (si tocaste algo mientras, se manda después)
+      ['hechas', 'fuera'].forEach(t => Object.keys(mando[t]).forEach(k => { if (ltPend[t][k] === mando[t][k]) delete ltPend[t][k]; }));
+      guardar('c3_lote_pend', JSON.stringify(ltPend));
+      if (j.lote) datos.lote = j.lote;
+      ltError = false;
+    } catch (e) { ltError = true; setTimeout(ltEnviar, 20000); }
+    finally {
+      ltEnviando = false; ltPintarEstado();
+      if (hayPend() && !ltError) { clearTimeout(ltTimer); ltTimer = setTimeout(ltEnviar, 600); }
+    }
+  }
+  // al abrir la lista: trae lo último marcado en otros equipos (respuesta muy chiquita y rápida)
+  async function ltTraer() {
+    try {
+      const r = await fetch(api + '?pin=' + encodeURIComponent(pin) + '&lote=1&t=' + Date.now());
+      const j = await r.json();
+      if (j.ok && j.lote) { datos.lote = j.lote; if (!$('#lotes').hidden) { const y = $('#lotes').scrollTop; aplicarLote(j.lote); pintarLotes(); $('#lotes').scrollTop = y; } }
+    } catch (e) {}
+  }
+  setTimeout(ltEnviar, 4000);   // si quedó algo sin mandar de antes
   const COLORES_FONDO = { 'plateado': 'linear-gradient(135deg,#F4F5F7,#C9CCD1 38%,#8E939A 62%,#F4F5F7)', 'morado metalizado': 'linear-gradient(135deg,#C7A6F2,#7E4FC0 38%,#4B2A80 62%,#C7A6F2)',
     'dorado': 'linear-gradient(135deg,#FFF6A6,#E2C233 38%,#9E8212 62%,#FFF6A6)' };
-  $('#btnLotes').addEventListener('click', () => { pintarLotes(); $('#lotes').hidden = false; document.body.style.overflow = 'hidden'; $('#lotes').scrollTop = 0; });
+  $('#btnLotes').addEventListener('click', () => { aplicarLote(datos.lote); pintarLotes(); ltTraer(); $('#lotes').hidden = false; document.body.style.overflow = 'hidden'; $('#lotes').scrollTop = 0; });
   $('#lotes').addEventListener('click', e => {
     if (e.target.closest('[data-lt-cerrar]')) { $('#lotes').hidden = true; document.body.style.overflow = ''; return; }
     if (e.target.closest('[data-lt-ocultar]')) { ltOcultar = !ltOcultar; pintarLotes(); return; }
     const k = e.target.closest('[data-lt-k]');
-    if (k) { const id = k.dataset.ltK; ltHechas.has(id) ? ltHechas.delete(id) : ltHechas.add(id); guardar('c3_lote_hechas', JSON.stringify([...ltHechas])); const y = $('#lotes').scrollTop; pintarLotes(); $('#lotes').scrollTop = y; return; }
+    if (k) { const id = k.dataset.ltK, sera = !ltHechas.has(id); sera ? ltHechas.add(id) : ltHechas.delete(id); ltCambio('hechas', id, sera); const y = $('#lotes').scrollTop; pintarLotes(); $('#lotes').scrollTop = y; return; }
     const pd = e.target.closest('[data-lt-ped]');
-    if (pd) { const v = pd.dataset.ltPed; ltFuera.has(v) ? ltFuera.delete(v) : ltFuera.add(v); guardar('c3_lote_fuera', JSON.stringify([...ltFuera])); const y = $('#lotes').scrollTop; pintarLotes(); $('#lotes').scrollTop = y; }
+    if (pd) { const v = pd.dataset.ltPed, sera = !ltFuera.has(v); sera ? ltFuera.add(v) : ltFuera.delete(v); ltCambio('fuera', v, sera); const y = $('#lotes').scrollTop; pintarLotes(); $('#lotes').scrollTop = y; }
   });
 
   function pintarPedidos() {
