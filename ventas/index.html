@@ -145,6 +145,12 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-o
 #lotes .lt-k small{font-size:10.5px;line-height:1.15;color:var(--muted);text-align:center;max-width:62px;overflow-wrap:anywhere}
 #lotes .lt-k[aria-pressed="true"] .cap{opacity:.28}
 #lotes .lt-k[aria-pressed="true"] .cap::after{content:"✓";position:absolute;inset:0;display:grid;place-items:center;font-size:30px;color:var(--ink)}
+#lotes .lt-vista{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--line);border-radius:12px;padding:4px;margin-top:12px}
+#lotes .lt-vista button{border:0;border-radius:9px;padding:9px;font-weight:800;font-size:15px;background:transparent;color:var(--muted)}
+#lotes .lt-vista button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+#lotes .lt-base .cap{width:62px;height:40px;border-radius:10px;font-size:17px}
+#lotes .lt-base{width:70px}
+#lotes .lt-base small{max-width:70px}
 #lotes .lt-aviso{background:var(--amber-soft);color:var(--ink);border-radius:12px;padding:10px 12px;font-size:13px;margin-top:14px}
 .chips button{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 12px;font-weight:600;font-size:14px}
 .chips button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
@@ -658,7 +664,7 @@ details[open] > summary{margin-bottom:4px}
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261107193222';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261107193457';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1652,13 +1658,15 @@ details[open] > summary{margin-bottom:4px}
         // si es un pedido por entregar: las teclas ya impresas salen clarito y se dice cuántas faltan
         const hecha = i => numero && ltHechas && ltHechas.has(numero + '-' + n + '-' + i);
         const faltan = numero ? teclas.filter((m, i) => !hecha(i)).length : 0;
+        const baseLista = numero && ltHechas && ltHechas.has(numero + '-' + n + '-base');
+        const falta = [faltan ? faltan + ' de ' + teclas.length + ' teclas' : '', base && !baseLista ? 'la base' : ''].filter(Boolean);
         const tira = teclas.length ? `<div class="teclas" style="background:${hexDe(base && base[1])}">${teclas.map((m, i) => {
             const ch = SIMBOLO[m[1].trim().toLowerCase()] || m[1].trim();
             return `<span class="tecla${hecha(i) ? ' hecha' : ''}" title="tecla ${esc(m[2])} · letra ${esc(m[3])}${hecha(i) ? ' · ya impresa' : ''}" style="background:${hexDe(m[2])};color:${hexDe(m[3])}">${esc(ch)}</span>`; }).join('')}</div>` : '';
         return `<div class="web-clk">${bloques.length > 1 ? `<div class="tit">Clicker ${n + 1}</div>` : ''}
           ${tira}
-          ${numero && teclas.length ? `<span class="imp-falta${faltan ? '' : ' ok'}">${faltan ? '🖨️ Faltan ' + faltan + ' de ' + teclas.length + ' teclas por imprimir' : '✓ Todas las teclas impresas'}</span>` : ''}
-          <ul class="web-lin">${base ? `<li>🧱 Base <b>${esc(base[1])}</b> · ${esc(sinAst(base[2]))}</li>` : ''}
+          ${numero && teclas.length ? `<span class="imp-falta${falta.length ? '' : ' ok'}">${falta.length ? '🖨️ Falta imprimir: ' + falta.join(' y ') : '✓ Teclas y base impresas'}</span>` : ''}
+          <ul class="web-lin">${base ? `<li>🧱 Base <b>${esc(base[1])}</b> · ${esc(sinAst(base[2]))}${numero ? (baseLista ? ' · ✓ impresa' : ' · <b>por imprimir</b>') : ''}</li>` : ''}
             ${teclas.map((m, i) => `<li>${i + 1}. <b>${esc(m[1])}</b> → tecla ${esc(m[2])} · letra ${esc(m[3])}</li>`).join('')}
             ${extras.concat(otras).filter(sigue).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
           ${link ? `<a class="btn chico" style="text-decoration:none;justify-self:start" target="_blank" rel="noopener" href="${esc(link)}">🔍 Ver el diseño en 3D</a>` : ''}
@@ -1917,14 +1925,17 @@ details[open] > summary{margin-bottom:4px}
   const leerSet = k => { try { return new Set(JSON.parse(leer(k) || '[]')); } catch (e) { return new Set(); } };
   var ltFuera = null, ltHechas = null, ltOcultar = false;
   function datosLotes() {
-    const peds = [], teclas = [], sinDiseno = [];
+    const peds = [], teclas = [], sinDiseno = [], bases = [];
     datos.ventas.filter(p => p.estado === 'Pedido' || p.estado === 'Pagado').forEach(p => {
       const letras = p.items.filter(i => esLetra(i.producto)).reduce((a, i) => a + i.cantidad, 0);
       if (!p.diseno) { if (letras) sinDiseno.push(p.numero + ' · ' + (p.cliente || '') + ' · ' + letras + ' teclas'); return; }
       const bloques = p.diseno.split(/\*?━━━ Clicker \d+ ━━━\*?/), bs = bloques.length > 1 ? bloques.slice(1) : bloques;
-      const lista = [];
+      const lista = [], susBases = [];
       bs.forEach((b, n) => {
         const pal = sinAst((/Palabra:\s*\*([^*]+)\*/.exec(b) || [])[1] || '').replace(/\[([^\]]+)\]/g, (m, x) => SIMBOLO[x.toLowerCase()] || '•');
+        const bm = /🧱 Base:\s*(?:\S+\s+)?\*([^*]+)\*\s*·\s*([^\n]+)/.exec(b);
+        const tam = (b.match(/^\s*\d+\.\s*\*[^*]+\*\s*→\s*tecla/gm) || []).length;
+        if (bm && tam) susBases.push({ id: p.numero + '-' + n + '-base', color: bm[1].trim().toLowerCase(), tipo: sinAst(bm[2]).trim().toLowerCase(), tam, pal, v: p.numero, k: n });
         [...b.matchAll(/^\s*\d+\.\s*\*([^*]+)\*\s*→\s*tecla\s*(?:\S+\s+)?\*([^*]+)\*\s*·\s*letra\s*(?:\S+\s+)?\*([^*]+)\*/gm)].forEach((m, i) => {
           const l = m[1].trim();
           lista.push({ id: p.numero + '-' + n + '-' + i, l: l.length > 1 ? (SIMBOLO[l.toLowerCase()] || '•') : l, t: m[2].trim().toLowerCase(), lc: m[3].trim().toLowerCase(), pal, v: p.numero });
@@ -1933,16 +1944,24 @@ details[open] > summary{margin-bottom:4px}
       // si pidió varios iguales (ej. 12 × CO): las letras de la venta son un múltiplo exacto del diseño
       const enDiseno = lista.length, n = enDiseno && letras > enDiseno && letras % enDiseno === 0 ? letras / enDiseno : 1;
       lista.forEach(t => { t.n = n; teclas.push(t); });
+      susBases.forEach(x => { x.n = n; bases.push(x); });
       if (letras > enDiseno * n) sinDiseno.push(p.numero + ' · ' + (p.cliente || '') + ' · ' + (letras - enDiseno * n) + ' teclas más, sin diseño');
-      peds.push({ v: p.numero, c: (p.cliente || '').split(' ')[0], n: enDiseno * n, ids: lista.map(t => t.id) });
+      peds.push({ v: p.numero, c: (p.cliente || '').split(' ')[0], n: enDiseno * n, ids: lista.map(t => t.id).concat(susBases.map(x => x.id)) });
     });
-    return { peds, teclas, sinDiseno };
+    return { peds, teclas, sinDiseno, bases };
   }
   function pintarLotes() {
     if (!ltFuera) aplicarLote(datos.lote);
-    const { peds, teclas, sinDiseno } = datosLotes();
+    const { peds, teclas, sinDiseno, bases } = datosLotes();
     const activas = teclas.filter(t => !ltFuera.has(t.v));
-    const total = activas.reduce((a, t) => a + t.n, 0), hechas = activas.filter(t => ltHechas.has(t.id)).reduce((a, t) => a + t.n, 0);
+    const basesAct = bases.filter(x => !ltFuera.has(x.v));
+    const enVista = ltVista === 'bases' ? basesAct : activas;
+    const total = enVista.reduce((a, t) => a + t.n, 0), hechas = enVista.filter(t => ltHechas.has(t.id)).reduce((a, t) => a + t.n, 0);
+    const queEs = ltVista === 'bases' ? ['base', 'bases', 'lista', 'listas'] : ['tecla', 'teclas', 'lista', 'listas'];
+    // bases agrupadas por color, y dentro por tamaño y tipo (las del mismo modelo se imprimen juntas)
+    const gb = {};
+    basesAct.forEach(x => { if (ltOcultar && ltHechas.has(x.id)) return; const m = x.tam + ' teclas · ' + x.tipo; ((gb[x.color] = gb[x.color] || {})[m] = gb[x.color][m] || []).push(x); });
+    const cuentaB = g => Object.values(g).flat().reduce((a, t) => a + t.n, 0);
     const grupos = {};
     activas.forEach(t => { if (ltOcultar && ltHechas.has(t.id)) return; ((grupos[t.t] = grupos[t.t] || {})[t.lc] = grupos[t.t][t.lc] || []).push(t); });
     const cuenta = g => Object.values(g).flat().reduce((a, t) => a + t.n, 0);
@@ -1950,16 +1969,25 @@ details[open] > summary{margin-bottom:4px}
     const fondo = c => { const k = COLORES_FONDO[c]; return k || hexDe(c); };
     $('#lotes').innerHTML = `<div class="lt-in">
       <div class="lt-cab"><div style="flex:1;min-width:0"><h2>Para imprimir</h2>
-        <div class="chico">${total - hechas} teclas por imprimir · ${hechas} listas</div>
+        <div class="chico">${total - hechas} ${total - hechas === 1 ? queEs[0] : queEs[1]} por imprimir · ${hechas} ${hechas === 1 ? queEs[2] : queEs[3]}</div>
         <div class="lt-prog"><i style="width:${total ? Math.round(hechas / total * 100) : 0}%"></i></div></div>
         <button class="btn chico" type="button" data-lt-cerrar>✕ Cerrar</button></div>
       <p class="chico" id="ltEstado" style="margin:8px 0 0;font-weight:700">${ltEstadoTxt()}</p>
       <p class="chico" style="margin:6px 0 0">Toca una tecla cuando ya la imprimiste. Toca un pedido para ver cómo va.</p>
       <div class="lt-peds">${peds.map(x => { const h = x.ids.filter(i => ltHechas.has(i)).length;
         return `<button type="button" data-lt-ped="${esc(x.v)}" aria-pressed="${!ltFuera.has(x.v)}" aria-expanded="${ltVer === x.v}"${ltVer === x.v ? ' style="border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)"' : ''}>${esc(x.c)} · ${h === x.ids.length ? '✓ listo' : h + '/' + x.ids.length}</button>`; }).join('')}</div>
-      ${ltVer ? verPedidoLote(ltVer, teclas) : ''}
-      <button type="button" class="btn chico" data-lt-ocultar style="margin-top:6px">${ltOcultar ? '👁 Mostrar también las que ya imprimí' : '🙈 Esconder las que ya imprimí'}</button>
-      ${orden.map(t => `<section class="lt-grupo">
+      ${ltVer ? verPedidoLote(ltVer, teclas, bases) : ''}
+      <div class="lt-vista" role="group" aria-label="Qué imprimir">
+        <button type="button" data-lt-vista="teclas" aria-pressed="${ltVista !== 'bases'}">⌨️ Teclas · ${activas.filter(t => !ltHechas.has(t.id)).reduce((a, t) => a + t.n, 0)}</button>
+        <button type="button" data-lt-vista="bases" aria-pressed="${ltVista === 'bases'}">🧱 Bases · ${basesAct.filter(t => !ltHechas.has(t.id)).reduce((a, t) => a + t.n, 0)}</button>
+      </div>
+      <button type="button" class="btn chico" data-lt-ocultar style="margin-top:10px">${ltOcultar ? '👁 Mostrar también las que ya imprimí' : '🙈 Esconder las que ya imprimí'}</button>
+      ${ltVista === 'bases' ? (Object.keys(gb).sort((a, b) => cuentaB(gb[b]) - cuentaB(gb[a])).map(c => `<section class="lt-grupo">
+        <div class="lt-gcab"><span class="lt-sw" style="background:${fondo(c)}"></span><div><b>Base ${esc(c)}</b><span class="chico">${cuentaB(gb[c])} ${cuentaB(gb[c]) === 1 ? 'base' : 'bases'}</span></div></div>
+        ${Object.keys(gb[c]).sort().map(m => `<div class="lt-sub"><div>${esc(m)}</div>
+          <div class="lt-keys">${gb[c][m].map(x => `<button type="button" class="lt-k lt-base" data-lt-k="${esc(x.id)}" aria-pressed="${ltHechas.has(x.id)}" aria-label="Base ${esc(c)} de ${x.tam} teclas, ${esc(x.tipo)}, de ${esc(x.pal)}">
+            <span class="cap" style="background:${fondo(c)};color:${['blanco', 'beige', 'amarillo', 'plateado', 'dorado', 'celeste', 'verde claro', 'mármol'].includes(c) ? '#242424' : '#fff'}">${x.tam}${x.n > 1 ? `<span class="x">×${x.n}</span>` : ''}</span><small>${esc(x.pal)}</small></button>`).join('')}</div></div>`).join('')}
+      </section>`).join('') || '<p class="vacio">No hay bases por imprimir. 🎉</p>') : orden.map(t => `<section class="lt-grupo">
         <div class="lt-gcab"><span class="lt-sw" style="background:${fondo(t)}"></span><div><b>Tecla ${esc(t)}</b><span class="chico">${cuenta(grupos[t])} ${cuenta(grupos[t]) === 1 ? 'tecla' : 'teclas'}</span></div></div>
         ${Object.keys(grupos[t]).sort((a, b) => cuenta({ x: grupos[t][b] }) - cuenta({ x: grupos[t][a] })).map(lc => `<div class="lt-sub">
           <div><span class="lt-dot" style="background:${fondo(lc)}"></span>letra ${esc(lc)}</div>
@@ -2015,19 +2043,22 @@ details[open] > summary{margin-bottom:4px}
   }
   setTimeout(ltEnviar, 4000);   // si quedó algo sin mandar de antes
   let ltVer = null;   // pedido abierto arriba de la lista
-  function verPedidoLote(v, teclas) {
+  var ltVista = 'teclas';
+  function verPedidoLote(v, teclas, bases) {
     const p = datos.ventas.find(x => x.numero === v); if (!p) return '';
     const mias = teclas.filter(t => t.v === v), por = {};
     mias.forEach(t => { const k = t.id.split('-').slice(-2, -1)[0]; (por[k] = por[k] || []).push(t); });
-    const h = mias.filter(t => ltHechas.has(t.id)).length, fuera = ltFuera.has(v);
+    const misBases = (bases || []).filter(x => x.v === v), todo = mias.concat(misBases);
+    const h = todo.filter(t => ltHechas.has(t.id)).length, fuera = ltFuera.has(v);
     const fondo = c => COLORES_FONDO[c] || hexDe(c);
     return `<section class="lt-grupo" style="border-color:var(--ink)">
       <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
-        <div><b style="font-size:17px">${esc(p.cliente || 'Sin nombre')}</b><div class="chico">${esc(v)} · ${h === mias.length ? '✓ todas impresas' : h + ' de ' + mias.length + ' impresas · faltan ' + (mias.length - h)}</div></div>
+        <div><b style="font-size:17px">${esc(p.cliente || 'Sin nombre')}</b><div class="chico">${esc(v)} · ${h === todo.length ? '✓ todo impreso' : h + ' de ' + todo.length + ' piezas impresas · faltan ' + (todo.length - h)}</div></div>
         <button type="button" class="btn chico" data-lt-vercerrar>✕</button></div>
-      <div class="lt-prog"><i style="width:${mias.length ? Math.round(h / mias.length * 100) : 0}%"></i></div>
+      <div class="lt-prog"><i style="width:${todo.length ? Math.round(h / todo.length * 100) : 0}%"></i></div>
       ${Object.values(por).map(ks => `<div class="lt-sub"><div>${esc(ks[0].pal)}${ks[0].n > 1 ? ' · ×' + ks[0].n : ''}</div>
-        <div class="lt-keys">${ks.map(k => `<button type="button" class="lt-k" data-lt-k="${esc(k.id)}" aria-pressed="${ltHechas.has(k.id)}" aria-label="Tecla ${esc(k.t)}, letra ${esc(k.l)} ${esc(k.lc)}">
+        <div class="lt-keys">${misBases.filter(x => String(x.k) === ks[0].id.split('-').slice(-2, -1)[0]).map(x => `<button type="button" class="lt-k lt-base" data-lt-k="${esc(x.id)}" aria-pressed="${ltHechas.has(x.id)}" aria-label="Base ${esc(x.color)}">
+          <span class="cap" style="background:${fondo(x.color)};color:${['blanco', 'beige', 'amarillo', 'plateado', 'dorado', 'celeste', 'verde claro', 'mármol'].includes(x.color) ? '#242424' : '#fff'}">🧱</span><small>base ${esc(x.color)} · ${esc(x.tipo)}</small></button>`).join('')}${ks.map(k => `<button type="button" class="lt-k" data-lt-k="${esc(k.id)}" aria-pressed="${ltHechas.has(k.id)}" aria-label="Tecla ${esc(k.t)}, letra ${esc(k.l)} ${esc(k.lc)}">
           <span class="cap" style="background:${fondo(k.t)};color:${hexDe(k.lc)}">${esc(k.l)}</span><small>${esc(k.t)}</small></button>`).join('')}</div></div>`).join('')}
       <button type="button" class="btn chico" data-lt-sacar="${esc(v)}" style="margin-top:12px">${fuera ? '➕ Volver a meterlo en la lista' : '➖ Sacarlo de la lista (ya está hecho)'}</button>
     </section>`;
@@ -2040,6 +2071,7 @@ details[open] > summary{margin-bottom:4px}
     if (e.target.closest('[data-lt-ocultar]')) { ltOcultar = !ltOcultar; pintarLotes(); return; }
     const k = e.target.closest('[data-lt-k]');
     if (k) { const id = k.dataset.ltK, sera = !ltHechas.has(id); sera ? ltHechas.add(id) : ltHechas.delete(id); ltCambio('hechas', id, sera); const y = $('#lotes').scrollTop; pintarLotes(); $('#lotes').scrollTop = y; return; }
+    const vb = e.target.closest('[data-lt-vista]'); if (vb) { ltVista = vb.dataset.ltVista; pintarLotes(); return; }
     if (e.target.closest('[data-lt-vercerrar]')) { ltVer = null; pintarLotes(); return; }
     const vp = e.target.closest('[data-lt-ped]');
     if (vp) { ltVer = ltVer === vp.dataset.ltPed ? null : vp.dataset.ltPed; pintarLotes(); $('#lotes').scrollTop = 0; return; }
