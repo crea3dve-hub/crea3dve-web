@@ -117,6 +117,32 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-o
 .web-det details summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--muted)}
 .acciones{display:flex;gap:6px;flex-wrap:wrap}
 .chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:8px}
+/* Lista para imprimir (teclas agrupadas por color) */
+#lotes{position:fixed;inset:0;z-index:60;background:var(--bg);overflow-y:auto;padding:env(safe-area-inset-top,0px) max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+#lotes .lt-in{max-width:760px;margin:0 auto}
+#lotes .lt-cab{position:sticky;top:0;z-index:2;background:var(--bg);display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 0 10px;border-bottom:1px solid var(--line)}
+#lotes .lt-cab h2{margin:0;font-size:20px}
+#lotes .lt-prog{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:6px}
+#lotes .lt-prog i{display:block;height:100%;background:var(--brand,#5CBA2E);transition:width .2s}
+#lotes .lt-peds{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
+#lotes .lt-peds button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 11px;font-size:13px;font-weight:600}
+#lotes .lt-peds button[aria-pressed="false"]{opacity:.45;text-decoration:line-through}
+#lotes .lt-grupo{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:12px;margin-top:14px}
+#lotes .lt-gcab{display:flex;align-items:center;gap:12px}
+#lotes .lt-sw{width:44px;height:44px;border-radius:11px;flex:none;border:1px solid rgba(0,0,0,.15);box-shadow:inset 0 -5px 0 rgba(0,0,0,.18)}
+#lotes .lt-gcab b{font-size:18px;text-transform:capitalize}
+#lotes .lt-gcab .chico{display:block}
+#lotes .lt-sub{margin-top:12px}
+#lotes .lt-sub>div:first-child{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px}
+#lotes .lt-dot{width:12px;height:12px;border-radius:50%;border:1px solid rgba(0,0,0,.2)}
+#lotes .lt-keys{display:flex;flex-wrap:wrap;gap:10px}
+#lotes .lt-k{display:grid;justify-items:center;gap:3px;border:0;background:none;padding:0;cursor:pointer;width:62px}
+#lotes .lt-k .cap{position:relative;width:54px;height:54px;border-radius:12px;display:grid;place-items:center;font:900 26px/1 "Nunito","Figtree",system-ui,sans-serif;border:1px solid rgba(0,0,0,.15);box-shadow:inset 0 -5px 0 rgba(0,0,0,.18)}
+#lotes .lt-k .x{position:absolute;top:-7px;right:-9px;background:var(--ink);color:var(--bg);font:800 11px/1 system-ui,sans-serif;border-radius:99px;padding:3px 5px}
+#lotes .lt-k small{font-size:10.5px;line-height:1.15;color:var(--muted);text-align:center;max-width:62px;overflow-wrap:anywhere}
+#lotes .lt-k[aria-pressed="true"] .cap{opacity:.28}
+#lotes .lt-k[aria-pressed="true"] .cap::after{content:"✓";position:absolute;inset:0;display:grid;place-items:center;font-size:30px;color:var(--ink)}
+#lotes .lt-aviso{background:var(--amber-soft);color:var(--ink);border-radius:12px;padding:10px 12px;font-size:13px;margin-top:14px}
 .chips button{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 12px;font-weight:600;font-size:14px}
 .chips button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .inv-fila{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
@@ -399,8 +425,10 @@ details[open] > summary{margin-bottom:4px}
       <button data-f="Entregado" aria-pressed="false">Entregados</button>
       <button data-f="todos" aria-pressed="false">Todos</button>
     </div>
+    <button class="btn ancho" id="btnLotes" type="button" style="margin-bottom:10px">🎨 Lista para imprimir teclas (por color)</button>
     <div class="card" id="cardEnviar" hidden></div>
     <div id="listaPedidos"></div>
+    <div id="lotes" hidden role="dialog" aria-modal="true" aria-label="Lista para imprimir teclas"></div>
   </section>
 
   <!-- INVENTARIO -->
@@ -623,7 +651,7 @@ details[open] > summary{margin-bottom:4px}
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261106145407';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261107191237';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1849,6 +1877,77 @@ details[open] > summary{margin-bottom:4px}
         completo ? p.numero + ': pagado completo' : p.numero + ': abono de ' + fmt(a.usd) + ' · falta ' + fmt(falta(p)));
     }
   });
+  /* ---------- Lista para imprimir: teclas de los pedidos por entregar, agrupadas por color ---------- */
+  // Se arma solo al abrirla (no hace lenta la página). Lo marcado como impreso se guarda en este teléfono.
+  const leerSet = k => { try { return new Set(JSON.parse(leer(k) || '[]')); } catch (e) { return new Set(); } };
+  let ltFuera = null, ltHechas = null, ltOcultar = false;
+  function datosLotes() {
+    const peds = [], teclas = [], sinDiseno = [];
+    datos.ventas.filter(p => p.estado === 'Pedido' || p.estado === 'Pagado').forEach(p => {
+      const letras = p.items.filter(i => esLetra(i.producto)).reduce((a, i) => a + i.cantidad, 0);
+      if (!p.diseno) { if (letras) sinDiseno.push(p.numero + ' · ' + (p.cliente || '') + ' · ' + letras + ' teclas'); return; }
+      const bloques = p.diseno.split(/\*?━━━ Clicker \d+ ━━━\*?/), bs = bloques.length > 1 ? bloques.slice(1) : bloques;
+      const lista = [];
+      bs.forEach((b, n) => {
+        const pal = sinAst((/Palabra:\s*\*([^*]+)\*/.exec(b) || [])[1] || '').replace(/\[([^\]]+)\]/g, (m, x) => SIMBOLO[x.toLowerCase()] || '•');
+        [...b.matchAll(/^\s*\d+\.\s*\*([^*]+)\*\s*→\s*tecla\s*(?:\S+\s+)?\*([^*]+)\*\s*·\s*letra\s*(?:\S+\s+)?\*([^*]+)\*/gm)].forEach((m, i) => {
+          const l = m[1].trim();
+          lista.push({ id: p.numero + '-' + n + '-' + i, l: l.length > 1 ? (SIMBOLO[l.toLowerCase()] || '•') : l, t: m[2].trim().toLowerCase(), lc: m[3].trim().toLowerCase(), pal, v: p.numero });
+        });
+      });
+      // si pidió varios iguales (ej. 12 × CO): las letras de la venta son un múltiplo exacto del diseño
+      const enDiseno = lista.length, n = enDiseno && letras > enDiseno && letras % enDiseno === 0 ? letras / enDiseno : 1;
+      lista.forEach(t => { t.n = n; teclas.push(t); });
+      if (letras > enDiseno * n) sinDiseno.push(p.numero + ' · ' + (p.cliente || '') + ' · ' + (letras - enDiseno * n) + ' teclas más, sin diseño');
+      peds.push({ v: p.numero, c: (p.cliente || '').split(' ')[0], n: enDiseno * n });
+    });
+    return { peds, teclas, sinDiseno };
+  }
+  function pintarLotes() {
+    if (!ltFuera) {
+      ltHechas = leerSet('c3_lote_hechas');
+      // la primera vez quedan fuera los de Maricarmen (CO) y Jenny (PIERO), que ya están hechos
+      ltFuera = leer('c3_lote_fuera') === null ? new Set(['V-0133', 'V-0120']) : leerSet('c3_lote_fuera');
+    }
+    const { peds, teclas, sinDiseno } = datosLotes();
+    const activas = teclas.filter(t => !ltFuera.has(t.v));
+    const total = activas.reduce((a, t) => a + t.n, 0), hechas = activas.filter(t => ltHechas.has(t.id)).reduce((a, t) => a + t.n, 0);
+    const grupos = {};
+    activas.forEach(t => { if (ltOcultar && ltHechas.has(t.id)) return; ((grupos[t.t] = grupos[t.t] || {})[t.lc] = grupos[t.t][t.lc] || []).push(t); });
+    const cuenta = g => Object.values(g).flat().reduce((a, t) => a + t.n, 0);
+    const orden = Object.keys(grupos).sort((a, b) => cuenta(grupos[b]) - cuenta(grupos[a]));
+    const fondo = c => { const k = COLORES_FONDO[c]; return k || hexDe(c); };
+    $('#lotes').innerHTML = `<div class="lt-in">
+      <div class="lt-cab"><div style="flex:1;min-width:0"><h2>Para imprimir</h2>
+        <div class="chico">${total - hechas} teclas por imprimir · ${hechas} listas</div>
+        <div class="lt-prog"><i style="width:${total ? Math.round(hechas / total * 100) : 0}%"></i></div></div>
+        <button class="btn chico" type="button" data-lt-cerrar>✕ Cerrar</button></div>
+      <p class="chico" style="margin:10px 0 0">Toca una tecla cuando ya la imprimiste. Toca un pedido para sacarlo o meterlo en la lista.</p>
+      <div class="lt-peds">${peds.map(x => `<button type="button" data-lt-ped="${esc(x.v)}" aria-pressed="${!ltFuera.has(x.v)}">${esc(x.v)} · ${esc(x.c)} · ${x.n}</button>`).join('')}</div>
+      <button type="button" class="btn chico" data-lt-ocultar style="margin-top:6px">${ltOcultar ? '👁 Mostrar también las que ya imprimí' : '🙈 Esconder las que ya imprimí'}</button>
+      ${orden.map(t => `<section class="lt-grupo">
+        <div class="lt-gcab"><span class="lt-sw" style="background:${fondo(t)}"></span><div><b>Tecla ${esc(t)}</b><span class="chico">${cuenta(grupos[t])} ${cuenta(grupos[t]) === 1 ? 'tecla' : 'teclas'}</span></div></div>
+        ${Object.keys(grupos[t]).sort((a, b) => cuenta({ x: grupos[t][b] }) - cuenta({ x: grupos[t][a] })).map(lc => `<div class="lt-sub">
+          <div><span class="lt-dot" style="background:${fondo(lc)}"></span>letra ${esc(lc)}</div>
+          <div class="lt-keys">${grupos[t][lc].map(k => `<button type="button" class="lt-k" data-lt-k="${esc(k.id)}" aria-pressed="${ltHechas.has(k.id)}" aria-label="Tecla ${esc(t)}, letra ${esc(k.l)} ${esc(lc)}, de ${esc(k.pal)}">
+            <span class="cap" style="background:${fondo(t)};color:${hexDe(lc)}">${esc(k.l)}${k.n > 1 ? `<span class="x">×${k.n}</span>` : ''}</span><small>${esc(k.pal)}</small></button>`).join('')}</div>
+        </div>`).join('')}
+      </section>`).join('') || '<p class="vacio">No hay teclas por imprimir. 🎉</p>'}
+      ${sinDiseno.length ? `<div class="lt-aviso"><b>Sin diseño en la página</b> (pedidos por WhatsApp): ${sinDiseno.map(esc).join(' · ')}</div>` : ''}
+    </div>`;
+  }
+  const COLORES_FONDO = { 'plateado': 'linear-gradient(135deg,#F4F5F7,#C9CCD1 38%,#8E939A 62%,#F4F5F7)', 'morado metalizado': 'linear-gradient(135deg,#C7A6F2,#7E4FC0 38%,#4B2A80 62%,#C7A6F2)',
+    'dorado': 'linear-gradient(135deg,#FFF6A6,#E2C233 38%,#9E8212 62%,#FFF6A6)' };
+  $('#btnLotes').addEventListener('click', () => { pintarLotes(); $('#lotes').hidden = false; document.body.style.overflow = 'hidden'; $('#lotes').scrollTop = 0; });
+  $('#lotes').addEventListener('click', e => {
+    if (e.target.closest('[data-lt-cerrar]')) { $('#lotes').hidden = true; document.body.style.overflow = ''; return; }
+    if (e.target.closest('[data-lt-ocultar]')) { ltOcultar = !ltOcultar; pintarLotes(); return; }
+    const k = e.target.closest('[data-lt-k]');
+    if (k) { const id = k.dataset.ltK; ltHechas.has(id) ? ltHechas.delete(id) : ltHechas.add(id); guardar('c3_lote_hechas', JSON.stringify([...ltHechas])); const y = $('#lotes').scrollTop; pintarLotes(); $('#lotes').scrollTop = y; return; }
+    const pd = e.target.closest('[data-lt-ped]');
+    if (pd) { const v = pd.dataset.ltPed; ltFuera.has(v) ? ltFuera.delete(v) : ltFuera.add(v); guardar('c3_lote_fuera', JSON.stringify([...ltFuera])); const y = $('#lotes').scrollTop; pintarLotes(); $('#lotes').scrollTop = y; }
+  });
+
   function pintarPedidos() {
     pintarEnviar();
     pintarWeb();
