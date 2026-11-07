@@ -198,7 +198,11 @@ nav.tabs button[aria-selected="true"]{color:var(--brand-ink);background:var(--br
 .aviso{pointer-events:none;position:fixed;left:16px;right:16px;bottom:calc(150px + env(safe-area-inset-bottom,0px));z-index:20;max-width:600px;margin:0 auto;
   background:var(--ink);color:var(--bg);padding:12px 14px;border-radius:12px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.2)}
 .aviso.error{background:var(--warn);color:#fff}
-.cola{background:var(--amber-soft);color:var(--amber);border-radius:12px;padding:10px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600;font-size:14px}
+.cola{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:20;width:max-content;max-width:calc(100% - 32px);
+  background:var(--ink);color:var(--bg);border-radius:999px;padding:8px 14px;display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.cola.ok{background:#2F7A12;color:#fff}
+.cola.mal{background:var(--warn);color:#fff}
+.cola .btn{padding:4px 10px}
 .vacio{color:var(--muted);text-align:center;padding:18px 8px}
 .login{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:16px}
 .login .card{width:100%;max-width:380px}
@@ -651,7 +655,7 @@ details[open] > summary{margin-bottom:4px}
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261107191915';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261107192351';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -709,12 +713,22 @@ details[open] > summary{margin-bottom:4px}
   }
   function guardarCola() { guardar('c3_cola', JSON.stringify(cola)); pintarCola(); }
   let enviandoCola = false;
+  // Barrita fija abajo: "Guardando…" mientras se manda, "✓ Todo guardado" al terminar, o aviso si no hay señal
+  let colaOkHasta = 0, colaOkTimer = null;
   function pintarCola() {
-    $('#avisoCola').hidden = !cola.length;
-    const n = cola.length;
-    $('#txtCola').textContent = enviandoCola ? (n === 1 ? '⏳ Guardando 1 registro en la hoja…' : `⏳ Guardando ${n} registros en la hoja…`)
-      : (n === 1 ? '1 registro sin enviar (sin señal)' : n + ' registros sin enviar (sin señal)');
-    $('#btnReintentar').hidden = enviandoCola;
+    const n = cola.length, el = $('#avisoCola');
+    const ok = !n && Date.now() < colaOkHasta;
+    el.hidden = !n && !ok;
+    el.classList.toggle('ok', ok);
+    el.classList.toggle('mal', !!n && !enviandoCola);
+    $('#txtCola').textContent = ok ? '✓ Todo guardado en tu hoja'
+      : enviandoCola ? (n === 1 ? '⏳ Guardando…' : `⏳ Guardando ${n}…`)
+      : (n === 1 ? '📴 1 cambio sin guardar (sin señal)' : '📴 ' + n + ' cambios sin guardar (sin señal)');
+    $('#btnReintentar').hidden = enviandoCola || !n;
+  }
+  function colaTermino() {
+    colaOkHasta = Date.now() + 2500; pintarCola();
+    clearTimeout(colaOkTimer); colaOkTimer = setTimeout(pintarCola, 2600);
   }
   // Guarda sin bloquear la pantalla: queda en el teléfono y se envía a la hoja por detrás, uno por uno
   function accionFondo(cuerpo, okTexto) {
@@ -726,8 +740,10 @@ details[open] > summary{margin-bottom:4px}
   }
   const puedeRepintar = () => !editando && !abonoAbierto && !webAbierto && !editProd && !editPC && !compraPC && !editG && !pagarG && !agregandoA &&
     !(document.activeElement && /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName));
-  // Envía; si no hay señal, lo guarda en el teléfono para reintentar
-  async function accion(cuerpo, okTexto) {
+  // Todo se guarda por detrás: se ve al instante, la barrita de abajo dice cuándo quedó en la hoja
+  async function accion(cuerpo, okTexto) { return accionFondo(cuerpo, okTexto); }
+  // (versión vieja, que esperaba a Google; ya no se usa)
+  async function accionEsperando(cuerpo, okTexto) {
     cuerpo.id = cuerpo.id || idNuevo();
     document.body.classList.add('cargando');
     try {
@@ -761,7 +777,8 @@ details[open] > summary{margin-bottom:4px}
         }
       }
     } finally {
-      enviandoCola = false; pintarCola();
+      enviandoCola = false;
+      if (!cola.length && huboCambios) colaTermino(); else pintarCola();
       if (rapido) refrescarLuego();
       else if (huboCambios && datos && puedeRepintar()) pintarTodo();
     }
@@ -1211,7 +1228,7 @@ details[open] > summary{margin-bottom:4px}
       propio: $('#kPers').value === '1', precio: kSug, mayor,
       nota: 'Calculadora: ' + (placas().length > 1 ? placas().length + ' placas (' + placas().map(p => horasTexto(p.h + p.m / 60) + ' ' + p.g + ' g').join(' + ') + ') = ' : '') + horasTexto(totHoras()) + ' · error ' + n('#kErr') + '%' + (detalle ? ' · insumos: ' + detalle : '') };
     $('#kGuardar').disabled = true;
-    try { if (await accion(cuerpo, 'Producto guardado')) $('#kGuardarTxt').textContent = '✓ Guardado: ' + nom + (cuerpo.nombreWeb ? ' · sale en la web como "' + cuerpo.nombreWeb + '"' : ''); }
+    try { if (accionFondo(cuerpo, 'Producto guardado')) $('#kGuardarTxt').textContent = '✓ Guardado: ' + nom + (cuerpo.nombreWeb ? ' · sale en la web como "' + cuerpo.nombreWeb + '"' : ''); }
     finally { $('#kGuardar').disabled = false; }
   });
   // Pasa un producto del catálogo a la calculadora para revisarlo o cambiarlo
@@ -1454,8 +1471,9 @@ details[open] > summary{margin-bottom:4px}
     const nSw = carrito.reduce((n, c) => n + (esLetra(c.producto) || esObjeto(c.producto) ? qt(c) : 0), 0);
     const SW = 'Switch para clicker (sueltos, incluido en el precio)';
     if (nSw && datos.productos.some(x => x.nombre === SW) && !carrito.some(c => c.producto === SW)) items.push({ producto: SW, cantidad: nSw, precio: 0 });
-    const ok = await accion({ accion: 'venta', numero: p.numero, cliente: p.cliente, canal: p.canal, metodo: p.metodo, estado: p.estado,
+    const ok = accionFondo({ accion: 'venta', numero: p.numero, cliente: p.cliente, canal: p.canal, metodo: p.metodo, estado: p.estado,
       fecha: aISO(p.fecha), items, nota: p.nota || undefined }, 'Agregado a ' + p.numero);
+    items.forEach(i => { const t = (i.precio || 0) * i.cantidad; p.items.push({ producto: i.producto, cantidad: i.cantidad, precio: i.precio || 0, total: t }); p.total += t; });
     if (ok) { carrito = []; grupoActual = null; quitarDescuento(); pintarCarrito(); terminarAgregar(true); }
   }
 
@@ -1567,10 +1585,20 @@ details[open] > summary{margin-bottom:4px}
       clienteAnterior: p.cliente, datosCliente: { cedula: f('cedula').trim(), telefono: f('telefono').trim() } };
     if (f('nota').trim() !== (p.nota || '')) cuerpo.nota = f('nota').trim();
     if (f('fecha') && f('fecha') !== aISO(p.fecha)) cuerpo.fecha = f('fecha');
+    // se ve el cambio al instante y se guarda por detrás
+    accionFondo(cuerpo, 'Pedido ' + num + ' corregido');
+    if (cuerpo.cliente !== undefined && cuerpo.cliente) p.cliente = cuerpo.cliente;
+    if (cuerpo.estado) p.estado = cuerpo.estado;
+    if (cuerpo.metodo !== undefined) p.metodo = cuerpo.metodo;
+    if (cuerpo.nota !== undefined) p.nota = cuerpo.nota;
+    items.forEach(it => { const i = p.items.find(x => x.fila === it.fila); if (!i) return; i.cantidad = it.cantidad; if (it.precioCambiado) i.precio = it.precio; i.total = (i.precio || 0) * i.cantidad; });
+    p.items = p.items.filter(i => i.cantidad > 0); p.total = p.items.reduce((a, i) => a + i.total, 0);
+    editando = null; pintarTodo();
+  }
+  async function guardarEdicionEsperando(card, cuerpo, p, num, items, f) {
     document.body.classList.add('cargando');
     try {
       const j = await enviar(cuerpo);
-      // se ve el cambio al instante; los datos completos llegan por detrás
       if (j.rapido) {
         if (cuerpo.cliente !== undefined) p.cliente = cuerpo.cliente;
         if (cuerpo.estado) p.estado = cuerpo.estado;
@@ -1684,18 +1712,17 @@ details[open] > summary{margin-bottom:4px}
     if (e.target.closest('[data-w-x]')) { webAbierto = null; pintarWeb(); return; }
     if (e.target.closest('[data-w-del]')) {
       if (!confirm('¿Descartar este pedido de la web?')) return;
-      if (await accion({ accion: 'descartarWeb', fila, idWeb: w.id })) { webAbierto = null; }
+      accionFondo({ accion: 'descartarWeb', fila, idWeb: w.id }, 'Pedido web descartado');
+      datos.pedidosWeb = datos.pedidosWeb.filter(x => x.fila !== fila); webAbierto = null; pintarWeb();
       return;
     }
     if (e.target.closest('[data-w-ok]')) {
       const v = k => card.querySelector(`[data-wk="${k}"]`).value.trim();
       const cliW = v('cliente'), copias = copiasDe(card);
-      const res = await accion({ accion: 'convertirWeb', fila, idWeb: w.id, cliente: cliW, datosCliente: { cedula: v('cedula'), telefono: v('telefono') } });
-      if (res) {
+      {
         webAbierto = null;
         // la web solo manda las letras: se suman la base de cada clicker y sus switches (para el inventario, sin costo para el cliente)
-        const num = ((res.mensaje || '').match(/V-\d+/) || [])[0];
-        if (num) {
+        {
           const extra = [];
           // si pidió varios iguales: el pedido se crea con uno y aquí se suman los demás
           if (copias > 1) w.items.forEach(i => extra.push({ producto: i.producto, cantidad: i.cantidad * (copias - 1), precio: i.precio, precioManual: true }));
@@ -1706,8 +1733,9 @@ details[open] > summary{margin-bottom:4px}
           });
           const SW = 'Switch para clicker (sueltos, incluido en el precio)';
           if (sw && datos.productos.some(x => x.nombre === SW)) extra.push({ producto: SW, cantidad: sw, precio: 0, precioManual: true });
-          if (extra.length) accionFondo({ accion: 'venta', numero: num, cliente: cliW || ('Web ' + (w.palabras || '')), canal: 'Página web',
-            metodo: '', estado: 'Pedido', items: extra }, (copias > 1 ? copias + ' iguales · ' : '') + 'Base y switches anotados en ' + num);
+          accionFondo({ accion: 'convertirWeb', fila, idWeb: w.id, cliente: cliW, datosCliente: { cedula: v('cedula'), telefono: v('telefono') }, extras: extra },
+            'Pedido creado' + (copias > 1 ? ' · ' + copias + ' iguales' : ''));
+          datos.pedidosWeb = datos.pedidosWeb.filter(x => x.fila !== fila); pintarWeb();
         }
       }
     }
