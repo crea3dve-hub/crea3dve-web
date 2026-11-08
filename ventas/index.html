@@ -161,6 +161,17 @@ button.tecla{padding:0;cursor:pointer}
 #lotes .lt-base .cap{width:62px;height:40px;border-radius:10px;font-size:17px}
 #lotes .lt-base{width:70px}
 #lotes .lt-base small{max-width:70px}
+/* el pedido se abre a un lado (computadora) o abajo (teléfono), sin mover la lista */
+#lotes .lt-panel{position:fixed;z-index:5;background:var(--bg);overflow-y:auto;overscroll-behavior:contain;box-shadow:0 -8px 30px rgba(0,0,0,.18)}
+#lotes .lt-panel .lt-grupo{margin:0}
+@media (min-width:900px){
+  #lotes .lt-panel{top:0;right:0;bottom:0;width:400px;padding:14px 16px calc(16px + env(safe-area-inset-bottom,0px));border-left:1px solid var(--line);box-shadow:-8px 0 30px rgba(0,0,0,.12)}
+  #lotes.con-panel .lt-in{margin-right:420px;margin-left:max(16px,calc((100% - 760px - 420px) / 2))}
+}
+@media (max-width:899px){
+  #lotes .lt-panel{left:0;right:0;bottom:0;max-height:58vh;border-radius:18px 18px 0 0;padding:10px max(12px,env(safe-area-inset-left,0px)) calc(12px + env(safe-area-inset-bottom,0px))}
+  #lotes.con-panel .lt-in{padding-bottom:60vh}
+}
 #lotes .lt-aviso{background:var(--amber-soft);color:var(--ink);border-radius:12px;padding:10px 12px;font-size:13px;margin-top:14px}
 .chips button{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 12px;font-weight:600;font-size:14px}
 .chips button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
@@ -674,7 +685,7 @@ details[open] > summary{margin-bottom:4px}
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261107204046';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261107205805';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -2018,7 +2029,7 @@ details[open] > summary{margin-bottom:4px}
       <p class="chico" style="margin:6px 0 0">Toca una pieza cuando ya la imprimiste. Toca un pedido para ver cómo va.</p>
       <div class="lt-peds">${peds.map(x => { const h = x.ids.filter(i => ltHechas.has(i)).length;
         return `<button type="button" data-lt-ped="${esc(x.v)}" aria-pressed="${!ltFuera.has(x.v)}" aria-expanded="${ltVer === x.v}"${ltVer === x.v ? ' style="border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)"' : ''}>${esc(x.c)} · ${h === x.ids.length ? '✓ listo' : h + '/' + x.ids.length}</button>`; }).join('')}</div>
-      ${ltVer ? verPedidoLote(ltVer, teclas, bases, charms) : ''}
+
       <div class="lt-vista" role="group" aria-label="Qué imprimir">
         <button type="button" data-lt-vista="teclas" aria-pressed="${ltVista !== 'bases'}">⌨️ Teclas · ${activas.filter(t => !ltHechas.has(t.id)).reduce((a, t) => a + t.n, 0)}</button>
         <button type="button" data-lt-vista="bases" aria-pressed="${ltVista === 'bases'}">🧱 Bases · ${basesAct.filter(t => !ltHechas.has(t.id)).reduce((a, t) => a + t.n, 0)}</button>
@@ -2045,6 +2056,7 @@ details[open] > summary{margin-bottom:4px}
             <span class="cap" style="background:${fondo(t)};color:${hexDe(lc)}">${esc(k.l)}${k.n > 1 ? `<span class="x">×${k.n}</span>` : ''}</span></button><button type="button" class="ver-b" data-lt-ir="${esc(k.v)}" data-lt-res="${esc(k.id)}" aria-label="Ver dónde va en el pedido"><small>${esc(k.pal)} ›</small></button></div>`).join('')}</div>
         </div>`).join('')}
       </section>`).join('') || '<p class="vacio">No hay teclas por imprimir. 🎉</p>'}
+      ${ltVer ? `<aside class="lt-panel" id="ltPanel" aria-label="Pedido">${verPedidoLote(ltVer, teclas, bases, charms)}</aside>` : ''}
       ${sinDiseno.length ? `<div class="lt-aviso"><b>Sin diseño en la página</b> (pedidos por WhatsApp): ${sinDiseno.map(esc).join(' · ')}</div>` : ''}
     </div>`;
   }
@@ -2088,7 +2100,7 @@ details[open] > summary{margin-bottom:4px}
     try {
       const r = await fetch(api + '?pin=' + encodeURIComponent(pin) + '&lote=1&t=' + Date.now());
       const j = await r.json();
-      if (j.ok && j.lote) { datos.lote = j.lote; if (!$('#lotes').hidden) { const y = $('#lotes').scrollTop; aplicarLote(j.lote); pintarLotes(); $('#lotes').scrollTop = y; } }
+      if (j.ok && j.lote) { datos.lote = j.lote; if (!$('#lotes').hidden) { aplicarLote(j.lote); repintarLotes(); } }
     } catch (e) {}
   }
   setTimeout(ltEnviar, 4000);   // si quedó algo sin mandar de antes
@@ -2117,20 +2129,28 @@ details[open] > summary{margin-bottom:4px}
   }
   const COLORES_FONDO = { 'plateado': 'linear-gradient(135deg,#F4F5F7,#C9CCD1 38%,#8E939A 62%,#F4F5F7)', 'morado metalizado': 'linear-gradient(135deg,#C7A6F2,#7E4FC0 38%,#4B2A80 62%,#C7A6F2)',
     'dorado': 'linear-gradient(135deg,#FFF6A6,#E2C233 38%,#9E8212 62%,#FFF6A6)' };
-  $('#btnLotes').addEventListener('click', () => { ltRecien.clear(); ltRes = null; aplicarLote(datos.lote); pintarLotes(); ltTraer(); $('#lotes').hidden = false; document.body.style.overflow = 'hidden'; $('#lotes').scrollTop = 0; });
+  // repinta sin mover nada: guarda dónde estabas en la lista y en el pedido abierto
+  function repintarLotes() {
+    const y = $('#lotes').scrollTop, pn = $('#ltPanel'), py = pn ? pn.scrollTop : 0, mismo = pn && pn.dataset.v === ltVer;
+    pintarLotes();
+    $('#lotes').classList.toggle('con-panel', !!ltVer);
+    $('#lotes').scrollTop = y;
+    const p2 = $('#ltPanel'); if (p2) { p2.dataset.v = ltVer; if (mismo) p2.scrollTop = py; else { const r = p2.querySelector('.resalta'); p2.scrollTop = r ? Math.max(0, r.offsetTop - 140) : 0; } }
+  }
+  $('#btnLotes').addEventListener('click', () => { ltRecien.clear(); ltRes = null; ltVer = null; $('#lotes').classList.remove('con-panel'); aplicarLote(datos.lote); pintarLotes(); ltTraer(); $('#lotes').hidden = false; document.body.style.overflow = 'hidden'; $('#lotes').scrollTop = 0; });
   $('#lotes').addEventListener('click', e => {
     if (e.target.closest('[data-lt-cerrar]')) { $('#lotes').hidden = true; document.body.style.overflow = ''; pintarPedidos(); return; }
-    if (e.target.closest('[data-lt-ocultar]')) { ltOcultar = !ltOcultar; ltRecien.clear(); pintarLotes(); return; }
+    if (e.target.closest('[data-lt-ocultar]')) { ltOcultar = !ltOcultar; ltRecien.clear(); repintarLotes(); return; }
     const ir = e.target.closest('[data-lt-ir]');
-    if (ir) { ltVer = ir.dataset.ltIr; ltRes = ir.dataset.ltRes; pintarLotes(); $('#lotes').scrollTop = 0; return; }
+    if (ir) { ltVer = ir.dataset.ltIr; ltRes = ir.dataset.ltRes; repintarLotes(); return; }
     const k = e.target.closest('[data-lt-k]');
-    if (k) { const id = k.dataset.ltK, sera = !ltHechas.has(id); sera ? ltHechas.add(id) : ltHechas.delete(id); ltRecien.add(id); ltCambio('hechas', id, sera); const y = $('#lotes').scrollTop; pintarLotes(); $('#lotes').scrollTop = y; return; }
-    const vb = e.target.closest('[data-lt-vista]'); if (vb) { ltVista = vb.dataset.ltVista; pintarLotes(); return; }
-    if (e.target.closest('[data-lt-vercerrar]')) { ltVer = null; pintarLotes(); return; }
+    if (k) { const id = k.dataset.ltK, sera = !ltHechas.has(id); sera ? ltHechas.add(id) : ltHechas.delete(id); ltRecien.add(id); ltCambio('hechas', id, sera); repintarLotes(); return; }
+    const vb = e.target.closest('[data-lt-vista]'); if (vb) { ltVista = vb.dataset.ltVista; repintarLotes(); return; }
+    if (e.target.closest('[data-lt-vercerrar]')) { ltVer = null; ltRes = null; repintarLotes(); return; }
     const vp = e.target.closest('[data-lt-ped]');
-    if (vp) { ltRes = null; ltVer = ltVer === vp.dataset.ltPed ? null : vp.dataset.ltPed; pintarLotes(); $('#lotes').scrollTop = 0; return; }
+    if (vp) { ltRes = null; ltVer = ltVer === vp.dataset.ltPed ? null : vp.dataset.ltPed; repintarLotes(); return; }
     const pd = e.target.closest('[data-lt-sacar]');
-    if (pd) { const v = pd.dataset.ltSacar, sera = !ltFuera.has(v); sera ? ltFuera.add(v) : ltFuera.delete(v); ltCambio('fuera', v, sera); const y = $('#lotes').scrollTop; pintarLotes(); $('#lotes').scrollTop = y; }
+    if (pd) { const v = pd.dataset.ltSacar, sera = !ltFuera.has(v); sera ? ltFuera.add(v) : ltFuera.delete(v); ltCambio('fuera', v, sera); repintarLotes(); }
   });
 
   function pintarPedidos() {
