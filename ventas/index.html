@@ -699,7 +699,7 @@ details[open] > summary{margin-bottom:4px}
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261107210201';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261108061636';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1979,7 +1979,7 @@ details[open] > summary{margin-bottom:4px}
   /* ---------- Lista para imprimir: teclas de los pedidos por entregar, agrupadas por color ---------- */
   // Se arma solo al abrirla (no hace lenta la página). Lo marcado como impreso se guarda en este teléfono.
   const leerSet = k => { try { return new Set(JSON.parse(leer(k) || '[]')); } catch (e) { return new Set(); } };
-  var ltFuera = null, ltHechas = null, ltOcultar = false;
+  var ltFuera = null, ltHechas = null, ltOcultar = true;   // de entrada se esconden las piezas ya impresas
   function datosLotes() {
     const peds = [], teclas = [], sinDiseno = [], bases = [], charms = [];
     datos.ventas.filter(p => p.estado === 'Pedido' || p.estado === 'Pagado').forEach(p => {
