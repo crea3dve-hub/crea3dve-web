@@ -674,7 +674,7 @@ details[open] > summary{margin-bottom:4px}
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261107203948';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261107204046';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -2119,7 +2119,7 @@ details[open] > summary{margin-bottom:4px}
     'dorado': 'linear-gradient(135deg,#FFF6A6,#E2C233 38%,#9E8212 62%,#FFF6A6)' };
   $('#btnLotes').addEventListener('click', () => { ltRecien.clear(); ltRes = null; aplicarLote(datos.lote); pintarLotes(); ltTraer(); $('#lotes').hidden = false; document.body.style.overflow = 'hidden'; $('#lotes').scrollTop = 0; });
   $('#lotes').addEventListener('click', e => {
-    if (e.target.closest('[data-lt-cerrar]')) { $('#lotes').hidden = true; document.body.style.overflow = ''; return; }
+    if (e.target.closest('[data-lt-cerrar]')) { $('#lotes').hidden = true; document.body.style.overflow = ''; pintarPedidos(); return; }
     if (e.target.closest('[data-lt-ocultar]')) { ltOcultar = !ltOcultar; ltRecien.clear(); pintarLotes(); return; }
     const ir = e.target.closest('[data-lt-ir]');
     if (ir) { ltVer = ir.dataset.ltIr; ltRes = ir.dataset.ltRes; pintarLotes(); $('#lotes').scrollTop = 0; return; }
