@@ -116,6 +116,10 @@ button.tecla{padding:0;cursor:pointer}
 .imp-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0;align-items:center}
 .imp-lab{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);min-width:58px}
 .card.listo{padding-block:12px}
+.clk-listos{background:var(--brand-soft);border-radius:12px;padding:10px;margin-bottom:10px}
+.clk-listos-f{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.clk-listo{border:0;background:none;padding:0;cursor:pointer}
+.clk-listo .teclas{margin:0}
 .listo-fila{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
 .listo-fila .teclas{margin:0}
 .btn-listo{border:0;background:var(--brand-soft);color:var(--ink);border-radius:999px;padding:6px 12px;font-weight:800;font-size:13px;cursor:pointer}
@@ -767,7 +771,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261109140021';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261109140345';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1818,17 +1822,21 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   // bloques de clickers del diseño de un pedido
   const bloquesDe = texto => { const partes = String(texto || '').split(/\*?━━━ Clicker \d+ ━━━\*?/); return partes.length > 1 ? partes.slice(1) : [String(texto || '')]; };
   // ¿ya está todo impreso y armado? (teclas, base, charms, cadena y aros)
+  // todo lo que hay que marcar de un clicker: teclas, base, charms y armado
+  function idsBloque(b, numero, n) {
+    const ids = [], nt = (b.match(/^\s*\d+\.\s*\*[^*]+\*\s*→\s*tecla/gm) || []).length;
+    if (!nt) return ids;
+    for (let i = 0; i < nt; i++) ids.push(numero + '-' + n + '-' + i);
+    if (/🧱 Base:/.test(b)) ids.push(numero + '-' + n + '-base');
+    charmsDeBloque(b, numero, n, '').forEach(x => ids.push(x.id));
+    armadoDeBloque(b, numero, n).forEach(x => ids.push(x.id));
+    return ids;
+  }
+  const bloqueListo = (b, numero, n) => { const ids = idsBloque(b, numero, n); return !!ltHechas && ids.length > 0 && ids.every(id => ltHechas.has(id)); };
   function todoListo(p) {
     if (!p.diseno || !ltHechas) return false;
     const ids = [];
-    bloquesDe(p.diseno).forEach((b, n) => {
-      const nt = (b.match(/^\s*\d+\.\s*\*[^*]+\*\s*→\s*tecla/gm) || []).length;
-      if (!nt) return;
-      for (let i = 0; i < nt; i++) ids.push(p.numero + '-' + n + '-' + i);
-      if (/🧱 Base:/.test(b)) ids.push(p.numero + '-' + n + '-base');
-      charmsDeBloque(b, p.numero, n, '').forEach(x => ids.push(x.id));
-      armadoDeBloque(b, p.numero, n).forEach(x => ids.push(x.id));
-    });
+    bloquesDe(p.diseno).forEach((b, n) => ids.push(...idsBloque(b, p.numero, n)));
     return ids.length > 0 && ids.every(id => ltHechas.has(id));
   }
   const detAbierto = new Set();   // pedidos listos que abriste para ver el detalle
@@ -1845,8 +1853,14 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     try {
       const partes = texto.split(/\*?━━━ Clicker \d+ ━━━\*?/);
       const bloques = partes.length > 1 ? partes.slice(1) : [texto];
+      const listos = [];
       const html = bloques.map((b, n) => {
         const base = /🧱 Base:\s*(?:\S+\s+)?\*([^*]+)\*\s*·\s*([^\n]+)/.exec(b);
+        if (numero && bloques.length > 1 && !detAbierto.has(numero + '-' + n) && bloqueListo(b, numero, n)) {
+          const ts = [...b.matchAll(/^\s*\d+\.\s*\*([^*]+)\*\s*→\s*tecla\s*(?:\S+\s+)?\*([^*]+)\*\s*·\s*letra\s*(?:\S+\s+)?\*([^*]+)\*/gm)];
+          listos.push(`<button type="button" class="clk-listo" data-det="${esc(numero + '-' + n)}" title="Clicker ${n + 1} listo · toca para ver el detalle"><span class="teclas" style="background:${hexDe(base && base[1])}">${ts.map(m => { const ch = SIMBOLO[m[1].trim().toLowerCase()] || m[1].trim(); return `<span class="tecla" style="background:${hexDe(m[2])};color:${hexDe(m[3])}">${capDe(ch, hexDe(m[3]), 20)}</span>`; }).join('')}</span></button>`);
+          return '';
+        }
         const teclas = [...b.matchAll(/^\s*\d+\.\s*\*([^*]+)\*\s*→\s*tecla\s*(?:\S+\s+)?\*([^*]+)\*\s*·\s*letra\s*(?:\S+\s+)?\*([^*]+)\*/gm)];
         const link = (/https:\/\/crea3dve\.com\/(?:d\/)?#c_[\w-]+/.exec(b) || [])[0];
         const lineas = b.split('\n'), extras = [];
@@ -1868,7 +1882,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         // base y charms: botoncitos para marcarlos como impresos
         const piezas = numero ? (base ? [`<button type="button" class="imp-chip" data-imp="${esc(numero + '-' + n + '-base')}" aria-pressed="${!!baseLista}">${baseLista ? '✓' : '○'} 🧱 base ${esc(base[1])}</button>`] : [])
           .concat(chs.map(x => `<button type="button" class="imp-chip" data-imp="${esc(x.id)}" aria-pressed="${!!(ltHechas && ltHechas.has(x.id))}">${ltHechas && ltHechas.has(x.id) ? '✓' : '○'} ${charmDibujo(x, 20)} ${esc(charmNombre(x))}</button>`)) : [];
-        return `<div class="web-clk">${bloques.length > 1 ? `<div class="tit">Clicker ${n + 1}</div>` : ''}
+        return `<div class="web-clk">${bloques.length > 1 ? `<div class="tit">Clicker ${n + 1}${numero && detAbierto.has(numero + '-' + n) ? ` <button type="button" class="btn-listo" data-det="${esc(numero + '-' + n)}">Resumir ▲</button>` : ''}</div>` : ''}
           ${tira}
           ${piezas.length ? `<div class="imp-chips"><span class="imp-lab">Imprimir</span>${piezas.join('')}</div>` : ''}
           ${arm.length ? `<div class="imp-chips"><span class="imp-lab">Armar</span>${arm.map(x => `<button type="button" class="imp-chip" data-imp="${esc(x.id)}" aria-pressed="${!!(ltHechas && ltHechas.has(x.id))}">${ltHechas && ltHechas.has(x.id) ? '✓' : '○'} ${x.ico} ${esc(x.nombre)}</button>`).join('')}</div>` : ''}
@@ -1879,7 +1893,8 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
           ${link ? `<a class="btn chico" style="text-decoration:none;justify-self:start" target="_blank" rel="noopener" href="${esc(link)}">🔍 Ver el diseño en 3D</a>` : ''}
         </div>`;
       }).join('');
-      return `<div class="web-det">${html}<details><summary>Ver el mensaje completo</summary><div class="web-txt">${esc(sinAst(texto))}</div></details></div>`;
+      const filaListos = listos.length ? `<div class="clk-listos"><div class="imp-lab">✓ Listos · ${listos.length} de ${bloques.length}</div><div class="clk-listos-f">${listos.join('')}</div></div>` : '';
+      return `<div class="web-det">${filaListos}${html}<details><summary>Ver el mensaje completo</summary><div class="web-txt">${esc(sinAst(texto))}</div></details></div>`;
     } catch (e) { return `<div class="web-txt">${esc(sinAst(texto))}</div>`; }
   }
   let webAbierto = null;
