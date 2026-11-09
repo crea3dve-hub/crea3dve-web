@@ -805,8 +805,18 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   }
   // ¿Trae todo lo que la página necesita? (una confirmación rápida del puente no trae los datos)
   function completos(d) { return !!(d && Array.isArray(d.ventas) && Array.isArray(d.productos) && d.listas && d.resumen); }
+  // Si la copia rápida de Google viene dañada o tarda, se pide directo a la hoja
   async function pedirDatos(fresco) {
-    const r = await fetch(api + '?pin=' + encodeURIComponent(pin) + (fresco ? '&fresco=1' : '') + '&t=' + Date.now(), { method: 'GET' });
+    if (fresco) return pedirDatos1(true);
+    try { return await pedirDatos1(false); }
+    catch (e) { if (e.message === 'Clave incorrecta') throw e; return pedirDatos1(true); }
+  }
+  async function pedirDatos1(fresco) {
+    const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), fresco ? 60000 : 15000);
+    try { return await pedirDatos2(fresco, ctl.signal); } finally { clearTimeout(tm); }
+  }
+  async function pedirDatos2(fresco, signal) {
+    const r = await fetch(api + '?pin=' + encodeURIComponent(pin) + (fresco ? '&fresco=1' : '') + '&t=' + Date.now(), { method: 'GET', signal });
     const j = await leerRespuesta(r);
     if (!j.ok) throw new Error(j.error || 'Error');
     if (!completos(j)) throw new Error('La hoja respondió incompleto, intenta de nuevo');
@@ -956,7 +966,8 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   document.querySelectorAll('nav.tabs button[data-ir]').forEach(b => b.addEventListener('click', () => irA(b.dataset.ir)));
 
   /* Botones y títulos sin emojis: se ve más limpio (no toca los dibujos de las teclas ni los charms) */
-  const RX_EMO = /^(?:\s*(?:\p{Extended_Pictographic}|\p{Regional_Indicator})(?:️|‍(?:\p{Extended_Pictographic})️?)*\s*)+/u;
+  let RX_EMO = /$^/;
+  try { RX_EMO = new RegExp('^(?:\\s*(?:\\p{Extended_Pictographic}|[\\u{1F1E6}-\\u{1F1FF}])(?:\\uFE0F|\\u200D\\p{Extended_Pictographic}\\uFE0F?)*\\s*)+', 'u'); } catch (x) {}
   function sinEmojis(raiz) {
     (raiz || document).querySelectorAll('.btn, .chips button, h2, h3, .ayuda, #lotes .lt-vista button, .segmento button, summary, .ktit, .card > b, .card > div > b, .card > strong, .card > div > strong, .card summary b').forEach(el => {
       const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let t;
