@@ -468,7 +468,10 @@ st.base = ren(st.base); st.tiles = (st.tiles||[]).map(ren); st.legs = (st.legs||
 if(st.mixTiles) st.mixTiles = st.mixTiles.map(ren); if(st.mixLegs) st.mixLegs = st.mixLegs.map(ren);
 st.charms.forEach(c=>{ c.c = ren(c.c); });
 const REEMPLAZO = ["Rojo","Naranja","Azul","Negro"].find(c=>!FIL_AGOTADO.has(c));   // color que toma el lugar de uno agotado
-function sinAgotados(){ const f = c => FIL_AGOTADO.has(c) ? REEMPLAZO : c;   // un filamento agotado se cambia por uno disponible
+// los que ya no tenemos se cambian por el más parecido de los nuevos
+const PARECIDO = {"Morado metalizado":"Violeta","Fucsia":"Rosa","Celeste":"Azul celeste"};
+const cambioDe = c => PARECIDO[c] && !FIL_AGOTADO.has(PARECIDO[c]) ? PARECIDO[c] : REEMPLAZO;
+function sinAgotados(){ const f = c => FIL_AGOTADO.has(c) ? cambioDe(c) : c;   // un filamento agotado se cambia por uno disponible
   st.base = f(st.base); st.tiles = st.tiles.map(f); st.legs = st.legs.map(f); st.charms.forEach(c=>{ c.c = f(c.c); }); }
 // charms personalizados: una lista (antes era uno solo como texto)
 const listaOtros = v => Array.isArray(v) ? v.map(x=>String(x==null?"":x)) : (typeof v==="string" ? [v] : []);
@@ -1070,7 +1073,7 @@ if(fromLink){ $("fromlink").hidden = false;
   // si el diseño del link tiene un color que ya se agotó, se cambia por uno disponible (y se avisa)
   const usados = [st.base, ...st.tiles, ...st.legs, ...st.charms.map(c=>c.c)], ag = [...new Set(usados.filter(c=>FIL_AGOTADO.has(c)))];
   if(ag.length){ sinAgotados(); render();
-    $("fromlink").textContent += ` El color ${ag.map(c=>c.toLowerCase()).join(" y ")} está agotado, lo cambiamos por ${REEMPLAZO.toLowerCase()}: puedes escoger otro.`; } }
+    $("fromlink").textContent += ` ${ag.map(c=>`El ${c.toLowerCase()} ya no está disponible, lo cambiamos por ${cambioDe(c).toLowerCase()}.`).join(" ")} Puedes escoger otro color.`; } }
 window.__render = render;
 </script>
 <script>
