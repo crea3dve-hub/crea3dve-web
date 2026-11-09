@@ -164,8 +164,8 @@ button.tecla{padding:0;cursor:pointer}
 #lotes .lt-charm{width:78px}
 #lotes .lt-charm small{max-width:78px}
 #lotes .lt-charm .cap.pers{border-radius:12px;font-size:12px;font-weight:800;line-height:1.1;padding:4px;text-align:center;background:var(--surface);color:var(--ink);border-style:dashed}
-#lotes .lt-vista{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;background:var(--line);border-radius:12px;padding:4px;margin-top:12px}
-#lotes .lt-vista button{border:0;border-radius:9px;padding:9px;font-weight:800;font-size:15px;background:transparent;color:var(--muted)}
+#lotes .lt-vista{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--line);border-radius:12px;padding:4px;margin-top:12px}
+#lotes .lt-vista button{border:0;border-radius:9px;padding:9px 4px;font-weight:800;font-size:clamp(12px,3.3vw,15px);background:transparent;color:var(--muted)}
 #lotes .lt-vista button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 #lotes .lt-base .cap{width:62px;height:40px;border-radius:10px;font-size:17px}
 #lotes .lt-base{width:70px}
@@ -767,7 +767,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261109135749';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261109140021';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -2169,9 +2169,11 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const oscuro = c => !['blanco', 'beige', 'amarillo', 'plateado', 'dorado', 'celeste', 'verde claro', 'mármol', 'amarillo mantequilla', 'rosado mate', 'madera', 'púrpura mate', ''].includes(c);
     const activas = teclas.filter(t => !ltFuera.has(t.v));
     const basesAct = bases.filter(x => !ltFuera.has(x.v));
-    const enVista = ltVista === 'bases' ? basesAct : ltVista === 'charms' ? charmsAct : activas;
+    // pedidos que todavía tienen algo por imprimir (los que ya están completos no salen)
+    const pedsPend = peds.filter(x => !ltFuera.has(x.v) && x.ids.some(id => !ltHechas.has(id) || ltRecien.has(id)));
+    const enVista = ltVista === 'bases' ? basesAct : ltVista === 'charms' ? charmsAct : ltVista === 'pedidos' ? activas.concat(basesAct, charmsAct) : activas;
     const total = enVista.reduce((a, t) => a + t.n, 0), hechas = enVista.filter(t => ltHechas.has(t.id)).reduce((a, t) => a + t.n, 0);
-    const queEs = ltVista === 'bases' ? ['base', 'bases', 'lista', 'listas'] : ltVista === 'charms' ? ['charm', 'charms', 'listo', 'listos'] : ['tecla', 'teclas', 'lista', 'listas'];
+    const queEs = ltVista === 'pedidos' ? ['pieza', 'piezas', 'lista', 'listas'] : ltVista === 'bases' ? ['base', 'bases', 'lista', 'listas'] : ltVista === 'charms' ? ['charm', 'charms', 'listo', 'listos'] : ['tecla', 'teclas', 'lista', 'listas'];
     // bases agrupadas por color, y dentro por tamaño y tipo (las del mismo modelo se imprimen juntas)
     const gb = {};
     basesAct.forEach(x => { const m = x.tam + ' teclas · ' + x.tipo; ((gb[x.color] = gb[x.color] || {})[m] = gb[x.color][m] || []).push(x); });
@@ -2196,12 +2198,13 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         return `<button type="button" data-lt-ped="${esc(x.v)}" aria-pressed="${!ltFuera.has(x.v)}" aria-expanded="${ltVer === x.v}"${ltVer === x.v ? ' style="border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)"' : ''}>${esc(x.c)} · ${h === x.ids.length ? '✓ listo' : h + '/' + x.ids.length}</button>`; }).join('')}</div>
 
       <div class="lt-vista" role="group" aria-label="Qué imprimir">
-        <button type="button" data-lt-vista="teclas" aria-pressed="${ltVista !== 'bases'}">⌨️ Teclas · ${activas.filter(t => !ltHechas.has(t.id)).reduce((a, t) => a + t.n, 0)}</button>
+        <button type="button" data-lt-vista="pedidos" aria-pressed="${ltVista === 'pedidos'}">📋 Pedidos · ${pedsPend.length}</button>
+        <button type="button" data-lt-vista="teclas" aria-pressed="${ltVista === 'teclas'}">⌨️ Teclas · ${activas.filter(t => !ltHechas.has(t.id)).reduce((a, t) => a + t.n, 0)}</button>
         <button type="button" data-lt-vista="bases" aria-pressed="${ltVista === 'bases'}">🧱 Bases · ${basesAct.filter(t => !ltHechas.has(t.id)).reduce((a, t) => a + t.n, 0)}</button>
         <button type="button" data-lt-vista="charms" aria-pressed="${ltVista === 'charms'}">✨ Charms · ${charmsAct.filter(t => !ltHechas.has(t.id)).reduce((a, t) => a + t.n, 0)}</button>
       </div>
       <button type="button" class="btn chico" data-lt-ocultar style="margin-top:10px">${ltOcultar ? '👁 Mostrar también las que ya imprimí' : '🙈 Esconder las que ya imprimí'}</button>
-      ${ltVista === 'charms' ? (Object.keys(gc).sort((a, b) => (a === 'Charm personalizado') - (b === 'Charm personalizado') || cuentaB(gc[b]) - cuentaB(gc[a]) || a.localeCompare(b)).filter(mo => hayVis(gc[mo])).map(mo => `<section class="lt-grupo">
+      ${ltVista === 'pedidos' ? (pedsPend.map(x => verPedidoLote(x.v, teclas, bases, charms, true)).join('') || '<p class="vacio">Todos los pedidos están impresos. 🎉</p>') : ltVista === 'charms' ? (Object.keys(gc).sort((a, b) => (a === 'Charm personalizado') - (b === 'Charm personalizado') || cuentaB(gc[b]) - cuentaB(gc[a]) || a.localeCompare(b)).filter(mo => hayVis(gc[mo])).map(mo => `<section class="lt-grupo">
         <div class="lt-gcab"><div><b>${esc(mo)}</b><span class="chico">${faltanDe(gc[mo])} por imprimir · ${cuentaB(gc[mo])} en total</span></div></div>
         ${Object.keys(gc[mo]).sort((a, b) => gc[mo][b].length - gc[mo][a].length || a.localeCompare(b)).filter(c => gc[mo][c].some(vis)).map(c => `<div class="lt-sub"><div>${COLOR_HEX[c] ? `<span class="lt-dot" style="background:${fondo(c)}"></span>` : ''}${esc(c)}</div>
           <div class="lt-keys">${gc[mo][c].filter(vis).map(x => `<div class="lt-k lt-charm" aria-pressed="${ltHechas.has(x.id)}"><button type="button" class="cap-b" data-lt-k="${esc(x.id)}" aria-pressed="${ltHechas.has(x.id)}" aria-label="${esc(mo)} ${esc(x.nombre || c)}, de ${esc(x.pal)}">
@@ -2269,8 +2272,9 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   }
   setTimeout(ltEnviar, 4000);   // si quedó algo sin mandar de antes
   let ltVer = null;   // pedido abierto arriba de la lista
-  var ltVista = 'teclas', ltRecien = new Set(), ltRes = null;
-  function verPedidoLote(v, teclas, bases, charms) {
+  var ltVista = 'pedidos', ltRecien = new Set(), ltRes = null;
+  function verPedidoLote(v, teclas, bases, charms, enLista) {
+    const ver = x => !enLista || !(ltOcultar && ltHechas.has(x.id) && !ltRecien.has(x.id));
     const p = datos.ventas.find(x => x.numero === v); if (!p) return '';
     const mias = teclas.filter(t => t.v === v), por = {};
     mias.forEach(t => { const k = t.id.split('-').slice(-2, -1)[0]; (por[k] = por[k] || []).push(t); });
@@ -2281,16 +2285,17 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     return `<section class="lt-grupo" style="border-color:var(--ink)">
       <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
         <div><b style="font-size:17px">${esc(p.cliente || 'Sin nombre')}</b><div class="chico">${esc(v)} · ${h === todo.length ? '✓ todo impreso' : h + ' de ' + todo.length + ' piezas impresas · faltan ' + (todo.length - h)}</div></div>
-        <button type="button" class="btn chico" data-lt-vercerrar>✕</button></div>
+        ${enLista ? '' : '<button type="button" class="btn chico" data-lt-vercerrar>✕</button>'}</div>
       <div class="lt-prog"><i style="width:${todo.length ? Math.round(h / todo.length * 100) : 0}%"></i></div>
       ${ltRes && todo.some(t => t.id === ltRes) ? `<p class="chico" style="margin:8px 0 0">La pieza con el borde negro es la que tocaste: así ves dónde va en el llavero.</p>` : ''}
-      ${Object.values(por).map(ks => { const kk = ks[0].id.split('-').slice(-2, -1)[0];
-        const bs = misBases.filter(x => String(x.k) === kk), cs = misCharms.filter(x => String(x.k) === kk);
-        return `<div class="lt-clk"><div class="lt-clk-t">${esc(ks[0].pal)}${ks[0].n > 1 ? ' · ×' + ks[0].n : ''}</div><div class="lt-fila">
+      ${Object.values(por).map(ks0 => { const kk = ks0[0].id.split('-').slice(-2, -1)[0], pal0 = ks0[0].pal, n0 = ks0[0].n;
+        const bs = misBases.filter(x => String(x.k) === kk && ver(x)), cs = misCharms.filter(x => String(x.k) === kk && ver(x)), ks = ks0.filter(ver);
+        if (!bs.length && !cs.length && !ks.length) return '';
+        return `<div class="lt-clk"><div class="lt-clk-t">${esc(pal0)}${n0 > 1 ? ' · ×' + n0 : ''}</div><div class="lt-fila">
         ${bs.length ? `<div class="lt-col"><span class="lt-lab">Base</span>${bs.map(x => `<button type="button" class="lt-k lt-base${ltRes === x.id ? ' resalta' : ''}" data-lt-k="${esc(x.id)}" aria-pressed="${ltHechas.has(x.id)}" aria-label="Base ${esc(x.color)}">
           <span class="cap" style="background:${fondo(x.color)};color:${oscuro(x.color) ? '#fff' : '#242424'}">${x.tam}</span><small>${esc(x.color)} · ${esc(x.tipo)}</small></button>`).join('')}</div>` : ''}
-        <div class="lt-col teclas"><span class="lt-lab">Teclas, en orden</span><div class="lt-tira">${ks.map((k, i) => `<button type="button" class="lt-k${ltRes === k.id ? ' resalta' : ''}" data-lt-k="${esc(k.id)}" aria-pressed="${ltHechas.has(k.id)}" aria-label="Tecla ${i + 1}: ${esc(k.t)}, letra ${esc(k.l)} ${esc(k.lc)}">
-          <span class="cap" style="background:${fondo(k.t)};color:${hexDe(k.lc)}">${capDe(k.l, hexDe(k.lc), 30)}</span><small>${i + 1}. ${esc(k.t)}</small></button>`).join('')}</div></div>
+        ${ks.length ? `<div class="lt-col teclas"><span class="lt-lab">Teclas, en orden</span><div class="lt-tira">${ks.map(k => { const i = ks0.indexOf(k); return `<button type="button" class="lt-k${ltRes === k.id ? ' resalta' : ''}" data-lt-k="${esc(k.id)}" aria-pressed="${ltHechas.has(k.id)}" aria-label="Tecla ${i + 1}: ${esc(k.t)}, letra ${esc(k.l)} ${esc(k.lc)}">
+          <span class="cap" style="background:${fondo(k.t)};color:${hexDe(k.lc)}">${capDe(k.l, hexDe(k.lc), 30)}</span><small>${i + 1}. ${esc(k.t)}</small></button>`; }).join('')}</div></div>` : ''}
         ${cs.length ? `<div class="lt-col charms"><span class="lt-lab">Charms</span><div class="lt-keys">${cs.map(x => `<button type="button" class="lt-k lt-charm${ltRes === x.id ? ' resalta' : ''}" data-lt-k="${esc(x.id)}" aria-pressed="${ltHechas.has(x.id)}" aria-label="${esc(charmNombre(x))}">
           <span class="cap dib">${charmDibujo(x, 44)}</span><small>${esc(charmNombre(x))}</small></button>`).join('')}</div></div>` : ''}
         </div></div>`; }).join('')}
