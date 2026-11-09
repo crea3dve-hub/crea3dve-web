@@ -204,8 +204,8 @@ button.tecla{padding:0;cursor:pointer}
 nav.tabs{position:fixed;left:12px;right:12px;margin:0 auto;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:10;max-width:560px;
   background:var(--surface);
   border:1px solid var(--line);border-radius:22px;box-shadow:0 10px 30px rgba(20,23,18,.14);padding:6px !important;gap:4px;
-  display:grid;grid-template-columns:repeat(7,1fr);padding-bottom:env(safe-area-inset-bottom,0px)}
-nav.tabs button{border:0;background:transparent;padding:8px 1px 7px;font-size:10px;letter-spacing:-.1px;font-weight:700;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:16px;cursor:pointer;transition:background .15s,color .15s}
+  display:grid;grid-template-columns:repeat(8,1fr);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav.tabs button{border:0;background:transparent;padding:8px 0 7px;font-size:9.5px;letter-spacing:-.2px;font-weight:700;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:16px;cursor:pointer;transition:background .15s,color .15s}
 nav.tabs button svg{width:22px;height:22px}
 nav.tabs button{position:relative}
 nav.tabs button[data-badge]:not([data-badge=""])::after{content:attr(data-badge);position:absolute;top:2px;right:calc(50% - 22px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--warn);color:#fff;font-size:11px;line-height:18px;text-align:center}
@@ -473,7 +473,7 @@ details[open] > summary{margin-bottom:4px}
       <button data-f="Entregado" aria-pressed="false">Entregados</button>
       <button data-f="todos" aria-pressed="false">Todos</button>
     </div>
-    <button class="btn ancho" id="btnLotes" type="button" style="margin-bottom:10px">🎨 Lista para imprimir (teclas, bases y charms)</button>
+    <button class="btn ancho" id="btnLotes" type="button" style="margin-bottom:10px" hidden>🎨 Lista para imprimir (teclas, bases y charms)</button>
     <div class="card" id="cardEnviar" hidden></div>
     <div id="listaPedidos"></div>
     <div id="lotes" hidden role="dialog" aria-modal="true" aria-label="Lista para imprimir teclas"></div>
@@ -671,6 +671,7 @@ details[open] > summary{margin-bottom:4px}
   <button role="tab" data-ir="pedidos" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Pedidos</button>
   <button role="tab" data-ir="inventario" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>Inventario</button>
   <button role="tab" data-ir="catalogo" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Catálogo</button>
+  <button type="button" id="navImprimir" aria-label="Lista para imprimir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>Imprimir</button>
   <button role="tab" data-ir="calcular" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M8 6h8"/><path d="M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h.01M12 19h4"/></svg>Calcular</button>
   <button role="tab" data-ir="gastos" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 15h3"/></svg>Gastos</button>
   <button role="tab" data-ir="resumen" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Resumen</button>
@@ -884,13 +885,14 @@ details[open] > summary{margin-bottom:4px}
   /* ---------- Pestañas ---------- */
   function irA(t) {
     document.querySelectorAll('[data-tab]').forEach(s => { s.hidden = s.id !== 'tab-' + t; });
-    document.querySelectorAll('nav.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.ir === t));
+    document.querySelectorAll('nav.tabs button[data-ir]').forEach(b => b.setAttribute('aria-selected', b.dataset.ir === t));
     window.scrollTo(0, 0);
     guardar('c3_tab', t);   // al recargar, la página vuelve a esta pestaña
   }
   // recuerda también dónde estabas en la pestaña (para volver al mismo sitio al recargar)
   addEventListener('pagehide', () => { try { sessionStorage.setItem('c3_scroll', String(scrollY)); } catch (e) {} });
-  document.querySelectorAll('nav.tabs button').forEach(b => b.addEventListener('click', () => irA(b.dataset.ir)));
+  document.querySelectorAll('nav.tabs button[data-ir]').forEach(b => b.addEventListener('click', () => irA(b.dataset.ir)));
+  $('#navImprimir').addEventListener('click', () => { irA('pedidos'); $('#btnLotes').click(); });
 
   /* ---------- Vender ---------- */
   function opciones(sel, lista, valor) {
