@@ -17,7 +17,7 @@ const COLORES = [   // [nombre, color, (fondo del botón)] — los mismos de cre
 ];
 // orden en que se muestran los colores (los que ya no tenemos no salen)
 const COLORES_VISTA = ["Blanco","Amarillo mantequilla","Amarillo","Naranja","Rojo","Rosa","Rosado mate","Magenta claro","Púrpura mate","Violeta","Morado",
-  "Azul celeste","Azul","Azul oscuro","Verde claro","Verde grama","Verde","Beige","Madera","Marrón","Gris","Negro","Plateado","Dorado","Mármol"];
+  "Azul celeste","Azul","Azul oscuro","Verde claro","Verde grama","Verde","Beige","Marrón","Gris","Negro","Plateado","Dorado","Mármol"];
 const FIL_QUITADO = new Set(["Fucsia","Celeste","Morado metalizado"]);   // ya no los tenemos: no salen en la página
 const FIL_AGOTADO = new Set([...FIL_QUITADO]);   // agotados por ahora (salen tachados); los quitados también cuentan como no disponibles
 const CATEGORIAS = ["Casa", "Oficina", "Llaveros", "Fidgets", "Para negocios"];

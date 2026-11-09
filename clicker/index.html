@@ -369,7 +369,7 @@ const PRECIO_LLAVERO = 0.50, PRECIO_COLORES = 0.50;
 // Filamentos que se acabaron: se ven tachados y no se pueden escoger (bórralos de aquí cuando vuelvan)
 // orden en que se muestran los colores (los que ya no tenemos no salen)
 const COLORES_VISTA = ["Blanco","Amarillo mantequilla","Amarillo","Naranja","Rojo","Rosa","Rosado mate","Magenta claro","Púrpura mate","Violeta","Morado",
-  "Azul celeste","Azul","Azul oscuro","Verde claro","Verde grama","Verde","Beige","Madera","Marrón","Gris","Negro","Plateado","Dorado","Mármol"];
+  "Azul celeste","Azul","Azul oscuro","Verde claro","Verde grama","Verde","Beige","Marrón","Gris","Negro","Plateado","Dorado","Mármol"];
 const FIL_QUITADO = new Set(["Fucsia","Celeste","Morado metalizado"]);   // ya no los tenemos: no salen en la página
 const FIL_AGOTADO = new Set([...FIL_QUITADO]);   // agotados por ahora (salen tachados); los quitados también cuentan como no disponibles
 const CADC = {"Blanco":"#F4F4F2", "Celeste":"#9CC7E8", "Azul":"#1F4FB8", "Verde":"#2E8B3E", "Verde limón":"#A6D84A", "Verde menta":"#7FC4A4", "Amarillo":"#F2D33A", "Naranja":"#F07A2A", "Rojo":"#D9262E", "Fucsia":"#E0306F", "Rosado":"#F49AC1"};   // colores de la cadenita
@@ -786,7 +786,7 @@ const TEMAS = [
   {n:"vibrante",  bases:["Negro","Blanco","Azul","Rosa","Violeta"],  tiles:["Rojo","Rosa","Naranja","Amarillo","Azul","Verde grama","Violeta","Magenta claro"], acc:["Blanco","Amarillo","Negro"]},
   {n:"arcoiris",  bases:["Blanco","Negro"],                          seq:["Rojo","Naranja","Amarillo","Verde grama","Azul celeste","Azul","Violeta","Rosa"], acc:["Blanco"]},
   {n:"dos tonos", bases:["Blanco","Negro","Beige","Plateado","Gris","Azul oscuro"], tiles:["Rosa","Azul celeste","Violeta","Verde claro","Amarillo","Azul","Rojo","Naranja","Verde","Negro","Blanco","Morado"], acc:["Blanco","Negro","Amarillo","Rosa"]},
-  {n:"elegante",  bases:["Negro","Blanco","Plateado","Beige","Azul oscuro"], tiles:["Blanco","Negro","Gris","Dorado","Plateado","Mármol","Beige","Madera","Azul oscuro"], acc:["Dorado","Negro","Blanco"], one:true},
+  {n:"elegante",  bases:["Negro","Blanco","Plateado","Beige","Azul oscuro"], tiles:["Blanco","Negro","Gris","Dorado","Plateado","Mármol","Beige","Azul oscuro"], acc:["Dorado","Negro","Blanco"], one:true},
   {n:"un color",  bases:["Blanco","Negro","Plateado"],                  tiles:["Rosa","Violeta","Azul celeste","Verde claro","Rojo","Azul","Amarillo","Naranja","Verde","Morado","Magenta claro","Rosado mate"], acc:["Blanco","Negro","Amarillo","Violeta","Rosa"], one:true},
 ];
 TEMAS.forEach(t=>["bases","tiles","seq","acc"].forEach(k=>{ if(t[k]) t[k] = t[k].filter(c=>!FIL_AGOTADO.has(c)); }));   // sin filamentos agotados
