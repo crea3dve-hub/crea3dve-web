@@ -440,7 +440,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       <button type="button" class="btn ancho" id="verMasProd" style="margin-top:8px" hidden></button>
     </div>
     <details class="card" style="margin-top:10px">
-      <summary>➕ Otro producto (a la medida, presupuesto…)</summary>
+      <summary>➕ Otro producto</summary>
       <label for="otroNombre">Qué es</label>
       <input id="otroNombre" placeholder="Ej: Organizador de joyas">
       <p class="chico" style="margin:10px 0 0">¿No sabes el precio? <button type="button" class="btn chico" id="irCalc">🧮 Calcúlalo aquí</button></p>
@@ -1653,11 +1653,12 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         <div class="copias"><button type="button" class="btn chico" data-ig="-1" aria-label="Uno menos">−</button><input data-iguales type="number" inputmode="numeric" min="1" max="500" value="1" aria-label="Cuántos iguales"><button type="button" class="btn chico" data-ig="1" aria-label="Uno más">+</button>
           <span class="chico" data-ig-total></span></div>
       </div>
-      <label>Productos</label>
+      <div class="fila" style="justify-content:space-between;margin:10px 0 4px"><label style="margin:0">Productos</label>
+        <button type="button" class="btn chico" data-regalo aria-pressed="${esRegalo(p)}">${esRegalo(p) ? 'Quitar regalo' : '🎁 Es un regalo'}</button></div>
       ${p.items.map((i, k) => `<div class="ed-item" data-k="${k}">
         <span class="nom">${esc(i.producto)}</span>
         <input data-q data-q0="${i.cantidad}" type="number" inputmode="numeric" min="0" value="${i.cantidad}" aria-label="Cantidad">
-        <input data-p type="number" inputmode="decimal" step="0.01" min="0" value="${i.precio || (i.cantidad ? +(i.total / i.cantidad).toFixed(2) : 0)}" aria-label="Precio c/u">
+        <input data-p data-p0="${(datos.productos.find(x => x.nombre === i.producto) || {}).precio || 0}" type="number" inputmode="decimal" step="0.01" min="0" value="${i.precio || (i.cantidad ? +(i.total / i.cantidad).toFixed(2) : 0)}" aria-label="Precio c/u">
         <button class="btn chico peligro" data-quitar aria-label="Quitar">✕</button>
       </div>`).join('')}
       <p class="chico" style="margin:6px 0 0">Cantidad y precio por unidad. ✕ quita el producto (vuelve al inventario).</p>
@@ -2446,6 +2447,17 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       else if (e.target.closest('[data-guardar]')) guardarEdicion(card);
       else if (e.target.closest('[data-add-vender]')) empezarAgregar(card.dataset.ed);
       else if (e.target.closest('[data-add-delivery]')) agregarDelivery(card.dataset.ed);
+      else if (e.target.closest('[data-regalo]')) {
+        // Regalo = todo a $0 (se guarda al tocar "Guardar cambios"). Quitarlo devuelve los precios normales.
+        const b = e.target.closest('[data-regalo]'), era = b.getAttribute('aria-pressed') === 'true';
+        card.querySelectorAll('.ed-item [data-p]').forEach(inp => {
+          if (!era) { inp.dataset.antes = inp.value; inp.value = 0; }
+          else inp.value = inp.dataset.antes && +inp.dataset.antes ? inp.dataset.antes : (inp.dataset.p0 || 0);
+          inp.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+        b.setAttribute('aria-pressed', String(!era)); b.textContent = era ? 'Es un regalo' : 'Quitar regalo';
+        avisar(era ? 'Precios normales de vuelta: toca Guardar cambios' : 'Todo a $0: toca Guardar cambios');
+      }
       else if (e.target.closest('[data-ig]')) { const inp = card.querySelector('[data-iguales]'); inp.value = Math.max(1, Math.min(500, (+inp.value || 1) + +e.target.closest('[data-ig]').dataset.ig)); aplicarIguales(card); }
       return;
     }
