@@ -367,7 +367,11 @@ const LINK_PAGINA = "https://crea3dve.com/";   // dominio de la página (el conf
 const PRECIO_LETRA = 1.50;           // cada letra: tecla + switch + su parte de la base (base y cadena incluidas)
 const PRECIO_LLAVERO = 0.50, PRECIO_COLORES = 0.50;
 // Filamentos que se acabaron: se ven tachados y no se pueden escoger (bórralos de aquí cuando vuelvan)
-const FIL_AGOTADO = new Set(["Fucsia","Celeste","Verde claro","Rojo","Morado metalizado"]);
+// orden en que se muestran los colores (los que ya no tenemos no salen)
+const COLORES_VISTA = ["Blanco","Amarillo mantequilla","Amarillo","Naranja","Rojo","Rosa","Rosado mate","Magenta claro","Púrpura mate","Violeta","Morado",
+  "Azul celeste","Azul","Azul oscuro","Verde claro","Verde grama","Verde","Beige","Madera","Marrón","Gris","Negro","Plateado","Dorado","Mármol"];
+const FIL_QUITADO = new Set(["Fucsia","Celeste","Morado metalizado"]);   // ya no los tenemos: no salen en la página
+const FIL_AGOTADO = new Set([...FIL_QUITADO]);   // agotados por ahora (salen tachados); los quitados también cuentan como no disponibles
 const CADC = {"Blanco":"#F4F4F2", "Celeste":"#9CC7E8", "Azul":"#1F4FB8", "Verde":"#2E8B3E", "Verde limón":"#A6D84A", "Verde menta":"#7FC4A4", "Amarillo":"#F2D33A", "Naranja":"#F07A2A", "Rojo":"#D9262E", "Fucsia":"#E0306F", "Rosado":"#F49AC1"};   // colores de la cadenita
    // cadenita de colores en vez de la plateada
    // aro de llavero en vez de la cadena de bolitas
@@ -423,7 +427,11 @@ const COLORES = [   // filamentos disponibles en el taller  [nombre, color, (fon
   ["Marrón","#7B4A2D"],["Verde claro","#A3E3A0"],["Verde","#3DA857"],
   ["Celeste","#8FCBF0"],["Azul","#2A5BC9"],["Morado metalizado","#7E4FC0","linear-gradient(135deg, #C7A6F2 0%, #7E4FC0 38%, #4B2A80 62%, #C7A6F2 100%)"],
   ["Dorado","#E2C233","linear-gradient(135deg, #FFF6A6 0%, #E2C233 38%, #9E8212 62%, #FFF6A6 100%)"],
-  ["Mármol","#E7E6E2","radial-gradient(circle at 30% 35%, #9a9a9a 0 1.5px, transparent 2px), radial-gradient(circle at 65% 60%, #8c8c8c 0 1.5px, transparent 2px), radial-gradient(circle at 45% 75%, #a5a5a5 0 1px, transparent 1.5px), #E7E6E2"]
+  ["Mármol","#E7E6E2","radial-gradient(circle at 30% 35%, #9a9a9a 0 1.5px, transparent 2px), radial-gradient(circle at 65% 60%, #8c8c8c 0 1.5px, transparent 2px), radial-gradient(circle at 45% 75%, #a5a5a5 0 1px, transparent 1.5px), #E7E6E2"],
+  // filamentos nuevos (nov. 2026) — van al final para no cambiar los links de diseños viejos
+  ["Verde grama","#6DBE45"],["Rosado mate","#E3A6B6"],["Magenta claro","#C65AC9"],["Púrpura mate","#A884C2"],
+  ["Violeta","#5B3AA6"],["Morado","#6A2C6E"],["Rosa","#DC3D6A"],["Amarillo mantequilla","#F2E3A2"],
+  ["Azul oscuro","#1E3550"],["Madera","#C8B08A","radial-gradient(circle at 25% 30%, #9C7F57 0 1px, transparent 1.6px), radial-gradient(circle at 70% 65%, #A88B62 0 1px, transparent 1.6px), #C8B08A"],["Azul celeste","#7C93DE"]
 ];
 window.METAL = {"#C9CCD1":1, "#7E4FC0":1, "#E2C233":1};   // se ven metalizados en el 3D
 // nombres viejos → nuevos (diseños guardados o links de antes)
@@ -435,8 +443,8 @@ const ren = n => RENOMBRE[n] || n;
 const SYMS = {"♥":"corazón","★":"estrella","✿":"flor","☺":"carita","♣":"trébol","🐾":"huella","⚽":"balón","✝":"cruz","⚡":"rayo"};
 const EXTRA_SYMS = ["&"];
 const FONTS = [["Redonda","'Nunito', system-ui, sans-serif","Redonda"]];   // por ahora solo letra redonda (antes también: ["Comic","'Comic Neue', 'Comic Sans MS', cursive","Comic"])
-const MIX = ["Amarillo","Azul","Verde claro","Rojo","Fucsia","Celeste","Naranja","Morado metalizado","Verde"].filter(c=>!FIL_AGOTADO.has(c));
-const LEGMIX = ["Morado metalizado","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Fucsia"].filter(c=>!FIL_AGOTADO.has(c));
+const MIX = ["Amarillo","Azul","Verde claro","Rojo","Rosa","Azul celeste","Naranja","Violeta","Verde grama","Magenta claro"].filter(c=>!FIL_AGOTADO.has(c));
+const LEGMIX = ["Morado","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Blanco","Rosa"].filter(c=>!FIL_AGOTADO.has(c));
 const hex = n => (COLORES.find(c=>c[0]===n)||COLORES[0])[1];
 const bg = n => { const c = COLORES.find(c=>c[0]===n)||COLORES[0]; return c[2]||c[1]; };   // fondo para botones (degradados)
 window.SPECIAL = {"#D9342C":"rainbow", "#E7E6E2":"marble"};
@@ -591,7 +599,7 @@ function charmIcon(t, c){
   return `<circle cx="22" cy="22" r="15" fill="none" stroke="#9AA394" stroke-width="2.5" stroke-dasharray="4 4"/><text x="22" y="22" dy=".36em" text-anchor="middle" font-family="Figtree, sans-serif" font-weight="800" font-size="18" fill="#7A8474">?</text>`;
 }
 function swatches(el, current, onPick){
-  el.innerHTML = COLORES.map(([n,h,css])=>{ const ag = FIL_AGOTADO.has(n);
+  el.innerHTML = COLORES_VISTA.map(n=>COLORES.find(c=>c[0]===n)).filter(c=>c && !FIL_QUITADO.has(c[0])).map(([n,h,css])=>{ const ag = FIL_AGOTADO.has(n);
     return `<button class="sw${ag?" sw-agotado":""}" style="background:${css||h}" title="${n}${ag?" (agotado)":""}" aria-label="${n}${ag?" agotado":""}" aria-pressed="${n===current}" data-n="${n}" ${ag?"disabled":""}></button>`; }).join("");
   el.querySelectorAll(".sw").forEach(b=>b.onclick=()=>onPick(b.dataset.n));
 }
@@ -654,7 +662,7 @@ function render(){
     const t = b.dataset.c;
     if(t==="otro"){ agregarOtro(); return; }
     if(st.charms.length < MAX_CHARMS){ const used = st.charms.filter(c=>c.t===t).map(c=>c.c);
-      const pal = ["Amarillo","Celeste","Fucsia","Verde claro","Morado metalizado","Blanco","Naranja","Rojo"].filter(p=>!FIL_AGOTADO.has(p)); const c = t==="pelota" ? charmInfo(t).color : (pal.find(p=>!used.includes(p)) || charmInfo(t).color);
+      const pal = ["Amarillo","Azul celeste","Rosa","Verde claro","Violeta","Blanco","Naranja","Rojo","Rosado mate"].filter(p=>!FIL_AGOTADO.has(p)); const c = t==="pelota" ? charmInfo(t).color : (pal.find(p=>!used.includes(p)) || charmInfo(t).color);
       st.charms.push({t, c}); render(); } });
   $("charmlist").innerHTML = st.charms.map((ch,i)=>{ const x = charmInfo(ch.t);
     return `<div class="crow"><svg viewBox="0 0 44 44">${charmIcon(ch.t, hex(ch.c))}</svg>
@@ -774,12 +782,12 @@ function legFor(tile, accents){
   return contrast("Blanco",tile) >= contrast("Negro",tile) ? "Blanco" : "Negro";
 }
 const TEMAS = [
-  {n:"pastel",    bases:["Blanco","Morado metalizado","Verde claro","Celeste","Beige"], tiles:["Celeste","Verde claro","Morado metalizado","Amarillo","Blanco","Beige"], acc:["Morado metalizado","Fucsia","Azul","Celeste","Verde claro","Amarillo"]},
-  {n:"vibrante",  bases:["Negro","Blanco","Azul","Fucsia"],          tiles:["Rojo","Fucsia","Naranja","Amarillo","Azul","Verde","Morado metalizado","Celeste"], acc:["Blanco","Amarillo","Negro"]},
-  {n:"arcoiris",  bases:["Blanco","Negro"],                          seq:["Rojo","Naranja","Amarillo","Verde","Celeste","Azul","Morado metalizado","Fucsia"], acc:["Blanco"]},
-  {n:"dos tonos", bases:["Blanco","Negro","Beige","Plateado","Gris"],          tiles:["Fucsia","Celeste","Morado metalizado","Verde claro","Amarillo","Azul","Rojo","Naranja","Verde","Negro","Blanco"], acc:["Blanco","Negro","Amarillo","Fucsia"]},
-  {n:"elegante",  bases:["Negro","Blanco","Plateado","Beige"],          tiles:["Blanco","Negro","Gris","Dorado","Plateado","Mármol","Beige","Morado metalizado"], acc:["Dorado","Negro","Blanco"], one:true},
-  {n:"un color",  bases:["Blanco","Negro","Plateado"],                  tiles:["Fucsia","Morado metalizado","Celeste","Verde claro","Rojo","Azul","Amarillo","Naranja","Verde"], acc:["Blanco","Negro","Amarillo","Morado metalizado","Fucsia"], one:true},
+  {n:"pastel",    bases:["Blanco","Púrpura mate","Verde claro","Azul celeste","Beige","Rosado mate"], tiles:["Azul celeste","Verde claro","Púrpura mate","Amarillo mantequilla","Rosado mate","Blanco"], acc:["Violeta","Rosa","Azul","Azul celeste","Verde claro","Amarillo"]},
+  {n:"vibrante",  bases:["Negro","Blanco","Azul","Rosa","Violeta"],  tiles:["Rojo","Rosa","Naranja","Amarillo","Azul","Verde grama","Violeta","Magenta claro"], acc:["Blanco","Amarillo","Negro"]},
+  {n:"arcoiris",  bases:["Blanco","Negro"],                          seq:["Rojo","Naranja","Amarillo","Verde grama","Azul celeste","Azul","Violeta","Rosa"], acc:["Blanco"]},
+  {n:"dos tonos", bases:["Blanco","Negro","Beige","Plateado","Gris","Azul oscuro"], tiles:["Rosa","Azul celeste","Violeta","Verde claro","Amarillo","Azul","Rojo","Naranja","Verde","Negro","Blanco","Morado"], acc:["Blanco","Negro","Amarillo","Rosa"]},
+  {n:"elegante",  bases:["Negro","Blanco","Plateado","Beige","Azul oscuro"], tiles:["Blanco","Negro","Gris","Dorado","Plateado","Mármol","Beige","Madera","Azul oscuro"], acc:["Dorado","Negro","Blanco"], one:true},
+  {n:"un color",  bases:["Blanco","Negro","Plateado"],                  tiles:["Rosa","Violeta","Azul celeste","Verde claro","Rojo","Azul","Amarillo","Naranja","Verde","Morado","Magenta claro","Rosado mate"], acc:["Blanco","Negro","Amarillo","Violeta","Rosa"], one:true},
 ];
 TEMAS.forEach(t=>["bases","tiles","seq","acc"].forEach(k=>{ if(t[k]) t[k] = t[k].filter(c=>!FIL_AGOTADO.has(c)); }));   // sin filamentos agotados
 let lastRand = "";
@@ -804,7 +812,7 @@ function randomize(){
   lastRand = sig; st.mixTiles=null; st.mixLegs=null;
   // aro y charms: solo cambia el color, no lo que la persona escogió
   st.aros.forEach(x=>{ const a = AROS.find(y=>y.id===x.t); if(a) x.c = pick(a.colores)[0]; });
-  const CH = ["Amarillo","Celeste","Fucsia","Verde claro","Morado metalizado","Blanco","Naranja","Rojo","Azul"].filter(c=>!FIL_AGOTADO.has(c));
+  const CH = ["Amarillo","Azul celeste","Rosa","Verde claro","Violeta","Blanco","Naranja","Rojo","Azul","Rosado mate","Magenta claro"].filter(c=>!FIL_AGOTADO.has(c));
   st.charms.forEach(c=>{ c.c = pick(CH.filter(x=>!st.tiles.includes(x)).concat(CH).slice(0,CH.length)); });
   render();
 }

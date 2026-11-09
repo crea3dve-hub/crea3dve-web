@@ -762,7 +762,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261108061636';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261109123957';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1752,7 +1752,9 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   /* ---------- Detalle de los pedidos que llegan de la página (colores de cada tecla, extras y link 3D) ---------- */
   const COLOR_HEX = { 'blanco':'#F2F1EC','negro':'#242424','gris':'#8C8F94','beige':'#C6A77E','plateado':'#C9CCD1','rojo':'#D52A2F','fucsia':'#E0457F',
     'naranja':'#F27B30','amarillo':'#F8D62A','marrón':'#7B4A2D','verde claro':'#A3E3A0','verde':'#3DA857','celeste':'#8FCBF0','azul':'#2A5BC9',
-    'morado metalizado':'#7E4FC0','dorado':'#E2C233','mármol':'#E7E6E2' };
+    'morado metalizado':'#7E4FC0','dorado':'#E2C233','mármol':'#E7E6E2',
+    'verde grama':'#6DBE45','rosado mate':'#E3A6B6','magenta claro':'#C65AC9','púrpura mate':'#A884C2','violeta':'#5B3AA6','morado':'#6A2C6E',
+    'rosa':'#DC3D6A','amarillo mantequilla':'#F2E3A2','azul oscuro':'#1E3550','madera':'#C8B08A','azul celeste':'#7C93DE' };
   const SIMBOLO = { 'corazón':'♥','estrella':'★','flor':'✿','carita':'☺','trébol':'♣','huella':'🐾','balón':'⚽','cruz':'✝','rayo':'⚡' };
   const hexDe = n => COLOR_HEX[String(n || '').trim().toLowerCase()] || '#DDDDDD';
   const sinAst = t => String(t || '').replace(/\*/g, '');
@@ -2104,7 +2106,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     // charms agrupados por modelo, y dentro por color
     const gc = {};
     charmsAct.forEach(x => { const c = x.color || (x.tipo === 'pers' ? 'el que pidió cada cliente' : 'como en el diseño'); ((gc[x.modelo] = gc[x.modelo] || {})[c] = gc[x.modelo][c] || []).push(x); });
-    const oscuro = c => !['blanco', 'beige', 'amarillo', 'plateado', 'dorado', 'celeste', 'verde claro', 'mármol', ''].includes(c);
+    const oscuro = c => !['blanco', 'beige', 'amarillo', 'plateado', 'dorado', 'celeste', 'verde claro', 'mármol', 'amarillo mantequilla', 'rosado mate', 'madera', 'púrpura mate', ''].includes(c);
     const activas = teclas.filter(t => !ltFuera.has(t.v));
     const basesAct = bases.filter(x => !ltFuera.has(x.v));
     const enVista = ltVista === 'bases' ? basesAct : ltVista === 'charms' ? charmsAct : activas;
@@ -2149,7 +2151,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         <div class="lt-gcab"><span class="lt-sw" style="background:${fondo(c)}"></span><div><b>Base ${esc(c)}</b><span class="chico">${faltanDe(gb[c])} por imprimir · ${cuentaB(gb[c])} en total</span></div></div>
         ${Object.keys(gb[c]).sort().filter(m => gb[c][m].some(vis)).map(m => `<div class="lt-sub"><div>${esc(m)}</div>
           <div class="lt-keys">${gb[c][m].filter(vis).map(x => `<div class="lt-k lt-base" aria-pressed="${ltHechas.has(x.id)}"><button type="button" class="cap-b" data-lt-k="${esc(x.id)}" aria-pressed="${ltHechas.has(x.id)}" aria-label="Base ${esc(c)} de ${x.tam} teclas, ${esc(x.tipo)}, de ${esc(x.pal)}">
-            <span class="cap" style="background:${fondo(c)};color:${['blanco', 'beige', 'amarillo', 'plateado', 'dorado', 'celeste', 'verde claro', 'mármol'].includes(c) ? '#242424' : '#fff'}">${x.tam}${x.n > 1 ? `<span class="x">×${x.n}</span>` : ''}</span></button><button type="button" class="ver-b" data-lt-ir="${esc(x.v)}" data-lt-res="${esc(x.id)}" aria-label="Ver dónde va en el pedido"><small>${esc(x.pal)} ›</small></button></div>`).join('')}</div></div>`).join('')}
+            <span class="cap" style="background:${fondo(c)};color:${['blanco', 'beige', 'amarillo', 'plateado', 'dorado', 'celeste', 'verde claro', 'mármol', 'amarillo mantequilla', 'rosado mate', 'madera', 'púrpura mate'].includes(c) ? '#242424' : '#fff'}">${x.tam}${x.n > 1 ? `<span class="x">×${x.n}</span>` : ''}</span></button><button type="button" class="ver-b" data-lt-ir="${esc(x.v)}" data-lt-res="${esc(x.id)}" aria-label="Ver dónde va en el pedido"><small>${esc(x.pal)} ›</small></button></div>`).join('')}</div></div>`).join('')}
       </section>`).join('') || '<p class="vacio">No hay bases por imprimir. 🎉</p>') : orden.map(t => `<section class="lt-grupo">
         <div class="lt-gcab"><span class="lt-sw" style="background:${fondo(t)}"></span><div><b>Tecla ${esc(t)}</b><span class="chico">${faltanDe(grupos[t])} por imprimir · ${cuenta(grupos[t])} en total</span></div></div>
         ${Object.keys(grupos[t]).sort((a, b) => cuenta({ x: grupos[t][b] }) - cuenta({ x: grupos[t][a] }) || a.localeCompare(b)).filter(lc => grupos[t][lc].some(vis)).map(lc => `<div class="lt-sub">
@@ -2215,7 +2217,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const misBases = (bases || []).filter(x => x.v === v), misCharms = (charms || []).filter(x => x.v === v), todo = mias.concat(misBases, misCharms);
     const h = todo.filter(t => ltHechas.has(t.id)).length, fuera = ltFuera.has(v);
     const fondo = c => COLORES_FONDO[c] || hexDe(c);
-    const oscuro = c => !['blanco', 'beige', 'amarillo', 'plateado', 'dorado', 'celeste', 'verde claro', 'mármol', ''].includes(c);
+    const oscuro = c => !['blanco', 'beige', 'amarillo', 'plateado', 'dorado', 'celeste', 'verde claro', 'mármol', 'amarillo mantequilla', 'rosado mate', 'madera', 'púrpura mate', ''].includes(c);
     return `<section class="lt-grupo" style="border-color:var(--ink)">
       <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
         <div><b style="font-size:17px">${esc(p.cliente || 'Sin nombre')}</b><div class="chico">${esc(v)} · ${h === todo.length ? '✓ todo impreso' : h + ' de ' + todo.length + ' piezas impresas · faltan ' + (todo.length - h)}</div></div>

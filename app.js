@@ -9,9 +9,17 @@ const COLORES = [   // [nombre, color, (fondo del botón)] — los mismos de cre
   ["Marrón","#7B4A2D"],["Verde claro","#A3E3A0"],["Verde","#3DA857"],
   ["Celeste","#8FCBF0"],["Azul","#2A5BC9"],["Morado metalizado","#7E4FC0","linear-gradient(135deg, #C7A6F2 0%, #7E4FC0 38%, #4B2A80 62%, #C7A6F2 100%)"],
   ["Dorado","#E2C233","linear-gradient(135deg, #FFF6A6 0%, #E2C233 38%, #9E8212 62%, #FFF6A6 100%)"],
-  ["Mármol","#E7E6E2","radial-gradient(circle at 30% 35%, #9a9a9a 0 1.5px, transparent 2px), radial-gradient(circle at 65% 60%, #8c8c8c 0 1.5px, transparent 2px), radial-gradient(circle at 45% 75%, #a5a5a5 0 1px, transparent 1.5px), #E7E6E2"]
+  ["Mármol","#E7E6E2","radial-gradient(circle at 30% 35%, #9a9a9a 0 1.5px, transparent 2px), radial-gradient(circle at 65% 60%, #8c8c8c 0 1.5px, transparent 2px), radial-gradient(circle at 45% 75%, #a5a5a5 0 1px, transparent 1.5px), #E7E6E2"],
+  // filamentos nuevos (nov. 2026) — van al final para no cambiar los links de diseños viejos
+  ["Verde grama","#6DBE45"],["Rosado mate","#E3A6B6"],["Magenta claro","#C65AC9"],["Púrpura mate","#A884C2"],
+  ["Violeta","#5B3AA6"],["Morado","#6A2C6E"],["Rosa","#DC3D6A"],["Amarillo mantequilla","#F2E3A2"],
+  ["Azul oscuro","#1E3550"],["Madera","#C8B08A","radial-gradient(circle at 25% 30%, #9C7F57 0 1px, transparent 1.6px), radial-gradient(circle at 70% 65%, #A88B62 0 1px, transparent 1.6px), #C8B08A"],["Azul celeste","#7C93DE"]
 ];
-const FIL_AGOTADO = new Set(["Fucsia","Celeste","Verde claro","Rojo","Morado metalizado"]);
+// orden en que se muestran los colores (los que ya no tenemos no salen)
+const COLORES_VISTA = ["Blanco","Amarillo mantequilla","Amarillo","Naranja","Rojo","Rosa","Rosado mate","Magenta claro","Púrpura mate","Violeta","Morado",
+  "Azul celeste","Azul","Azul oscuro","Verde claro","Verde grama","Verde","Beige","Madera","Marrón","Gris","Negro","Plateado","Dorado","Mármol"];
+const FIL_QUITADO = new Set(["Fucsia","Celeste","Morado metalizado"]);   // ya no los tenemos: no salen en la página
+const FIL_AGOTADO = new Set([...FIL_QUITADO]);   // agotados por ahora (salen tachados); los quitados también cuentan como no disponibles
 const CATEGORIAS = ["Casa", "Oficina", "Llaveros", "Fidgets", "Para negocios"];
 // hoja: nombre exacto del producto en la hoja de ventas (para que se anote solo). precio: null = se cotiza.
 // sinColor: true = no se escoge color (se hace como en la foto o a pedido).
@@ -125,7 +133,7 @@ function selectorCard(p){
     <div class="col-pop">${pts.map(pt => `<div class="col-lbl">${esc(pt.nombre)}: <span data-colname="${pt.k}">${esc(elegido[p.id][pt.k])}</span></div>${sws(p, pt, "card", elegido[p.id][pt.k])}`).join("")}</div></div>`.replace('<div class="col-pop">', '<div class="col-pop" hidden>');
 }
 function sws(p, parte, donde, sel){
-  return `<div class="sws" role="radiogroup" aria-label="${esc(parte.nombre)}" data-prod="${p.id}" data-parte="${parte.k}" data-donde="${donde}">` + COLORES.map(([n,c,bg])=>{
+  return `<div class="sws" role="radiogroup" aria-label="${esc(parte.nombre)}" data-prod="${p.id}" data-parte="${parte.k}" data-donde="${donde}">` + COLORES_VISTA.map(n => COLORES.find(c => c[0] === n)).filter(c => c && !FIL_QUITADO.has(c[0])).map(([n,c,bg])=>{
     const ag = FIL_AGOTADO.has(n);
     return `<button type="button" class="sw" role="radio" aria-checked="${n===sel}" aria-label="${esc(n)}${ag?" (agotado)":""}" data-color="${esc(n)}" style="background:${bg||c}" ${ag?"disabled":""}></button>`;
   }).join("") + `</div>`;
