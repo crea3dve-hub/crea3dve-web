@@ -978,6 +978,9 @@ function avisarCaja(){
   }catch(e){}
 }
 $("ord-wa").addEventListener("click", avisarCaja);
+// si la página quedó abierta muchas horas (colores o precios viejos), al volver se recarga sola; el diseño queda guardado
+const ABIERTA = Date.now();
+document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible" && Date.now() - ABIERTA > 6*3600e3 && $("order").hidden) location.reload(); });
 document.querySelectorAll("#colgar button").forEach(b=>b.onclick=()=>{ st.colgar = b.dataset.c; render(); });
 document.querySelectorAll("#cadsw button").forEach(b=>b.onclick=()=>{ st.cadColor = b.dataset.cc; render(); });
 $("ord-copy").onclick = copyPhoto;
@@ -985,6 +988,7 @@ $("ord-skip").onclick = photoCopied;
 $("ord-close").onclick = ()=>{ $("order").hidden = true; document.body.classList.remove("sheet-open"); };
 
 $("copybtn").onclick=async()=>{
+  avisarCaja();   // si copian el pedido para mandarlo a mano, igual queda anotado en la página de ventas
   const t=$("summary").textContent;
   try{ await navigator.clipboard.writeText(t); $("copybtn").textContent="Copiado"; setTimeout(()=>$("copybtn").textContent="Copiar pedido",1800); }
   catch(e){ const r=document.createRange(); r.selectNodeContents($("summary")); const s=getSelection(); s.removeAllRanges(); s.addRange(r); $("copybtn").textContent="Seleccionado: copia con Ctrl+C"; }
