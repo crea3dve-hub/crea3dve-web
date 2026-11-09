@@ -11,7 +11,7 @@ const COLORES = [   // [nombre, color, (fondo del botón)] — los mismos de cre
   ["Dorado","#E2C233","linear-gradient(135deg, #FFF6A6 0%, #E2C233 38%, #9E8212 62%, #FFF6A6 100%)"],
   ["Mármol","#E7E6E2","radial-gradient(circle at 30% 35%, #9a9a9a 0 1.5px, transparent 2px), radial-gradient(circle at 65% 60%, #8c8c8c 0 1.5px, transparent 2px), radial-gradient(circle at 45% 75%, #a5a5a5 0 1px, transparent 1.5px), #E7E6E2"],
   // filamentos nuevos (nov. 2026) — van al final para no cambiar los links de diseños viejos
-  ["Verde grama","#6DBE45"],["Rosado mate","#E3A6B6"],["Magenta claro","#C65AC9"],["Púrpura mate","#A884C2"],
+  ["Verde grama","#6DBE45"],["Rosado mate","#E3A6B6"],["Magenta claro","#C65AC9"],["Púrpura mate","#E3B1DD"],
   ["Violeta","#5B3AA6"],["Morado","#6A2C6E"],["Rosa","#DC3D6A"],["Amarillo mantequilla","#F2E3A2"],
   ["Azul oscuro","#1E3550"],["Madera","#C8B08A","radial-gradient(circle at 25% 30%, #9C7F57 0 1px, transparent 1.6px), radial-gradient(circle at 70% 65%, #A88B62 0 1px, transparent 1.6px), #C8B08A"],["Azul celeste","#7C93DE"]
 ];
