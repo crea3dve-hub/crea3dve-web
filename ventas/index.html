@@ -113,7 +113,12 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-o
 .teclas{display:flex;gap:4px;flex-wrap:wrap;padding:6px 6px 9px;border-radius:9px;width:max-content;max-width:100%}
 .tecla.hecha{opacity:.3}
 button.tecla{padding:0;cursor:pointer}
-.imp-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
+.imp-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0;align-items:center}
+.imp-lab{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);min-width:58px}
+.card.listo{padding-block:12px}
+.listo-fila{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+.listo-fila .teclas{margin:0}
+.btn-listo{border:0;background:var(--brand-soft);color:var(--ink);border-radius:999px;padding:6px 12px;font-weight:800;font-size:13px;cursor:pointer}
 .imp-chip svg,.imp-chip img{vertical-align:middle;margin:-3px 0}
 .imp-chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 10px;font-size:12.5px;font-weight:700;cursor:pointer;color:var(--ink)}
 .imp-chip[aria-pressed="true"]{opacity:.5;text-decoration:line-through}
@@ -762,7 +767,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261109134227';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261109135749';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1796,6 +1801,37 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         });
     return out;
   }
+  // lo que hay que armar en cada clicker: teclas en la base, cómo se cuelga y los aros de metal
+  function armadoDeBloque(b, numero, n) {
+    const out = [{ id: numero + '-' + n + '-a0', nombre: 'Teclas puestas en la base', ico: '🔧' }];
+    const cad = /Cadenita de colores\*?\s*color\s*\*([^*]+)\*/.exec(b);
+    if (cad) out.push({ id: numero + '-' + n + '-a1', nombre: 'Cadenita ' + cad[1].trim().toLowerCase(), ico: '⛓️' });
+    else if (/Aro de llavero/.test(b)) out.push({ id: numero + '-' + n + '-a1', nombre: 'Aro de llavero', ico: '🔑' });
+    else out.push({ id: numero + '-' + n + '-a1', nombre: 'Cadena plateada', ico: '⛓️' });
+    let i = 2;
+    b.split('\n').forEach(l => {
+      const m = /^\*([^*]+)\*\s+color\s+\*([^*]+)\*\s*—/.exec(l.trim());
+      if (m && !/Cadenita/.test(m[1])) out.push({ id: numero + '-' + n + '-a' + (i++), nombre: m[1].trim() + ' ' + m[2].trim().toLowerCase(), ico: '💍' });
+    });
+    return out;
+  }
+  // bloques de clickers del diseño de un pedido
+  const bloquesDe = texto => { const partes = String(texto || '').split(/\*?━━━ Clicker \d+ ━━━\*?/); return partes.length > 1 ? partes.slice(1) : [String(texto || '')]; };
+  // ¿ya está todo impreso y armado? (teclas, base, charms, cadena y aros)
+  function todoListo(p) {
+    if (!p.diseno || !ltHechas) return false;
+    const ids = [];
+    bloquesDe(p.diseno).forEach((b, n) => {
+      const nt = (b.match(/^\s*\d+\.\s*\*[^*]+\*\s*→\s*tecla/gm) || []).length;
+      if (!nt) return;
+      for (let i = 0; i < nt; i++) ids.push(p.numero + '-' + n + '-' + i);
+      if (/🧱 Base:/.test(b)) ids.push(p.numero + '-' + n + '-base');
+      charmsDeBloque(b, p.numero, n, '').forEach(x => ids.push(x.id));
+      armadoDeBloque(b, p.numero, n).forEach(x => ids.push(x.id));
+    });
+    return ids.length > 0 && ids.every(id => ltHechas.has(id));
+  }
+  const detAbierto = new Set();   // pedidos listos que abriste para ver el detalle
   function detalleWeb(texto, items, numero) {
     let quedan = null;
     if (items) quedan = items.map(i => ({ w: palabras(i.producto), n: i.cantidad || 1 })).filter(x => x.w.length);
@@ -1823,6 +1859,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         const baseLista = numero && ltHechas && ltHechas.has(numero + '-' + n + '-base');
         const chs = numero ? charmsDeBloque(b, numero, n, '') : [], chFalta = chs.filter(x => !(ltHechas && ltHechas.has(x.id))).length;
         const falta = [faltan ? faltan + ' de ' + teclas.length + ' teclas' : '', base && !baseLista ? 'la base' : '', chFalta ? chFalta + (chFalta === 1 ? ' charm' : ' charms') : ''].filter(Boolean);
+        const arm = numero && teclas.length ? armadoDeBloque(b, numero, n) : [], armFalta = arm.filter(x => !(ltHechas && ltHechas.has(x.id)));
         const yFin = a => a.length > 1 ? a.slice(0, -1).join(', ') + ' y ' + a[a.length - 1] : a[0];
         const tira = teclas.length ? `<div class="teclas" style="background:${hexDe(base && base[1])}">${teclas.map((m, i) => {
             const ch = SIMBOLO[m[1].trim().toLowerCase()] || m[1].trim();
@@ -1833,8 +1870,9 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
           .concat(chs.map(x => `<button type="button" class="imp-chip" data-imp="${esc(x.id)}" aria-pressed="${!!(ltHechas && ltHechas.has(x.id))}">${ltHechas && ltHechas.has(x.id) ? '✓' : '○'} ${charmDibujo(x, 20)} ${esc(charmNombre(x))}</button>`)) : [];
         return `<div class="web-clk">${bloques.length > 1 ? `<div class="tit">Clicker ${n + 1}</div>` : ''}
           ${tira}
-          ${piezas.length ? `<div class="imp-chips">${piezas.join('')}</div>` : ''}
-          ${numero && teclas.length ? `<span class="imp-falta${falta.length ? '' : ' ok'}">${falta.length ? '🖨️ Falta imprimir: ' + yFin(falta) : '✓ Todo impreso'}</span>` : ''}
+          ${piezas.length ? `<div class="imp-chips"><span class="imp-lab">Imprimir</span>${piezas.join('')}</div>` : ''}
+          ${arm.length ? `<div class="imp-chips"><span class="imp-lab">Armar</span>${arm.map(x => `<button type="button" class="imp-chip" data-imp="${esc(x.id)}" aria-pressed="${!!(ltHechas && ltHechas.has(x.id))}">${ltHechas && ltHechas.has(x.id) ? '✓' : '○'} ${x.ico} ${esc(x.nombre)}</button>`).join('')}</div>` : ''}
+          ${numero && teclas.length ? `<span class="imp-falta${falta.length || armFalta.length ? '' : ' ok'}">${falta.length ? '🖨️ Falta imprimir: ' + yFin(falta) + (armFalta.length ? ' · falta armar' : '') : armFalta.length ? '🔧 Impreso · falta armar: ' + yFin(armFalta.map(x => x.nombre.toLowerCase())) : '✓ Listo: impreso y armado'}</span>` : ''}
           <ul class="web-lin">${base ? `<li>🧱 Base <b>${esc(base[1])}</b> · ${esc(sinAst(base[2]))}${numero ? (baseLista ? ' · ✓ impresa' : ' · <b>por imprimir</b>') : ''}</li>` : ''}
             ${teclas.map((m, i) => `<li>${i + 1}. <b>${esc(m[1])}</b> → tecla ${esc(m[2])} · letra ${esc(m[3])}</li>`).join('')}
             ${extras.concat(otras).filter(sigue).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
@@ -2328,7 +2366,18 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       if (p.estado === 'Entregado' && contactos(p.cliente).length) botones.push(`<a class="btn chico" style="text-decoration:none" target="_blank" rel="noopener" data-wa1="${esc(p.numero)}" href="https://wa.me/${telWa(contactos(p.cliente)[0].telefono)}?text=${encodeURIComponent(textoNota(p))}">📲 WhatsApp${enviadas[p.numero] ? ' ✓' : ''}</a>`);
       botones.push(`<button class="btn chico" data-editar="${esc(p.numero)}">✏️ Editar</button>`);
       if (editando === p.numero) return editorPedido(p);
-      return `<div class="card">
+      const porEntregar = p.estado === 'Pedido' || p.estado === 'Pagado';
+      if (porEntregar && !detAbierto.has(p.numero) && todoListo(p)) return `<div class="card listo">
+        <div class="pedido-cab"><div><span class="num">${esc(p.numero)}</span> · ${esc(p.cliente || 'Sin nombre')}<div class="chico">${esc(p.fecha)} · ${esc(p.canal)}</div></div>
+        <div style="text-align:right"><span class="pill ${conAbono(p) ? 'Abono' : esc(p.estado)}">${esc(conAbono(p) ? 'Abonó ' + Math.round(abonado(p) / p.total * 100) + '%' : PILL_TXT[p.estado] || p.estado)}</span><div style="font-weight:800;margin-top:4px">${regalo ? '🎁 Regalo' : fmt(p.total)}</div></div></div>
+        <div class="listo-fila">${bloquesDe(p.diseno).map(b => { const base = /🧱 Base:\s*(?:\S+\s+)?\*([^*]+)\*/.exec(b); const ts = [...b.matchAll(/^\s*\d+\.\s*\*([^*]+)\*\s*→\s*tecla\s*(?:\S+\s+)?\*([^*]+)\*\s*·\s*letra\s*(?:\S+\s+)?\*([^*]+)\*/gm)];
+          return ts.length ? `<div class="teclas" style="background:${hexDe(base && base[1])}">${ts.map(m => { const ch = SIMBOLO[m[1].trim().toLowerCase()] || m[1].trim(); return `<span class="tecla" style="background:${hexDe(m[2])};color:${hexDe(m[3])}">${capDe(ch, hexDe(m[3]), 20)}</span>`; }).join('')}</div>` : ''; }).join('')}
+          <button type="button" class="btn-listo" data-det="${esc(p.numero)}">✓ Listo para entregar · ver detalle</button></div>
+        ${cajaAbonos(p)}
+        ${abonoAbierto === p.numero ? formAbono(p) : ''}
+        ${botones.length ? `<div class="acciones">${botones.join('')}</div>` : ''}
+      </div>`;
+      return `<div class="card">${detAbierto.has(p.numero) && todoListo(p) ? `<button type="button" class="btn-listo" data-det="${esc(p.numero)}" style="float:right;margin-left:8px">Resumir ▲</button>` : ''}
         <div class="pedido-cab"><div><span class="num">${esc(p.numero)}</span> · ${esc(p.cliente || 'Sin nombre')}<div class="chico">${esc(p.fecha)} · ${esc(p.canal)}${p.metodo ? ' · ' + esc(p.metodo) : ''}</div></div>
         <div style="text-align:right"><span class="pill ${conAbono(p) ? 'Abono' : esc(p.estado)}">${esc(conAbono(p) ? (debe(p) ? 'Entregado · ' : '') + 'Abonó ' + Math.round(abonado(p) / p.total * 100) + '%' : debe(p) ? 'Entregado · debe' : PILL_TXT[p.estado] || p.estado || '—')}</span><div style="font-weight:800;margin-top:4px">${regalo ? '🎁 Regalo' : fmt(p.total)}</div></div></div>
         <ul class="lista-items">${p.items.map(i => `<li>${i.cantidad} × ${esc(i.producto)}</li>`).join('')}</ul>
@@ -2453,11 +2502,13 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   }
   // marcar como impresa una tecla, base o charm desde el pedido (se guarda igual que en la lista para imprimir)
   $('#listaPedidos').addEventListener('click', e => {
+    const dt = e.target.closest('[data-det]');
+    if (dt) { e.stopImmediatePropagation(); const v = dt.dataset.det; detAbierto.has(v) ? detAbierto.delete(v) : detAbierto.add(v); pintarPedidos(); return; }
     const b = e.target.closest('[data-imp]'); if (!b) return;
     e.stopImmediatePropagation();
     const id = b.dataset.imp, sera = !ltHechas.has(id);
     sera ? ltHechas.add(id) : ltHechas.delete(id); ltCambio('hechas', id, sera);
-    avisar(sera ? 'Marcada como impresa' : 'Marcada por imprimir');
+    avisar(sera ? '✓ Marcado' : 'Desmarcado');
     pintarPedidos();
   });
   $('#listaPedidos').addEventListener('click', e => {
