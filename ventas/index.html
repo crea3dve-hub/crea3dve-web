@@ -322,6 +322,68 @@ details[open] > summary{margin-bottom:4px}
 .kres .cobrar.mayor{background:var(--brand);color:var(--brand-ink)}
 .kres .cobrar span{display:block;font-size:12px;opacity:.85;margin-top:2px}
 .cargando{opacity:.6;pointer-events:none}
+
+/* ===== Estilo limpio (tipo panel de gestión): menos colores, menos redondeo, sin emojis en botones ===== */
+:root{ --bg:#F5F6F4; --line:#E5E8E1; --muted:#646B60; --accion:#2F7A17; --accion-ink:#fff; --sombra:0 1px 2px rgba(16,24,12,.05),0 1px 3px rgba(16,24,12,.04) }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#0F110D; --line:#2A2F26; --accion:#6BCB3B; --accion-ink:#0E1A08; --sombra:none } }
+:root[data-theme="dark"]{ --bg:#0F110D; --line:#2A2F26; --accion:#6BCB3B; --accion-ink:#0E1A08; --sombra:none }
+body{font-size:15px;-webkit-font-smoothing:antialiased}
+header.top{background:var(--surface)}
+.marca{font-size:18px}
+h2{font-size:19px;font-weight:700;letter-spacing:-.2px}
+h3{font-size:11.5px;font-weight:700;letter-spacing:.08em}
+.card{border-radius:12px;box-shadow:var(--sombra);padding:16px}
+label{font-size:12.5px;font-weight:600}
+input,select,textarea{border-radius:8px;padding:10px 12px;font-size:15px}
+input:focus,select:focus,textarea:focus{outline:2px solid color-mix(in srgb,var(--accion) 55%,transparent)}
+.btn{border-radius:8px;padding:10px 14px;font-weight:600;font-size:14px;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:var(--sombra)}
+.btn:hover{border-color:color-mix(in srgb,var(--ink) 25%,var(--line))}
+.btn.primario{background:var(--accion);color:var(--accion-ink);border-color:var(--accion)}
+.btn.ancho{padding:13px;font-size:15px;border-radius:10px}
+.btn.chico{padding:7px 11px;font-size:13px;border-radius:7px}
+.btn.peligro{background:var(--surface);color:var(--warn);border-color:color-mix(in srgb,var(--warn) 30%,var(--line))}
+.acciones{gap:6px}
+.segmento{background:#ECEEE9;border:0;border-radius:10px;padding:3px;gap:3px}
+.segmento button{border-radius:8px;padding:8px;font-weight:600;font-size:14px}
+.segmento button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .segmento{background:#22261F} }
+.rapido .nums button{border-radius:10px;font-size:20px;font-weight:600;padding:10px 0}
+.rapido .nums button:active,.grid-extra button:active{background:var(--brand-soft);color:var(--ink)}
+.grid-extra button,.prod{border-radius:10px;font-weight:500}
+.grid-extra button span,.prod .precio{font-weight:700}
+.prod b{font-weight:600}
+.pill{border-radius:6px;font-weight:600;font-size:11.5px;padding:3px 7px}
+.chips button{border-radius:8px;font-size:13px;padding:6px 11px}
+.chips button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink)}
+.pedido-cab .num{font-weight:700}
+.ayuda,.abonos,.iguales,.web-cli,.iguales-v{background:#F0F2EE;color:var(--ink)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .ayuda,:root:not([data-theme="light"]) .abonos,:root:not([data-theme="light"]) .iguales,:root:not([data-theme="light"]) .web-cli,:root:not([data-theme="light"]) .iguales-v{background:#1C2019} }
+.ayuda{border-radius:8px;font-size:13px;border:1px solid var(--line)}
+.grande{font-size:28px;font-weight:700;letter-spacing:-.5px}
+.inv-num{font-size:20px;font-weight:700}
+.total{font-weight:700;font-size:20px}
+.barra{height:8px}
+.barra i{background:var(--accion)}
+nav.tabs{border-radius:16px;box-shadow:0 6px 24px rgba(20,23,18,.10)}
+nav.tabs button{font-weight:600;border-radius:10px}
+nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--accion)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) nav.tabs button[aria-selected="true"]{color:var(--brand)} }
+.barra-total{border-radius:12px}
+.caja-rec{border-radius:14px}
+/* Computadora: menú fijo a la izquierda, como un panel */
+@media (min-width:1000px){
+  body{padding-bottom:24px;padding-left:232px}
+  nav.tabs{left:16px;right:auto;top:76px;bottom:auto;width:200px;max-width:none;margin:0;display:flex;flex-direction:column;gap:2px;padding:8px !important;border-radius:12px;box-shadow:var(--sombra)}
+  nav.tabs button{flex-direction:row;justify-content:flex-start;gap:10px;font-size:14px;letter-spacing:0;padding:9px 12px;text-align:left}
+  nav.tabs button svg{width:18px;height:18px}
+  nav.tabs button[data-badge]:not([data-badge=""])::after{position:static;margin-left:auto}
+  .wrap{max-width:900px;margin:0 0 0 8px;padding-left:16px;padding-right:24px}
+  header.top{margin-left:-232px}
+  header.top .wrap{max-width:none;margin:0;padding-left:24px;padding-right:24px}
+  .barra-total{left:232px;right:0;bottom:16px}
+  .cola{bottom:16px}
+  .aviso{bottom:80px}
+}
 </style>
 </head>
 <body>
@@ -892,6 +954,19 @@ details[open] > summary{margin-bottom:4px}
   // recuerda también dónde estabas en la pestaña (para volver al mismo sitio al recargar)
   addEventListener('pagehide', () => { try { sessionStorage.setItem('c3_scroll', String(scrollY)); } catch (e) {} });
   document.querySelectorAll('nav.tabs button[data-ir]').forEach(b => b.addEventListener('click', () => irA(b.dataset.ir)));
+
+  /* Botones y títulos sin emojis: se ve más limpio (no toca los dibujos de las teclas ni los charms) */
+  const RX_EMO = /^(?:\s*(?:\p{Extended_Pictographic}|\p{Regional_Indicator})(?:️|‍(?:\p{Extended_Pictographic})️?)*\s*)+/u;
+  function sinEmojis(raiz) {
+    (raiz || document).querySelectorAll('.btn, .chips button, h2, h3, .ayuda, #lotes .lt-vista button, .segmento button, summary, .ktit, .card > b, .card > div > b, .card > strong, .card > div > strong, .card summary b').forEach(el => {
+      const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let t;
+      while ((t = w.nextNode())) { if (!t.nodeValue.trim()) continue; const n = t.nodeValue.replace(RX_EMO, ''); if (n !== t.nodeValue && (n.trim() || el.textContent.replace(RX_EMO, '').trim())) t.nodeValue = n; break; }
+    });
+  }
+  let emoPend = false;
+  new MutationObserver(() => { if (emoPend) return; emoPend = true; requestAnimationFrame(() => { emoPend = false; sinEmojis(); }); })
+    .observe(document.body, { childList: true, subtree: true, characterData: true });
+  sinEmojis();
   $('#navImprimir').addEventListener('click', () => { irA('pedidos'); $('#btnLotes').click(); });
 
   /* ---------- Vender ---------- */
