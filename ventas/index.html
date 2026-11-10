@@ -182,7 +182,7 @@ button.tecla{padding:0;cursor:pointer}
 #lotes .lt-charm{width:78px}
 #lotes .lt-charm small{max-width:78px}
 #lotes .lt-charm .cap.pers{border-radius:12px;font-size:12px;font-weight:800;line-height:1.1;padding:4px;text-align:center;background:var(--surface);color:var(--ink);border-style:dashed}
-#lotes .lt-vista{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;background:var(--line);border-radius:12px;padding:4px;margin-top:12px}
+#lotes .lt-vista{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;background:var(--line);border-radius:12px;padding:4px;margin-top:12px}
 #lotes .lt-vista button{border:0;border-radius:9px;padding:9px 4px;font-weight:800;font-size:clamp(12px,3.3vw,15px);background:transparent;color:var(--muted)}
 #lotes .lt-vista button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 #lotes .lt-base .cap{width:62px;height:40px;border-radius:10px;font-size:17px}
@@ -214,6 +214,11 @@ button.tecla{padding:0;cursor:pointer}
 #lotes .ams i{width:22px;height:22px;border-radius:50%;border:1px solid rgba(0,0,0,.2);display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:900}
 #lotes .placa-grupos{display:flex;flex-wrap:wrap;gap:4px 22px;align-items:flex-start;margin-top:4px}
 #lotes .placa-grupos .lt-sub{margin-top:8px}
+@media (max-width:560px){ #lotes .lt-vista{grid-template-columns:repeat(3,1fr)} }
+#lotes .letra-cab{display:flex;align-items:center;gap:12px}
+#lotes .letra-cab b{font:900 34px/1 "Nunito","Figtree",system-ui,sans-serif;min-width:44px;text-align:center}
+#lotes .letras-idx{display:flex;flex-wrap:wrap;gap:4px;margin-top:12px}
+#lotes .letras-idx a{min-width:30px;text-align:center;padding:4px 6px;border:1px solid var(--line);border-radius:8px;font-weight:800;text-decoration:none;color:var(--ink);background:var(--surface)}
 #lotes .placa-cfg{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px;font-size:14px}
 #lotes .placa-cfg input{width:70px}
 #lotes .lt-aviso{background:var(--amber-soft);color:var(--ink);border-radius:12px;padding:10px 12px;font-size:13px;margin-top:14px}
@@ -792,7 +797,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261110113826';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261110114054';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -2306,7 +2311,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const basesAct = bases.filter(x => !ltFuera.has(x.v));
     // pedidos que todavía tienen algo por imprimir (los que ya están completos no salen)
     const pedsPend = peds.filter(x => !ltFuera.has(x.v) && x.ids.some(id => !ltHechas.has(id) || ltRecien.has(id)));
-    const enVista = ltVista === 'placas' ? activas.concat(basesAct, charmsAct.filter(x => x.color)) : ltVista === 'bases' ? basesAct : ltVista === 'charms' ? charmsAct : ltVista === 'pedidos' ? activas.concat(basesAct, charmsAct) : activas;
+    const enVista = ltVista === 'letras' ? activas : ltVista === 'placas' ? activas.concat(basesAct, charmsAct.filter(x => x.color)) : ltVista === 'bases' ? basesAct : ltVista === 'charms' ? charmsAct : ltVista === 'pedidos' ? activas.concat(basesAct, charmsAct) : activas;
     const total = enVista.reduce((a, t) => a + t.n, 0), hechas = enVista.reduce((a, t) => a + hechoN(t), 0);
     const queEs = ltVista === 'placas' ? ['pieza', 'piezas', 'lista', 'listas'] : ltVista === 'pedidos' ? ['pieza', 'piezas', 'lista', 'listas'] : ltVista === 'bases' ? ['base', 'bases', 'lista', 'listas'] : ltVista === 'charms' ? ['charm', 'charms', 'listo', 'listos'] : ['tecla', 'teclas', 'lista', 'listas'];
     // bases agrupadas por color, y dentro por tamaño y tipo (las del mismo modelo se imprimen juntas)
@@ -2335,12 +2340,13 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       <div class="lt-vista" role="group" aria-label="Qué imprimir">
         <button type="button" data-lt-vista="placas" aria-pressed="${ltVista === 'placas'}">🧩 Placas</button>
         <button type="button" data-lt-vista="pedidos" aria-pressed="${ltVista === 'pedidos'}">📋 Pedidos · ${pedsPend.length}</button>
+        <button type="button" data-lt-vista="letras" aria-pressed="${ltVista === 'letras'}">🔤 Por letra</button>
         <button type="button" data-lt-vista="teclas" aria-pressed="${ltVista === 'teclas'}">⌨️ Teclas · ${activas.reduce((a, t) => a + t.n - hechoN(t), 0)}</button>
         <button type="button" data-lt-vista="bases" aria-pressed="${ltVista === 'bases'}">🧱 Bases · ${basesAct.reduce((a, t) => a + t.n - hechoN(t), 0)}</button>
         <button type="button" data-lt-vista="charms" aria-pressed="${ltVista === 'charms'}">✨ Charms · ${charmsAct.reduce((a, t) => a + t.n - hechoN(t), 0)}</button>
       </div>
       <button type="button" class="btn chico" data-lt-ocultar style="margin-top:10px">${ltOcultar ? '👁 Mostrar también las que ya imprimí' : '🙈 Esconder las que ya imprimí'}</button>
-      ${ltVista === 'placas' ? pintarPlacas(activas, basesAct, charmsAct) : ltVista === 'pedidos' ? (pedsPend.map(x => verPedidoLote(x.v, teclas, bases, charms, true)).join('') || '<p class="vacio">Todos los pedidos están impresos. 🎉</p>') : ltVista === 'charms' ? (Object.keys(gc).sort((a, b) => (a === 'Charm personalizado') - (b === 'Charm personalizado') || cuentaB(gc[b]) - cuentaB(gc[a]) || a.localeCompare(b)).filter(mo => hayVis(gc[mo])).map(mo => `<section class="lt-grupo">
+      ${ltVista === 'letras' ? pintarPorLetra(activas, vis, fondo) : ltVista === 'placas' ? pintarPlacas(activas, basesAct, charmsAct) : ltVista === 'pedidos' ? (pedsPend.map(x => verPedidoLote(x.v, teclas, bases, charms, true)).join('') || '<p class="vacio">Todos los pedidos están impresos. 🎉</p>') : ltVista === 'charms' ? (Object.keys(gc).sort((a, b) => (a === 'Charm personalizado') - (b === 'Charm personalizado') || cuentaB(gc[b]) - cuentaB(gc[a]) || a.localeCompare(b)).filter(mo => hayVis(gc[mo])).map(mo => `<section class="lt-grupo">
         <div class="lt-gcab"><div><b>${esc(mo)}</b><span class="chico">${faltanDe(gc[mo])} por imprimir · ${cuentaB(gc[mo])} en total</span></div></div>
         ${Object.keys(gc[mo]).sort((a, b) => gc[mo][b].length - gc[mo][a].length || a.localeCompare(b)).filter(c => gc[mo][c].some(vis)).map(c => `<div class="lt-sub"><div>${COLOR_HEX[c] ? `<span class="lt-dot" style="background:${fondo(c)}"></span>` : ''}${esc(rc(c))}${cantGrupo(gc[mo][c])}</div>
           <div class="lt-keys">${gc[mo][c].filter(vis).map(x => `<div class="lt-k lt-charm" aria-pressed="${ltHechas.has(x.id)}"><button type="button" class="cap-b" data-lt-k="${esc(x.id)}" aria-pressed="${ltHechas.has(x.id)}" aria-label="${esc(mo)} ${esc(x.nombre || c)}, de ${esc(x.pal)}">
@@ -2513,6 +2519,21 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     }
     return placas;
   }
+  // teclas agrupadas por letra (A, B, C…), para buscar entre lo que ya está impreso
+  function pintarPorLetra(activas, vis, fondo) {
+    const g = {};
+    activas.filter(vis).forEach(k => { (g[k.l] = g[k.l] || []).push(k); });
+    const letras = Object.keys(g).sort((a, b) => { const sa = /[A-ZÑ0-9]/i.test(a), sb = /[A-ZÑ0-9]/i.test(b); return sa !== sb ? (sa ? -1 : 1) : a.localeCompare(b, 'es'); });
+    if (!letras.length) return '<p class="vacio">No hay teclas por imprimir. 🎉</p>';
+    const falta = l => g[l].reduce((a, k) => a + k.n - hechoN(k), 0);
+    return `<div class="letras-idx">${letras.map(l => `<a href="#letra-${encodeURIComponent(l)}" data-lt-salto="${esc(l)}">${esc(l)}</a>`).join('')}</div>` +
+      letras.map(l => `<section class="lt-grupo" id="letra-${esc(encodeURIComponent(l))}">
+        <div class="letra-cab"><b>${capDe(l, 'currentColor', 30)}</b><span class="chico">${falta(l)} por imprimir</span></div>
+        <div class="lt-keys" style="margin-top:8px">${g[l].sort((a, b) => a.t.localeCompare(b.t) || a.lc.localeCompare(b.lc)).map(k => `<div class="lt-k" aria-pressed="${ltHechas.has(k.id)}"><button type="button" class="cap-b" data-lt-k="${esc(k.id)}" aria-pressed="${ltHechas.has(k.id)}" aria-label="Letra ${esc(k.l)}, tecla ${esc(k.t)}, letra ${esc(k.lc)}">
+          <span class="cap" style="background:${fondo(k.t)};color:${hexDe(k.lc)}">${capDe(k.l, hexDe(k.lc), 34)}${k.n > 1 ? `<span class="x">${hechoN(k) && hechoN(k) < k.n ? hechoN(k) + '/' : '×'}${k.n}</span>` : ''}</span></button>
+          <button type="button" class="ver-b" data-lt-ir="${esc(k.v)}" data-lt-res="${esc(k.id)}"><small>${esc(rc(k.t))} · ${esc(rc(k.lc))}<br>${esc(k.pal)} ›</small></button>${pasoN(k)}</div>`).join('')}</div>
+      </section>`).join('');
+  }
   function pintarPlacas(activas, basesAct, charmsAct) {
     const vivo = x => !ltHechas.has(x.id) || ltRecien.has(x.id);
     const piezas = [];
@@ -2575,6 +2596,8 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     if (k) { const id = k.dataset.ltK, sera = !ltHechas.has(id);
       if (ltParcial.has(id)) { const v = ltParcial.get(id); ltHechas.delete(id + '@' + v); ltCambio('hechas', id + '@' + v, false); ltParcial.delete(id); }
       sera ? ltHechas.add(id) : ltHechas.delete(id); ltRecien.add(id); ltCambio('hechas', id, sera); repintarLotes(); return; }
+    const sl = e.target.closest('[data-lt-salto]');
+    if (sl) { e.preventDefault(); const el = document.getElementById('letra-' + encodeURIComponent(sl.dataset.ltSalto)); if (el) $('#lotes').scrollTop += el.getBoundingClientRect().top - 90; return; }
     const pl = e.target.closest('[data-lt-placa]');
     if (pl) { const ids = pl.dataset.ltPlaca.split(','), todas = ids.every(id => ltHechas.has(id));
       ids.forEach(id => { if (todas) ltHechas.delete(id); else ltHechas.add(id); ltRecien.add(id); ltCambio('hechas', id, !todas); }); repintarLotes(); return; }
