@@ -797,7 +797,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261110114054';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261110114455';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -2290,7 +2290,10 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         });
       });
       // si pidió varios iguales (ej. 12 × CO): las letras de la venta son un múltiplo exacto del diseño
-      const enDiseno = lista.length, n = enDiseno && letras > enDiseno && letras % enDiseno === 0 ? letras / enDiseno : 1;
+      // varios iguales (ej. 12 × CO): solo cuando el pedido es de un clicker y su primera línea de letras es un múltiplo exacto
+      // del diseño. Letras sueltas agregadas aparte (otros diseños) no cuentan como copias.
+      const prim = p.items.find(i => esLetra(i.producto)), q1 = prim ? prim.cantidad : 0;
+      const enDiseno = lista.length, n = enDiseno && bs.length === 1 && q1 > enDiseno && q1 % enDiseno === 0 ? q1 / enDiseno : 1;
       lista.forEach(t => { t.n = n; teclas.push(t); });
       susBases.forEach(x => { x.n = n; bases.push(x); });
       susCharms.forEach(x => { x.n = n; charms.push(x); });
