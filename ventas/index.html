@@ -121,6 +121,8 @@ button.tecla{padding:0;cursor:pointer}
 .dis-fila{display:grid;grid-template-columns:22px 56px minmax(0,1fr) minmax(0,1fr) auto auto;gap:6px;align-items:center}
 .dis-fila input{text-align:center;font-weight:800;font-size:18px;padding:6px}
 .dis-fila select{min-width:0}
+.dis-pers{display:grid;gap:6px;border-top:1px solid var(--line);padding-top:10px}
+.dis-pfila{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}
 .dis-n{font-weight:800;color:var(--muted);text-align:right}
 .clk-listos{background:var(--brand-soft);border-radius:12px;padding:10px;margin-bottom:10px}
 .clk-listos-f{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
@@ -777,7 +779,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261110073056';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261110073810';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1857,6 +1859,10 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     disEdit = { numero, n, base: base ? base[1].trim().toLowerCase() : 'blanco', tipo: base ? sinAst(base[2]).trim().toLowerCase() : 'lisa',
       teclas: b.split('\n').map(l => RE_TECLA.exec(l)).filter(Boolean).map(m => ({ l: SIMBOLO[m[1].trim().toLowerCase()] || m[1].trim(), t: m[2].trim().toLowerCase(), lc: m[3].trim().toLowerCase() })) };
     if (!disEdit.teclas.length) disEdit.teclas.push({ l: 'A', t: 'blanco', lc: 'negro' });
+    // charms personalizados: lo que pidió el cliente
+    disEdit.pers = b.split('\n').map(l => /Charm personalizado:\s*\*([^*]*)\*\s*—\s*(\$[\d.,]+)?/.exec(l)).filter(Boolean)
+      .map(m => ({ nombre: /cuento/.test(m[1]) ? '' : m[1].trim(), precio: m[2] || '$1,50' }));
+    disEdit.persAntes = disEdit.pers.length;
   }
   const opColores = sel => Object.keys(COLOR_HEX).map(c => `<option${c === sel ? ' selected' : ''}>${esc(c)}</option>`).join('');
   const tiraDis = d => `<div class="teclas" style="background:${hexDe(d.base)}">${d.teclas.map(k => `<span class="tecla" style="background:${hexDe(k.t)};color:${hexDe(k.lc)}">${capDe(k.l, hexDe(k.lc), 20)}</span>`).join('')}</div>`;
@@ -1875,6 +1881,9 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         <button type="button" class="btn chico" data-de-del="${i}" aria-label="Quitar esta tecla">✕</button></div>`).join('')}</div>
       <div class="chico">Columnas: letra (puedes poner cualquier signo, como + o !) · color de la tecla · color de la letra</div>
       <div class="acciones"><button type="button" class="btn chico" data-de-add>＋ Agregar tecla</button></div>
+      <div class="dis-pers"><label>Charms personalizados</label>
+        ${d.pers.map((c, i) => `<div class="dis-pfila"><input data-de-p="${i}" value="${esc(c.nombre)}" maxlength="60" placeholder="¿Qué charm pidió? Ej.: Kuromi, Stitch, un gato negro" aria-label="Charm personalizado ${i + 1}"><button type="button" class="btn chico" data-de-pdel="${i}" aria-label="Quitar este charm">✕</button></div>`).join('') || '<div class="chico">Este clicker no tiene charm personalizado.</div>'}
+        <div class="acciones"><button type="button" class="btn chico" data-de-padd>＋ Agregar charm personalizado</button></div></div>
       <div class="acciones"><button type="button" class="btn chico primario" data-de-ok>Guardar diseño</button><button type="button" class="btn chico" data-de-x>Cancelar</button></div>
     </div>`;
   }
@@ -1893,6 +1902,19 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const enDonde = primera >= 0 ? primera : Math.max(0, out.findIndex(l => /Teclas:/.test(l)) + 1);
     out.splice(enDonde, 0, ...nuevas);
     out = out.map(l => /🔤 Palabra:/.test(l) ? `🔤 Palabra: *${palabra}*` : /🧱 Base:/.test(l) ? `🧱 Base: *${d.base}* · ${d.tipo}` : l);
+    // charms personalizados: se reemplazan en el mismo lugar (o se agregan en Extras)
+    const esPers = l => /Charm personalizado:/.test(l);
+    const lineasPers = d.pers.map(c => `Charm personalizado: *${c.nombre.trim() || '(te cuento cuál)'}* — ${c.precio || '$1,50'}`);
+    let ip = out.findIndex(esPers);
+    out = out.filter(l => !esPers(l));
+    if (lineasPers.length) {
+      if (ip < 0) {
+        const ex = out.findIndex(l => /^Extras:/.test(l.trim()));
+        if (ex >= 0) { ip = ex + 1; while (ip < out.length && out[ip].trim() && !/^(Subtotal|🔗|💰|📸)/.test(out[ip].trim())) ip++; }
+        else { ip = out.findIndex(l => /^(Subtotal|🔗|💰|📸)/.test(l.trim())); if (ip < 0) ip = out.length; out.splice(ip, 0, '', 'Extras:'); ip += 2; }
+      }
+      out.splice(ip, 0, ...lineasPers);
+    }
     partes[idx] = out.join('\n');
     const texto = partes.join('');
     const antes = bloquesDe(p.diseno)[d.n].split('\n').filter(l => RE_TECLA.test(l)).length, dif = teclas.length - antes;
@@ -1905,6 +1927,16 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       const cant = Math.max(1, it.cantidad + dif);
       accionFondo({ accion: 'editar', numero: d.numero, items: [{ fila: it.fila, producto: it.producto, cantidad: cant }] }, dif > 0 ? 'Se sumó ' + dif + (dif === 1 ? ' letra' : ' letras') + ' al pedido' : 'Se quitó ' + (-dif) + (dif === -1 ? ' letra' : ' letras') + ' del pedido');
       it.cantidad = cant; it.total = (it.precio || 0) * cant; p.total = p.items.reduce((a, i) => a + i.total, 0);
+    }
+    // si cambió la cantidad de charms personalizados, también el precio
+    const difP = d.pers.length - d.persAntes;
+    if (difP) {
+      const ip2 = p.items.find(i => /^Charm personalizado/.test(i.producto));
+      if (ip2 && ip2.fila) { const c = Math.max(0, ip2.cantidad + difP); accionFondo({ accion: 'editar', numero: d.numero, items: [{ fila: ip2.fila, producto: ip2.producto, cantidad: c }] }, 'Charms personalizados: ' + c); ip2.cantidad = c; ip2.total = (ip2.precio || 0) * c; }
+      else if (difP > 0) { const it2 = { producto: 'Charm personalizado (otro)', cantidad: difP, precio: 1.5, precioManual: true };
+        accionFondo({ accion: 'venta', numero: p.numero, cliente: p.cliente, canal: p.canal, metodo: p.metodo, estado: p.estado, fecha: aISO(p.fecha), items: [it2] }, 'Charm personalizado agregado al pedido');
+        p.items.push({ producto: it2.producto, cantidad: difP, precio: 1.5, total: 1.5 * difP }); }
+      p.items = p.items.filter(i => i.cantidad > 0); p.total = p.items.reduce((a, i) => a + i.total, 0);
     }
     disEdit = null; pintarPedidos();
   }
@@ -2595,6 +2627,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const t = e.target;
     if (t.matches('[data-de-base]')) disEdit.base = t.value;
     else if (t.matches('[data-de-tipo]')) disEdit.tipo = t.value;
+    else if (t.dataset.deP !== undefined) { disEdit.pers[+t.dataset.deP].nombre = t.value; return; }
     else if (t.dataset.deI !== undefined) disEdit.teclas[+t.dataset.deI][t.dataset.deK] = t.dataset.deK === 'l' ? t.value.toUpperCase() : t.value;
     const pv = document.querySelector('[data-dis-prev]'); if (pv) pv.innerHTML = tiraDis(disEdit);
   };
@@ -2608,6 +2641,8 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       e.stopImmediatePropagation();
       const d = disEdit;
       if (e.target.closest('[data-de-add]')) { const u = d.teclas[d.teclas.length - 1] || { t: 'blanco', lc: 'negro' }; d.teclas.push({ l: '', t: u.t, lc: u.lc }); pintarPedidos(); const ins = document.querySelectorAll('[data-de-k="l"]'); if (ins.length) ins[ins.length - 1].focus(); return; }
+      if (e.target.closest('[data-de-padd]')) { d.pers.push({ nombre: '', precio: '$1,50' }); pintarPedidos(); const ins = document.querySelectorAll('[data-de-p]'); if (ins.length) ins[ins.length - 1].focus(); return; }
+      const pdel = e.target.closest('[data-de-pdel]'); if (pdel) { d.pers.splice(+pdel.dataset.dePdel, 1); pintarPedidos(); return; }
       const del = e.target.closest('[data-de-del]'); if (del) { d.teclas.splice(+del.dataset.deDel, 1); pintarPedidos(); return; }
       const sub = e.target.closest('[data-de-sub]'); if (sub) { const i = +sub.dataset.deSub; if (i > 0) { [d.teclas[i - 1], d.teclas[i]] = [d.teclas[i], d.teclas[i - 1]]; pintarPedidos(); } return; }
       if (e.target.closest('[data-de-x]')) { disEdit = null; pintarPedidos(); return; }
