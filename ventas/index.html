@@ -116,6 +116,12 @@ button.tecla{padding:0;cursor:pointer}
 .imp-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0;align-items:center}
 .imp-lab{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);min-width:58px}
 .card.listo{padding-block:12px}
+.dis-ed{display:grid;gap:10px;border:2px solid var(--ink);border-radius:12px;padding:12px;margin:6px 0}
+.dis-filas{display:grid;gap:6px}
+.dis-fila{display:grid;grid-template-columns:22px 56px minmax(0,1fr) minmax(0,1fr) auto auto;gap:6px;align-items:center}
+.dis-fila input{text-align:center;font-weight:800;font-size:18px;padding:6px}
+.dis-fila select{min-width:0}
+.dis-n{font-weight:800;color:var(--muted);text-align:right}
 .clk-listos{background:var(--brand-soft);border-radius:12px;padding:10px;margin-bottom:10px}
 .clk-listos-f{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .clk-listo{border:0;background:none;padding:0;cursor:pointer}
@@ -771,7 +777,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261109140345';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261110073056';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -864,7 +870,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     vaciarCola();
     return true;
   }
-  const puedeRepintar = () => !editando && !abonoAbierto && !webAbierto && !editProd && !editPC && !compraPC && !editG && !pagarG && !agregandoA &&
+  const puedeRepintar = () => !editando && !disEdit && !abonoAbierto && !webAbierto && !editProd && !editPC && !compraPC && !editG && !pagarG && !agregandoA &&
     !(document.activeElement && /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName));
   // Todo se guarda por detrás: se ve al instante, la barrita de abajo dice cuándo quedó en la hoja
   async function accion(cuerpo, okTexto) { return accionFondo(cuerpo, okTexto); }
@@ -1840,6 +1846,68 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     return ids.length > 0 && ids.every(id => ltHechas.has(id));
   }
   const detAbierto = new Set();   // pedidos listos que abriste para ver el detalle
+  /* ---------- Cambiar el diseño de un clicker de un pedido (letras, colores, base) ---------- */
+  var disEdit = null;   // { numero, n, base, tipo, teclas: [{ l, t, lc }] }
+  const NOMBRE_SIM = { '♥': 'corazón', '★': 'estrella', '✿': 'flor', '☺': 'carita', '♣': 'trébol', '🐾': 'huella', '⚽': 'balón', '✝': 'cruz', '⚡': 'rayo' };
+  const RE_TECLA = /^\s*\d+\.\s*\*([^*]+)\*\s*→\s*tecla\s*(?:\S+\s+)?\*([^*]+)\*\s*·\s*letra\s*(?:\S+\s+)?\*([^*]+)\*/;
+  function abrirDisEdit(numero, n) {
+    const p = datos.ventas.find(v => v.numero === numero); if (!p || !p.diseno) return;
+    const b = bloquesDe(p.diseno)[n] || '';
+    const base = /🧱 Base:\s*(?:\S+\s+)?\*([^*]+)\*\s*·\s*([^\n]+)/.exec(b);
+    disEdit = { numero, n, base: base ? base[1].trim().toLowerCase() : 'blanco', tipo: base ? sinAst(base[2]).trim().toLowerCase() : 'lisa',
+      teclas: b.split('\n').map(l => RE_TECLA.exec(l)).filter(Boolean).map(m => ({ l: SIMBOLO[m[1].trim().toLowerCase()] || m[1].trim(), t: m[2].trim().toLowerCase(), lc: m[3].trim().toLowerCase() })) };
+    if (!disEdit.teclas.length) disEdit.teclas.push({ l: 'A', t: 'blanco', lc: 'negro' });
+  }
+  const opColores = sel => Object.keys(COLOR_HEX).map(c => `<option${c === sel ? ' selected' : ''}>${esc(c)}</option>`).join('');
+  const tiraDis = d => `<div class="teclas" style="background:${hexDe(d.base)}">${d.teclas.map(k => `<span class="tecla" style="background:${hexDe(k.t)};color:${hexDe(k.lc)}">${capDe(k.l, hexDe(k.lc), 20)}</span>`).join('')}</div>`;
+  function editorDiseno() {
+    const d = disEdit;
+    return `<div class="dis-ed" data-dis-form>
+      <div class="dis-prev" data-dis-prev>${tiraDis(d)}</div>
+      <div class="dos"><div><label>Base</label><select data-de-base>${opColores(d.base)}</select></div>
+        <div><label>Tipo de base</label><select data-de-tipo><option${d.tipo === 'lisa' ? ' selected' : ''}>lisa</option><option${d.tipo === 'acanalada' ? ' selected' : ''}>acanalada</option></select></div></div>
+      <div class="dis-filas">${d.teclas.map((k, i) => `<div class="dis-fila">
+        <span class="dis-n">${i + 1}</span>
+        <input data-de-i="${i}" data-de-k="l" value="${esc(k.l)}" maxlength="3" aria-label="Letra o símbolo ${i + 1}">
+        <select data-de-i="${i}" data-de-k="t" aria-label="Color de la tecla ${i + 1}">${opColores(k.t)}</select>
+        <select data-de-i="${i}" data-de-k="lc" aria-label="Color de la letra ${i + 1}">${opColores(k.lc)}</select>
+        <button type="button" class="btn chico" data-de-sub="${i}" aria-label="Subir">↑</button>
+        <button type="button" class="btn chico" data-de-del="${i}" aria-label="Quitar esta tecla">✕</button></div>`).join('')}</div>
+      <div class="chico">Columnas: letra (puedes poner cualquier signo, como + o !) · color de la tecla · color de la letra</div>
+      <div class="acciones"><button type="button" class="btn chico" data-de-add>＋ Agregar tecla</button></div>
+      <div class="acciones"><button type="button" class="btn chico primario" data-de-ok>Guardar diseño</button><button type="button" class="btn chico" data-de-x>Cancelar</button></div>
+    </div>`;
+  }
+  function guardarDiseno() {
+    const d = disEdit, p = datos.ventas.find(v => v.numero === d.numero); if (!p) return;
+    const teclas = d.teclas.filter(k => k.l.trim());
+    if (!teclas.length) return avisar('Pon al menos una letra', true);
+    const nom = l => NOMBRE_SIM[l] || l;
+    const palabra = teclas.map(k => NOMBRE_SIM[k.l] ? '[' + NOMBRE_SIM[k.l] + ']' : k.l).join('');
+    const partes = String(p.diseno).split(/(\*?━━━ Clicker \d+ ━━━\*?)/);
+    const idx = partes.length > 1 ? 2 + d.n * 2 : 0;
+    let b = partes[idx] || '';
+    const lineas = b.split('\n'), nuevas = teclas.map((k, i) => `${i + 1}. *${nom(k.l.trim())}* → tecla *${k.t}* · letra *${k.lc}*`);
+    const primera = lineas.findIndex(l => RE_TECLA.test(l));
+    let out = lineas.filter(l => !RE_TECLA.test(l));
+    const enDonde = primera >= 0 ? primera : Math.max(0, out.findIndex(l => /Teclas:/.test(l)) + 1);
+    out.splice(enDonde, 0, ...nuevas);
+    out = out.map(l => /🔤 Palabra:/.test(l) ? `🔤 Palabra: *${palabra}*` : /🧱 Base:/.test(l) ? `🧱 Base: *${d.base}* · ${d.tipo}` : l);
+    partes[idx] = out.join('\n');
+    const texto = partes.join('');
+    const antes = bloquesDe(p.diseno)[d.n].split('\n').filter(l => RE_TECLA.test(l)).length, dif = teclas.length - antes;
+    p.diseno = texto;
+    const palabras = bloquesDe(texto).map(bb => sinAst((/Palabra:\s*\*([^*]+)\*/.exec(bb) || [])[1] || '').replace(/\[([^\]]+)\]/g, (m, x) => SIMBOLO[x.toLowerCase()] || '•')).join(', ');
+    accionFondo({ accion: 'editarDiseno', numero: d.numero, texto, palabras }, 'Diseño cambiado');
+    // si cambió la cantidad de letras, se ajusta el precio del pedido
+    const it = p.items.find(i => esLetra(i.producto));
+    if (dif && it && it.fila) {
+      const cant = Math.max(1, it.cantidad + dif);
+      accionFondo({ accion: 'editar', numero: d.numero, items: [{ fila: it.fila, producto: it.producto, cantidad: cant }] }, dif > 0 ? 'Se sumó ' + dif + (dif === 1 ? ' letra' : ' letras') + ' al pedido' : 'Se quitó ' + (-dif) + (dif === -1 ? ' letra' : ' letras') + ' del pedido');
+      it.cantidad = cant; it.total = (it.precio || 0) * cant; p.total = p.items.reduce((a, i) => a + i.total, 0);
+    }
+    disEdit = null; pintarPedidos();
+  }
   function detalleWeb(texto, items, numero) {
     let quedan = null;
     if (items) quedan = items.map(i => ({ w: palabras(i.producto), n: i.cantidad || 1 })).filter(x => x.w.length);
@@ -1882,7 +1950,8 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         // base y charms: botoncitos para marcarlos como impresos
         const piezas = numero ? (base ? [`<button type="button" class="imp-chip" data-imp="${esc(numero + '-' + n + '-base')}" aria-pressed="${!!baseLista}">${baseLista ? '✓' : '○'} 🧱 base ${esc(base[1])}</button>`] : [])
           .concat(chs.map(x => `<button type="button" class="imp-chip" data-imp="${esc(x.id)}" aria-pressed="${!!(ltHechas && ltHechas.has(x.id))}">${ltHechas && ltHechas.has(x.id) ? '✓' : '○'} ${charmDibujo(x, 20)} ${esc(charmNombre(x))}</button>`)) : [];
-        return `<div class="web-clk">${bloques.length > 1 ? `<div class="tit">Clicker ${n + 1}${numero && detAbierto.has(numero + '-' + n) ? ` <button type="button" class="btn-listo" data-det="${esc(numero + '-' + n)}">Resumir ▲</button>` : ''}</div>` : ''}
+        if (numero && disEdit && disEdit.numero === numero && disEdit.n === n) return `<div class="web-clk">${bloques.length > 1 ? `<div class="tit">Clicker ${n + 1}</div>` : ''}${editorDiseno()}</div>`;
+        return `<div class="web-clk">${numero ? `<div style="display:flex;justify-content:flex-end"><button type="button" class="btn chico" data-dis-ed="${esc(numero)}" data-dis-n="${n}" style="width:auto">✏️ Cambiar letras y colores</button></div>` : ''}${bloques.length > 1 ? `<div class="tit">Clicker ${n + 1}${numero && detAbierto.has(numero + '-' + n) ? ` <button type="button" class="btn-listo" data-det="${esc(numero + '-' + n)}">Resumir ▲</button>` : ''}</div>` : ''}
           ${tira}
           ${piezas.length ? `<div class="imp-chips"><span class="imp-lab">Imprimir</span>${piezas.join('')}</div>` : ''}
           ${arm.length ? `<div class="imp-chips"><span class="imp-lab">Armar</span>${arm.map(x => `<button type="button" class="imp-chip" data-imp="${esc(x.id)}" aria-pressed="${!!(ltHechas && ltHechas.has(x.id))}">${ltHechas && ltHechas.has(x.id) ? '✓' : '○'} ${x.ico} ${esc(x.nombre)}</button>`).join('')}</div>` : ''}
@@ -2520,8 +2589,31 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nombre;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   }
+  // cambios en el editor de diseño: se ve la tira al instante
+  const disCambio = e => {
+    if (!disEdit || !e.target.closest('[data-dis-form]')) return;
+    const t = e.target;
+    if (t.matches('[data-de-base]')) disEdit.base = t.value;
+    else if (t.matches('[data-de-tipo]')) disEdit.tipo = t.value;
+    else if (t.dataset.deI !== undefined) disEdit.teclas[+t.dataset.deI][t.dataset.deK] = t.dataset.deK === 'l' ? t.value.toUpperCase() : t.value;
+    const pv = document.querySelector('[data-dis-prev]'); if (pv) pv.innerHTML = tiraDis(disEdit);
+  };
+  $('#listaPedidos').addEventListener('input', disCambio);
+  $('#listaPedidos').addEventListener('change', disCambio);
   // marcar como impresa una tecla, base o charm desde el pedido (se guarda igual que en la lista para imprimir)
   $('#listaPedidos').addEventListener('click', e => {
+    const de = e.target.closest('[data-dis-ed]');
+    if (de) { e.stopImmediatePropagation(); abrirDisEdit(de.dataset.disEd, +de.dataset.disN); pintarPedidos(); return; }
+    if (disEdit && e.target.closest('[data-dis-form]')) {
+      e.stopImmediatePropagation();
+      const d = disEdit;
+      if (e.target.closest('[data-de-add]')) { const u = d.teclas[d.teclas.length - 1] || { t: 'blanco', lc: 'negro' }; d.teclas.push({ l: '', t: u.t, lc: u.lc }); pintarPedidos(); const ins = document.querySelectorAll('[data-de-k="l"]'); if (ins.length) ins[ins.length - 1].focus(); return; }
+      const del = e.target.closest('[data-de-del]'); if (del) { d.teclas.splice(+del.dataset.deDel, 1); pintarPedidos(); return; }
+      const sub = e.target.closest('[data-de-sub]'); if (sub) { const i = +sub.dataset.deSub; if (i > 0) { [d.teclas[i - 1], d.teclas[i]] = [d.teclas[i], d.teclas[i - 1]]; pintarPedidos(); } return; }
+      if (e.target.closest('[data-de-x]')) { disEdit = null; pintarPedidos(); return; }
+      if (e.target.closest('[data-de-ok]')) { guardarDiseno(); return; }
+      return;
+    }
     const dt = e.target.closest('[data-det]');
     if (dt) { e.stopImmediatePropagation(); const v = dt.dataset.det; detAbierto.has(v) ? detAbierto.delete(v) : detAbierto.add(v); pintarPedidos(); return; }
     const b = e.target.closest('[data-imp]'); if (!b) return;
