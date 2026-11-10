@@ -788,7 +788,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261110084210';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261110085026';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -2515,8 +2515,8 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
           const c1 = it => it.tipo === 'tecla' ? it.x.t : it.x.color, c2 = it => it.tipo === 'tecla' ? it.x.lc : it.tipo === 'base' ? it.x.tipo : '';
           const ord = pl.items.slice().sort((a, b) => orden(a.tipo) - orden(b.tipo) || pos(c1(a)) - pos(c1(b)) || pos(c2(a)) - pos(c2(b)) || String(c2(a)).localeCompare(c2(b)) || String(a.x.pal).localeCompare(b.x.pal));
           const grupos = [];
-          ord.forEach(it => { const k = it.tipo + '|' + c1(it) + '|' + c2(it), g = grupos[grupos.length - 1]; if (g && g.k === k) g.its.push(it); else grupos.push({ k, it, its: [it] }); });
-          const nom = g => g.it.tipo === 'tecla' ? `tecla ${c1(g.it)} · letra ${c2(g.it)}` : g.it.tipo === 'base' ? `bases ${c1(g.it)} ${c2(g.it)}` : `charms ${c1(g.it)}`;
+          ord.forEach(it => { const k = it.tipo + '|' + c1(it) + '|' + (it.tipo === 'base' ? '' : c2(it)), g = grupos[grupos.length - 1]; if (g && g.k === k) g.its.push(it); else grupos.push({ k, it, its: [it] }); });
+          const nom = g => g.it.tipo === 'tecla' ? `tecla ${c1(g.it)} · letra ${c2(g.it)}` : g.it.tipo === 'base' ? `bases ${c1(g.it)}` : `charms ${c1(g.it)}`;
           const n = g => g.its.reduce((a, x) => a + x.n, 0);
           return '<div class="placa-grupos">' + grupos.map(g => `<div class="lt-sub"><div><span class="lt-dot" style="background:${fondo(c1(g.it))}"></span>${g.it.tipo === 'tecla' ? `<span class="lt-dot" style="background:${fondo(c2(g.it))}"></span>` : ''}${esc(nom(g))} · ${n(g)}</div><div class="lt-keys">${g.its.map(tile).join('')}</div></div>`).join('') + '</div>';
         })()}
