@@ -165,7 +165,9 @@ button.tecla{padding:0;cursor:pointer}
 #lotes .lt-keys{display:flex;flex-wrap:wrap;gap:10px}
 #lotes .lt-k{display:grid;justify-items:center;gap:3px;border:0;background:none;padding:0;cursor:pointer;width:62px}
 #lotes .lt-k .cap{position:relative;width:54px;height:54px;border-radius:12px;display:grid;place-items:center;font:900 26px/1 "Nunito","Figtree",system-ui,sans-serif;border:1px solid rgba(0,0,0,.15);box-shadow:inset 0 -5px 0 rgba(0,0,0,.18)}
-#lotes .lt-cant{display:inline-flex;align-items:center;gap:4px;margin-left:8px;font-weight:700;color:var(--ink)}
+#lotes .lt-ncant{display:flex;align-items:center;gap:2px;font-size:12px;font-weight:800;color:var(--ink)}
+#lotes .lt-ncant input{width:44px;padding:2px 4px;font-size:13px;font-weight:800;text-align:center}
+.lt-cant{display:inline-flex;align-items:center;gap:4px;margin-left:8px;font-weight:700;color:var(--ink)}
 #lotes .lt-cant input{width:56px;padding:3px 6px;font-size:14px;font-weight:800;text-align:center}
 #lotes .lt-k .x{position:absolute;top:-7px;right:-9px;background:var(--ink);color:var(--bg);font:800 11px/1 system-ui,sans-serif;border-radius:99px;padding:3px 5px}
 #lotes .cap-b,#lotes .ver-b{border:0;background:none;padding:0;cursor:pointer;display:grid;justify-items:center;font:inherit;color:inherit}
@@ -790,7 +792,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261110112606';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261110113826';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -2343,18 +2345,18 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         ${Object.keys(gc[mo]).sort((a, b) => gc[mo][b].length - gc[mo][a].length || a.localeCompare(b)).filter(c => gc[mo][c].some(vis)).map(c => `<div class="lt-sub"><div>${COLOR_HEX[c] ? `<span class="lt-dot" style="background:${fondo(c)}"></span>` : ''}${esc(rc(c))}${cantGrupo(gc[mo][c])}</div>
           <div class="lt-keys">${gc[mo][c].filter(vis).map(x => `<div class="lt-k lt-charm" aria-pressed="${ltHechas.has(x.id)}"><button type="button" class="cap-b" data-lt-k="${esc(x.id)}" aria-pressed="${ltHechas.has(x.id)}" aria-label="${esc(mo)} ${esc(x.nombre || c)}, de ${esc(x.pal)}">
             <span class="cap dib">${charmDibujo(x, 50)}${x.n > 1 ? `<span class="x">${hechoN(x) && hechoN(x) < x.n ? hechoN(x) + '/' : '×'}${x.n}</span>` : ''}</span>
-            </button><button type="button" class="ver-b" data-lt-ir="${esc(x.v)}" data-lt-res="${esc(x.id)}" aria-label="Ver dónde va en el pedido"><small>${x.tipo === 'pers' || x.tipo === 'obj' ? '<b>' + esc(x.nombre) + '</b><br>' : ''}${esc(x.pal)} ›</small></button></div>`).join('')}</div></div>`).join('')}
+            </button><button type="button" class="ver-b" data-lt-ir="${esc(x.v)}" data-lt-res="${esc(x.id)}" aria-label="Ver dónde va en el pedido"><small>${x.tipo === 'pers' || x.tipo === 'obj' ? '<b>' + esc(x.nombre) + '</b><br>' : ''}${esc(x.pal)} ›</small></button>${pasoN(x)}</div>`).join('')}</div></div>`).join('')}
       </section>`).join('') || '<p class="vacio">No hay charms por imprimir. 🎉</p>') : ltVista === 'bases' ? (Object.keys(gb).sort((a, b) => cuentaB(gb[b]) - cuentaB(gb[a]) || a.localeCompare(b)).filter(c => hayVis(gb[c])).map(c => `<section class="lt-grupo">
         <div class="lt-gcab"><span class="lt-sw" style="background:${fondo(c)}"></span><div><b>Base ${esc(rc(c))}</b><span class="chico">${faltanDe(gb[c])} por imprimir · ${cuentaB(gb[c])} en total</span></div></div>
         ${Object.keys(gb[c]).sort().filter(m => gb[c][m].some(vis)).map(m => `<div class="lt-sub"><div>${esc(m)}${cantGrupo(gb[c][m])}</div>
           <div class="lt-keys">${gb[c][m].filter(vis).map(x => `<div class="lt-k lt-base" aria-pressed="${ltHechas.has(x.id)}"><button type="button" class="cap-b" data-lt-k="${esc(x.id)}" aria-pressed="${ltHechas.has(x.id)}" aria-label="Base ${esc(c)} de ${x.tam} teclas, ${esc(x.tipo)}, de ${esc(x.pal)}">
-            <span class="cap" style="background:${/acanal/.test(x.tipo) ? RAYAS + ',' : ''}${fondo(c)};color:${['blanco', 'beige', 'amarillo', 'plateado', 'dorado', 'celeste', 'verde claro', 'mármol', 'amarillo mantequilla', 'rosado mate', 'madera', 'púrpura mate'].includes(c) ? '#242424' : '#fff'}">${x.tam}${x.n > 1 ? `<span class="x">${hechoN(x) && hechoN(x) < x.n ? hechoN(x) + '/' : '×'}${x.n}</span>` : ''}</span></button><button type="button" class="ver-b" data-lt-ir="${esc(x.v)}" data-lt-res="${esc(x.id)}" aria-label="Ver dónde va en el pedido"><small>${esc(x.pal)} ›</small></button></div>`).join('')}</div></div>`).join('')}
+            <span class="cap" style="background:${/acanal/.test(x.tipo) ? RAYAS + ',' : ''}${fondo(c)};color:${['blanco', 'beige', 'amarillo', 'plateado', 'dorado', 'celeste', 'verde claro', 'mármol', 'amarillo mantequilla', 'rosado mate', 'madera', 'púrpura mate'].includes(c) ? '#242424' : '#fff'}">${x.tam}${x.n > 1 ? `<span class="x">${hechoN(x) && hechoN(x) < x.n ? hechoN(x) + '/' : '×'}${x.n}</span>` : ''}</span></button><button type="button" class="ver-b" data-lt-ir="${esc(x.v)}" data-lt-res="${esc(x.id)}" aria-label="Ver dónde va en el pedido"><small>${esc(x.pal)} ›</small></button>${pasoN(x)}</div>`).join('')}</div></div>`).join('')}
       </section>`).join('') || '<p class="vacio">No hay bases por imprimir. 🎉</p>') : orden.map(t => `<section class="lt-grupo">
         <div class="lt-gcab"><span class="lt-sw" style="background:${fondo(t)}"></span><div><b>Tecla ${esc(rc(t))}</b><span class="chico">${faltanDe(grupos[t])} por imprimir · ${cuenta(grupos[t])} en total</span></div></div>
         ${Object.keys(grupos[t]).sort((a, b) => cuenta({ x: grupos[t][b] }) - cuenta({ x: grupos[t][a] }) || a.localeCompare(b)).filter(lc => grupos[t][lc].some(vis)).map(lc => `<div class="lt-sub">
           <div><span class="lt-dot" style="background:${fondo(lc)}"></span>letra ${esc(rc(lc))}${cantGrupo(grupos[t][lc])}</div>
           <div class="lt-keys">${grupos[t][lc].filter(vis).map(k => `<div class="lt-k" aria-pressed="${ltHechas.has(k.id)}"><button type="button" class="cap-b" data-lt-k="${esc(k.id)}" aria-pressed="${ltHechas.has(k.id)}" aria-label="Tecla ${esc(t)}, letra ${esc(k.l)} ${esc(lc)}, de ${esc(k.pal)}">
-            <span class="cap" style="background:${fondo(t)};color:${hexDe(lc)}">${capDe(k.l, hexDe(lc), 34)}${k.n > 1 ? `<span class="x">${hechoN(k) && hechoN(k) < k.n ? hechoN(k) + '/' : '×'}${k.n}</span>` : ''}</span></button><button type="button" class="ver-b" data-lt-ir="${esc(k.v)}" data-lt-res="${esc(k.id)}" aria-label="Ver dónde va en el pedido"><small>${esc(k.pal)} ›</small></button></div>`).join('')}</div>
+            <span class="cap" style="background:${fondo(t)};color:${hexDe(lc)}">${capDe(k.l, hexDe(lc), 34)}${k.n > 1 ? `<span class="x">${hechoN(k) && hechoN(k) < k.n ? hechoN(k) + '/' : '×'}${k.n}</span>` : ''}</span></button><button type="button" class="ver-b" data-lt-ir="${esc(k.v)}" data-lt-res="${esc(k.id)}" aria-label="Ver dónde va en el pedido"><small>${esc(k.pal)} ›</small></button>${pasoN(k)}</div>`).join('')}</div>
         </div>`).join('')}
       </section>`).join('') || '<p class="vacio">No hay teclas por imprimir. 🎉</p>'}
       ${ltVer ? `<aside class="lt-panel" id="ltPanel" aria-label="Pedido">${verPedidoLote(ltVer, teclas, bases, charms)}</aside>` : ''}
@@ -2385,8 +2387,10 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     ltRecien.add(id);
   }
   // marca "k listas" en un grupo: se llenan las piezas en orden
+  const pasoN = x => x.n > 1 ? `<label class="lt-ncant" title="¿Cuántas de estas ${x.n} ya imprimiste?"><input type="number" min="0" max="${x.n}" value="${hechoN(x)}" inputmode="numeric" data-lt-cant="${esc(x.id + ':' + x.n)}" aria-label="Cuántas listas de ${x.n}">/${x.n}</label>` : '';
   function marcarCantidad(items, k) { items.forEach(x => { const d = Math.max(0, Math.min(x.n, k)); ponerCant(x.id, d, x.n); k -= d; }); }
-  const cantGrupo = its => { const tot = its.reduce((a, x) => a + x.n, 0), h = its.reduce((a, x) => a + hechoN(x), 0);
+  const cantGrupo = () => '';   // (ya no se usa: la cantidad se marca solo en piezas repetidas de un mismo pedido)
+  const cantGrupoViejo = its => { const tot = its.reduce((a, x) => a + x.n, 0), h = its.reduce((a, x) => a + hechoN(x), 0);
     return tot > 1 ? ` <label class="lt-cant" title="Escribe cuántas ya imprimiste">listas <input type="number" min="0" max="${tot}" value="${h}" inputmode="numeric" data-lt-cant="${esc(its.map(x => x.id + ':' + x.n).join(','))}"> de ${tot}</label>` : ''; };
   const hayPend = () => Object.keys(ltPend.hechas).length + Object.keys(ltPend.fuera).length > 0;
   const ltEstadoTxt = () => ltEnviando || (hayPend() && !ltError) ? '⏳ Guardando…' : ltError ? '📴 Sin conexión: quedó en este teléfono y se guarda solo cuando vuelva la señal' : '✓ Guardado · lo ves igual en todos tus equipos';
@@ -2524,7 +2528,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         : it.tipo === 'base' ? `<span class="cap" style="background:${/acanal/.test(x.tipo) ? RAYAS + ',' : ''}${fondo(x.color)};color:${oscuroP(x.color) ? '#fff' : '#242424'}">${x.tam}${x.n > 1 ? `<span class="x">${hechoN(x) && hechoN(x) < x.n ? hechoN(x) + '/' : '×'}${x.n}</span>` : ''}</span>`
         : `<span class="cap dib">${charmDibujo(x, 50)}${x.n > 1 ? `<span class="x">${hechoN(x) && hechoN(x) < x.n ? hechoN(x) + '/' : '×'}${x.n}</span>` : ''}</span>`;
       const cls = it.tipo === 'base' ? ' lt-base' : it.tipo === 'charm' ? ' lt-charm' : '';
-      return `<div class="lt-k${cls}" aria-pressed="${h}"><button type="button" class="cap-b" data-lt-k="${esc(it.id)}" aria-pressed="${h}" aria-label="${it.tipo}">${cap}</button><button type="button" class="ver-b" data-lt-ir="${esc(x.v)}" data-lt-res="${esc(it.id)}"><small>${it.tipo === 'base' ? esc(x.tipo) + ' · ' : it.tipo === 'charm' ? 'charm · ' : ''}${esc(x.pal)} ›</small></button></div>`; };
+      return `<div class="lt-k${cls}" aria-pressed="${h}"><button type="button" class="cap-b" data-lt-k="${esc(it.id)}" aria-pressed="${h}" aria-label="${it.tipo}">${cap}</button><button type="button" class="ver-b" data-lt-ir="${esc(x.v)}" data-lt-res="${esc(it.id)}"><small>${it.tipo === 'base' ? esc(x.tipo) + ' · ' : it.tipo === 'charm' ? 'charm · ' : ''}${esc(x.pal)} ›</small></button>${pasoN(x)}</div>`; };
     const cfg = `<div class="placa-cfg"><label for="porPlaca">Piezas por placa:</label><input id="porPlaca" type="number" min="4" max="200" value="${porPlaca}" inputmode="numeric">
       <span class="chico">Cada placa usa máximo 4 colores (los 4 del AMS). Una tecla con letra de otro color cuenta 2 colores.</span></div>`;
     return cfg + (placas.map((pl, i) => { const tot = pl.items.reduce((a, x) => a + x.n, 0), hechas = pl.items.filter(x => ltHechas.has(x.id)).reduce((a, x) => a + x.n, 0);
