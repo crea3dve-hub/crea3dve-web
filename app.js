@@ -1,6 +1,14 @@
 // WhatsApp a veces daña los emojis que van en el link (salen como "�" en algunos teléfonos y computadoras):
 // al mensaje de WhatsApp se le quitan; el pedido que se guarda en la página de ventas los conserva
+// Solo se quitan donde suelen dañarse: navegadores dentro de apps (Instagram, Facebook, TikTok…),
+// vistas web de Android y computadoras (WhatsApp Web / de escritorio). En Safari o Chrome del teléfono van completos.
+const UA = navigator.userAgent || "";
+const EMOJI_OK = /iPhone|iPad|iPod|Android/.test(UA)
+  && !/Instagram|FBAN|FBAV|FB_IAB|FBIOS|TikTok|musical_ly|BytedanceWebview|Line\/|Snapchat|Twitter|Pinterest|WhatsApp/i.test(UA)
+  && !/; wv\)/.test(UA)
+  && !(/iPhone|iPad|iPod/.test(UA) && !/Safari\//.test(UA));
 function sinEmojis(t){
+  if(EMOJI_OK) return String(t);
   return String(t).replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}\u{20E3}]/gu, "")
     .replace(/^[ \t]+/gm, "").replace(/[ \t]{2,}/g, " ").replace(/ +$/gm, "");
 }
