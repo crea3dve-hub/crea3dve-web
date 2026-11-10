@@ -1,3 +1,9 @@
+// WhatsApp a veces daña los emojis que van en el link (salen como "�" en algunos teléfonos y computadoras):
+// al mensaje de WhatsApp se le quitan; el pedido que se guarda en la página de ventas los conserva
+function sinEmojis(t){
+  return String(t).replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}\u{20E3}]/gu, "")
+    .replace(/^[ \t]+/gm, "").replace(/[ \t]{2,}/g, " ").replace(/ +$/gm, "");
+}
 /* ====== CONFIGURACIÓN: productos, precios y colores (cambia aquí) ====== */
 const WHATSAPP = "584242674222";
 const CAJA_API = "https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec";
@@ -106,7 +112,7 @@ function avisarCaja(datos, esperar){
   return esperar ? p : null;
 }
 function abrirWhatsApp(texto){
-  const url = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(texto)}`;
+  const url = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(sinEmojis(texto))}`;
   const w = window.open(url, "_blank");
   if(w) { try{ w.opener = null; }catch(e){} } else location.href = url;
 }
@@ -404,7 +410,7 @@ fm.addEventListener("submit", async e => {
     items:[{producto:"Pieza a la medida (por cotizar)", cantidad:1, precio:0}], foto: fotoData || ""};
   if(fotoData){
     await Promise.race([avisarCaja(datos, true), new Promise(r => setTimeout(r, 20000))]);   // espera a que suba la foto
-    location.href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(texto)}`;
+    location.href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(sinEmojis(texto))}`;
   } else { avisarCaja(datos); abrirWhatsApp(texto); }
   btn.disabled = false; lbl.textContent = antes;
 });
