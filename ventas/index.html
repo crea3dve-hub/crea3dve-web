@@ -118,6 +118,7 @@ button.tecla{padding:0;cursor:pointer}
 .card.listo{padding-block:12px}
 .tira-fila{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .tira-fila .teclas{margin:0}
+.copias{background:var(--ink);color:var(--bg);font-weight:900;font-size:17px;border-radius:999px;padding:4px 12px}
 .dis-ed{display:grid;gap:10px;border:2px solid var(--ink);border-radius:12px;padding:12px;margin:6px 0}
 .dis-filas{display:grid;gap:6px}
 .dis-fila{display:grid;grid-template-columns:22px 56px minmax(0,1fr) minmax(0,1fr) auto auto;gap:6px;align-items:center}
@@ -797,7 +798,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261110114601';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261110121736';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1976,6 +1977,11 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     try {
       const partes = texto.split(/\*?━━━ Clicker \d+ ━━━\*?/);
       const bloques = partes.length > 1 ? partes.slice(1) : [texto];
+      // ¿pidió varios iguales? (las letras del pedido son un múltiplo exacto de las del diseño, ej. 28 letras con 2 teclas = 14 de cada uno)
+      const letrasPed = (items || []).filter(i => esLetra(i.producto)).reduce((a, i) => a + (i.cantidad || 0), 0);
+      const teclasDis = (texto.match(/^\s*\d+\.\s*\*[^*]+\*\s*→\s*tecla/gm) || []).length;
+      const copias = numero && teclasDis && letrasPed > teclasDis && letrasPed % teclasDis === 0 ? letrasPed / teclasDis : 1;
+      const hN = id => !ltHechas ? 0 : ltHechas.has(id) ? copias : Math.min(copias, (ltParcial && ltParcial.get(id)) || 0);
       const listos = [];
       const html = bloques.map((b, n) => {
         const base = /🧱 Base:\s*(?:\S+\s+)?\*([^*]+)\*\s*·\s*([^\n]+)/.exec(b);
@@ -1992,10 +1998,11 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         const otras = lineas.map(l => l.trim()).filter(l => /^(🔗|⛓|🔑|🎀)/.test(l) && !/crea3dve\.com/.test(l)).map(sinAst);
         // si es un pedido por entregar: las teclas ya impresas salen clarito y se dice cuántas faltan
         const hecha = i => numero && ltHechas && ltHechas.has(numero + '-' + n + '-' + i);
-        const faltan = numero ? teclas.filter((m, i) => !hecha(i)).length : 0;
+        const faltan = numero ? teclas.reduce((a, m, i) => a + copias - hN(numero + '-' + n + '-' + i), 0) : 0;
         const baseLista = numero && ltHechas && ltHechas.has(numero + '-' + n + '-base');
-        const chs = numero ? charmsDeBloque(b, numero, n, '') : [], chFalta = chs.filter(x => !(ltHechas && ltHechas.has(x.id))).length;
-        const falta = [faltan ? faltan + ' de ' + teclas.length + ' teclas' : '', base && !baseLista ? 'la base' : '', chFalta ? chFalta + (chFalta === 1 ? ' charm' : ' charms') : ''].filter(Boolean);
+        const chs = numero ? charmsDeBloque(b, numero, n, '') : [], chFalta = chs.reduce((a, x) => a + copias - hN(x.id), 0);
+        const basesF = base ? copias - hN(numero + '-' + n + '-base') : 0;
+        const falta = [faltan ? faltan + ' de ' + teclas.length * copias + (teclas.length * copias === 1 ? ' tecla' : ' teclas') : '', basesF ? (copias > 1 ? basesF + (basesF === 1 ? ' base' : ' bases') : 'la base') : '', chFalta ? chFalta + (chFalta === 1 ? ' charm' : ' charms') : ''].filter(Boolean);
         const arm = numero && teclas.length ? armadoDeBloque(b, numero, n) : [], armFalta = arm.filter(x => !(ltHechas && ltHechas.has(x.id)));
         const yFin = a => a.length > 1 ? a.slice(0, -1).join(', ') + ' y ' + a[a.length - 1] : a[0];
         const tira = teclas.length ? `<div class="teclas" style="background:${hexDe(base && base[1])}">${teclas.map((m, i) => {
@@ -2008,7 +2015,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         if (numero && disEdit && disEdit.numero === numero && disEdit.n === n) return `<div class="web-clk">${bloques.length > 1 ? `<div class="tit">Clicker ${n + 1}</div>` : ''}${editorDiseno()}</div>`;
         const btnDis = numero ? `<button type="button" class="btn chico" data-dis-ed="${esc(numero)}" data-dis-n="${n}" style="width:auto">✏️ Cambiar letras y colores</button>` : '';
         return `<div class="web-clk">${bloques.length > 1 ? `<div class="tit">Clicker ${n + 1}${numero && detAbierto.has(numero + '-' + n) ? ` <button type="button" class="btn-listo" data-det="${esc(numero + '-' + n)}">Resumir ▲</button>` : ''}</div>` : ''}
-          <div class="tira-fila">${tira}${btnDis}</div>
+          <div class="tira-fila">${tira}${copias > 1 ? `<span class="copias" title="Pidió ${copias} iguales">×${copias}</span>` : ''}${btnDis}</div>
           ${piezas.length ? `<div class="imp-chips"><span class="imp-lab">Imprimir</span>${piezas.join('')}</div>` : ''}
           ${arm.length ? `<div class="imp-chips"><span class="imp-lab">Armar</span>${arm.map(x => `<button type="button" class="imp-chip" data-imp="${esc(x.id)}" aria-pressed="${!!(ltHechas && ltHechas.has(x.id))}">${ltHechas && ltHechas.has(x.id) ? '✓' : '○'} ${x.ico} ${esc(x.nombre)}</button>`).join('')}</div>` : ''}
           ${numero && teclas.length ? `<span class="imp-falta${falta.length || armFalta.length ? '' : ' ok'}">${falta.length ? '🖨️ Falta imprimir: ' + yFin(falta) + (armFalta.length ? ' · falta armar' : '') : armFalta.length ? '🔧 Impreso · falta armar: ' + yFin(armFalta.map(x => x.nombre.toLowerCase())) : '✓ Listo: impreso y armado'}</span>` : ''}
