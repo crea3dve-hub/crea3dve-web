@@ -207,7 +207,7 @@ button.tecla{padding:0;cursor:pointer}
 #lotes .lt-col.charms{grid-column:1/-1}
 #lotes .lt-lab{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 #lotes .lt-tira{display:flex;flex-wrap:wrap;gap:6px;padding:4px 2px 6px}
-#lotes .lt-tira .lt-k{width:60px;flex:none}
+#lotes .lt-tira .lt-k{width:84px;flex:none}
 #lotes .lt-tira .lt-k small,#lotes .lt-clk small{overflow-wrap:normal;max-width:none}
 #lotes .lt-tira .lt-k .cap{width:48px;height:48px;font-size:22px}
 #lotes .ams{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 4px}
@@ -798,7 +798,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261110123014';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261110124918';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -2465,7 +2465,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         ${bs.length ? `<div class="lt-col"><span class="lt-lab">Base</span>${bs.map(x => `<button type="button" class="lt-k lt-base${ltRes === x.id ? ' resalta' : ''}" data-lt-k="${esc(x.id)}" aria-pressed="${ltHechas.has(x.id)}" aria-label="Base ${esc(x.color)}">
           <span class="cap" style="background:${/acanal/.test(x.tipo) ? RAYAS + ',' : ''}${fondo(x.color)};color:${oscuro(x.color) ? '#fff' : '#242424'}">${x.tam}</span><small>${esc(rc(x.color))} · ${esc(x.tipo)}</small></button>`).join('')}</div>` : ''}
         ${ks.length ? `<div class="lt-col teclas"><span class="lt-lab">Teclas, en orden</span><div class="lt-tira">${ks.map(k => { const i = ks0.indexOf(k); return `<button type="button" class="lt-k${ltRes === k.id ? ' resalta' : ''}" data-lt-k="${esc(k.id)}" aria-pressed="${ltHechas.has(k.id)}" aria-label="Tecla ${i + 1}: ${esc(k.t)}, letra ${esc(k.l)} ${esc(k.lc)}">
-          <span class="cap" style="background:${fondo(k.t)};color:${hexDe(k.lc)}">${capDe(k.l, hexDe(k.lc), 30)}</span><small>${i + 1}. ${esc(rc(k.t))}</small></button>`; }).join('')}</div></div>` : ''}
+          <span class="cap" style="background:${fondo(k.t)};color:${hexDe(k.lc)}">${capDe(k.l, hexDe(k.lc), 30)}</span><small>${i + 1}. tecla ${esc(rc(k.t))}<br>letra ${esc(rc(k.lc))}</small></button>`; }).join('')}</div></div>` : ''}
         ${cs.length ? `<div class="lt-col charms"><span class="lt-lab">Charms</span><div class="lt-keys">${cs.map(x => `<button type="button" class="lt-k lt-charm${ltRes === x.id ? ' resalta' : ''}" data-lt-k="${esc(x.id)}" aria-pressed="${ltHechas.has(x.id)}" aria-label="${esc(charmNombre(x))}">
           <span class="cap dib">${charmDibujo(x, 44)}</span><small>${esc(charmNombre(x))}</small></button>`).join('')}</div></div>` : ''}
         </div></div>`; }).join('')}
