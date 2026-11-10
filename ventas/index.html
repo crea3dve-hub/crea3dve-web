@@ -788,7 +788,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261110085026';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261110085210';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1776,6 +1776,11 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     } finally { document.body.classList.remove('cargando'); }
   }
   /* ---------- Detalle de los pedidos que llegan de la página (colores de cada tecla, extras y link 3D) ---------- */
+  // nombre que trae el rollo de filamento (solo para verlo aquí, no sale en la página pública)
+  const ROLLO = { 'verde grama': 'Green H6', 'rosado mate': 'Matte Pink', 'magenta claro': 'Pink W3', 'púrpura mate': 'Matte Purple',
+    'violeta': 'Violet', 'morado': 'Pink W6', 'rosa': 'Rose', 'amarillo mantequilla': 'Yellow D2', 'azul oscuro': 'Blue N8',
+    'azul celeste': 'Blue P4', 'verde claro': 'Light Green', 'rojo': 'Red', 'gris': 'Grey', 'blanco': 'White', 'negro': 'Black', 'beige': 'Wood' };
+  const rc = c => { const r = ROLLO[String(c || '').toLowerCase().trim()]; return r ? c + ' (' + r + ')' : c; };
   const COLOR_HEX = { 'blanco':'#F2F1EC','negro':'#242424','gris':'#8C8F94','beige':'#C6A77E','plateado':'#C9CCD1','rojo':'#D52A2F','fucsia':'#E0457F',
     'naranja':'#F27B30','amarillo':'#F8D62A','marrón':'#7B4A2D','verde claro':'#B5D99C','verde':'#3DA857','celeste':'#8FCBF0','azul':'#2A5BC9',
     'morado metalizado':'#7E4FC0','dorado':'#E2C233','mármol':'#E7E6E2',
@@ -1987,9 +1992,9 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         const tira = teclas.length ? `<div class="teclas" style="background:${hexDe(base && base[1])}">${teclas.map((m, i) => {
             const ch = SIMBOLO[m[1].trim().toLowerCase()] || m[1].trim();
             return numero ? `<button type="button" class="tecla${hecha(i) ? ' hecha' : ''}" data-imp="${esc(numero + '-' + n + '-' + i)}" aria-pressed="${!!hecha(i)}" title="tecla ${esc(m[2])} · letra ${esc(m[3])} · toca para marcarla ${hecha(i) ? 'por imprimir' : 'impresa'}" style="background:${hexDe(m[2])};color:${hexDe(m[3])}">${capDe(ch, hexDe(m[3]), 20)}</button>`
-              : `<span class="tecla" title="tecla ${esc(m[2])} · letra ${esc(m[3])}" style="background:${hexDe(m[2])};color:${hexDe(m[3])}">${capDe(ch, hexDe(m[3]), 20)}</span>`; }).join('')}</div>` : '';
+              : `<span class="tecla" title="tecla ${esc(rc(m[2]))} · letra ${esc(rc(m[3]))}" style="background:${hexDe(m[2])};color:${hexDe(m[3])}">${capDe(ch, hexDe(m[3]), 20)}</span>`; }).join('')}</div>` : '';
         // base y charms: botoncitos para marcarlos como impresos
-        const piezas = numero ? (base ? [`<button type="button" class="imp-chip" data-imp="${esc(numero + '-' + n + '-base')}" aria-pressed="${!!baseLista}">${baseLista ? '✓' : '○'} 🧱 base ${esc(base[1])}</button>`] : [])
+        const piezas = numero ? (base ? [`<button type="button" class="imp-chip" data-imp="${esc(numero + '-' + n + '-base')}" aria-pressed="${!!baseLista}">${baseLista ? '✓' : '○'} 🧱 base ${esc(rc(base[1]))}</button>`] : [])
           .concat(chs.map(x => `<button type="button" class="imp-chip" data-imp="${esc(x.id)}" aria-pressed="${!!(ltHechas && ltHechas.has(x.id))}">${ltHechas && ltHechas.has(x.id) ? '✓' : '○'} ${charmDibujo(x, 20)} ${esc(charmNombre(x))}</button>`)) : [];
         if (numero && disEdit && disEdit.numero === numero && disEdit.n === n) return `<div class="web-clk">${bloques.length > 1 ? `<div class="tit">Clicker ${n + 1}</div>` : ''}${editorDiseno()}</div>`;
         const btnDis = numero ? `<button type="button" class="btn chico" data-dis-ed="${esc(numero)}" data-dis-n="${n}" style="width:auto">✏️ Cambiar letras y colores</button>` : '';
@@ -1998,8 +2003,8 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
           ${piezas.length ? `<div class="imp-chips"><span class="imp-lab">Imprimir</span>${piezas.join('')}</div>` : ''}
           ${arm.length ? `<div class="imp-chips"><span class="imp-lab">Armar</span>${arm.map(x => `<button type="button" class="imp-chip" data-imp="${esc(x.id)}" aria-pressed="${!!(ltHechas && ltHechas.has(x.id))}">${ltHechas && ltHechas.has(x.id) ? '✓' : '○'} ${x.ico} ${esc(x.nombre)}</button>`).join('')}</div>` : ''}
           ${numero && teclas.length ? `<span class="imp-falta${falta.length || armFalta.length ? '' : ' ok'}">${falta.length ? '🖨️ Falta imprimir: ' + yFin(falta) + (armFalta.length ? ' · falta armar' : '') : armFalta.length ? '🔧 Impreso · falta armar: ' + yFin(armFalta.map(x => x.nombre.toLowerCase())) : '✓ Listo: impreso y armado'}</span>` : ''}
-          <ul class="web-lin">${base ? `<li>🧱 Base <b>${esc(base[1])}</b> · ${esc(sinAst(base[2]))}${numero ? (baseLista ? ' · ✓ impresa' : ' · <b>por imprimir</b>') : ''}</li>` : ''}
-            ${teclas.map((m, i) => `<li>${i + 1}. <b>${esc(m[1])}</b> → tecla ${esc(m[2])} · letra ${esc(m[3])}</li>`).join('')}
+          <ul class="web-lin">${base ? `<li>🧱 Base <b>${esc(rc(base[1]))}</b> · ${esc(sinAst(base[2]))}${numero ? (baseLista ? ' · ✓ impresa' : ' · <b>por imprimir</b>') : ''}</li>` : ''}
+            ${teclas.map((m, i) => `<li>${i + 1}. <b>${esc(m[1])}</b> → tecla ${esc(rc(m[2]))} · letra ${esc(rc(m[3]))}</li>`).join('')}
             ${extras.concat(otras).filter(sigue).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
           ${link ? `<a class="btn chico" style="text-decoration:none;justify-self:start" target="_blank" rel="noopener" href="${esc(link)}">🔍 Ver el diseño en 3D</a>` : ''}
         </div>`;
@@ -2333,19 +2338,19 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       <button type="button" class="btn chico" data-lt-ocultar style="margin-top:10px">${ltOcultar ? '👁 Mostrar también las que ya imprimí' : '🙈 Esconder las que ya imprimí'}</button>
       ${ltVista === 'placas' ? pintarPlacas(activas, basesAct, charmsAct) : ltVista === 'pedidos' ? (pedsPend.map(x => verPedidoLote(x.v, teclas, bases, charms, true)).join('') || '<p class="vacio">Todos los pedidos están impresos. 🎉</p>') : ltVista === 'charms' ? (Object.keys(gc).sort((a, b) => (a === 'Charm personalizado') - (b === 'Charm personalizado') || cuentaB(gc[b]) - cuentaB(gc[a]) || a.localeCompare(b)).filter(mo => hayVis(gc[mo])).map(mo => `<section class="lt-grupo">
         <div class="lt-gcab"><div><b>${esc(mo)}</b><span class="chico">${faltanDe(gc[mo])} por imprimir · ${cuentaB(gc[mo])} en total</span></div></div>
-        ${Object.keys(gc[mo]).sort((a, b) => gc[mo][b].length - gc[mo][a].length || a.localeCompare(b)).filter(c => gc[mo][c].some(vis)).map(c => `<div class="lt-sub"><div>${COLOR_HEX[c] ? `<span class="lt-dot" style="background:${fondo(c)}"></span>` : ''}${esc(c)}</div>
+        ${Object.keys(gc[mo]).sort((a, b) => gc[mo][b].length - gc[mo][a].length || a.localeCompare(b)).filter(c => gc[mo][c].some(vis)).map(c => `<div class="lt-sub"><div>${COLOR_HEX[c] ? `<span class="lt-dot" style="background:${fondo(c)}"></span>` : ''}${esc(rc(c))}</div>
           <div class="lt-keys">${gc[mo][c].filter(vis).map(x => `<div class="lt-k lt-charm" aria-pressed="${ltHechas.has(x.id)}"><button type="button" class="cap-b" data-lt-k="${esc(x.id)}" aria-pressed="${ltHechas.has(x.id)}" aria-label="${esc(mo)} ${esc(x.nombre || c)}, de ${esc(x.pal)}">
             <span class="cap dib">${charmDibujo(x, 50)}${x.n > 1 ? `<span class="x">×${x.n}</span>` : ''}</span>
             </button><button type="button" class="ver-b" data-lt-ir="${esc(x.v)}" data-lt-res="${esc(x.id)}" aria-label="Ver dónde va en el pedido"><small>${x.tipo === 'pers' || x.tipo === 'obj' ? '<b>' + esc(x.nombre) + '</b><br>' : ''}${esc(x.pal)} ›</small></button></div>`).join('')}</div></div>`).join('')}
       </section>`).join('') || '<p class="vacio">No hay charms por imprimir. 🎉</p>') : ltVista === 'bases' ? (Object.keys(gb).sort((a, b) => cuentaB(gb[b]) - cuentaB(gb[a]) || a.localeCompare(b)).filter(c => hayVis(gb[c])).map(c => `<section class="lt-grupo">
-        <div class="lt-gcab"><span class="lt-sw" style="background:${fondo(c)}"></span><div><b>Base ${esc(c)}</b><span class="chico">${faltanDe(gb[c])} por imprimir · ${cuentaB(gb[c])} en total</span></div></div>
+        <div class="lt-gcab"><span class="lt-sw" style="background:${fondo(c)}"></span><div><b>Base ${esc(rc(c))}</b><span class="chico">${faltanDe(gb[c])} por imprimir · ${cuentaB(gb[c])} en total</span></div></div>
         ${Object.keys(gb[c]).sort().filter(m => gb[c][m].some(vis)).map(m => `<div class="lt-sub"><div>${esc(m)}</div>
           <div class="lt-keys">${gb[c][m].filter(vis).map(x => `<div class="lt-k lt-base" aria-pressed="${ltHechas.has(x.id)}"><button type="button" class="cap-b" data-lt-k="${esc(x.id)}" aria-pressed="${ltHechas.has(x.id)}" aria-label="Base ${esc(c)} de ${x.tam} teclas, ${esc(x.tipo)}, de ${esc(x.pal)}">
             <span class="cap" style="background:${/acanal/.test(x.tipo) ? RAYAS + ',' : ''}${fondo(c)};color:${['blanco', 'beige', 'amarillo', 'plateado', 'dorado', 'celeste', 'verde claro', 'mármol', 'amarillo mantequilla', 'rosado mate', 'madera', 'púrpura mate'].includes(c) ? '#242424' : '#fff'}">${x.tam}${x.n > 1 ? `<span class="x">×${x.n}</span>` : ''}</span></button><button type="button" class="ver-b" data-lt-ir="${esc(x.v)}" data-lt-res="${esc(x.id)}" aria-label="Ver dónde va en el pedido"><small>${esc(x.pal)} ›</small></button></div>`).join('')}</div></div>`).join('')}
       </section>`).join('') || '<p class="vacio">No hay bases por imprimir. 🎉</p>') : orden.map(t => `<section class="lt-grupo">
-        <div class="lt-gcab"><span class="lt-sw" style="background:${fondo(t)}"></span><div><b>Tecla ${esc(t)}</b><span class="chico">${faltanDe(grupos[t])} por imprimir · ${cuenta(grupos[t])} en total</span></div></div>
+        <div class="lt-gcab"><span class="lt-sw" style="background:${fondo(t)}"></span><div><b>Tecla ${esc(rc(t))}</b><span class="chico">${faltanDe(grupos[t])} por imprimir · ${cuenta(grupos[t])} en total</span></div></div>
         ${Object.keys(grupos[t]).sort((a, b) => cuenta({ x: grupos[t][b] }) - cuenta({ x: grupos[t][a] }) || a.localeCompare(b)).filter(lc => grupos[t][lc].some(vis)).map(lc => `<div class="lt-sub">
-          <div><span class="lt-dot" style="background:${fondo(lc)}"></span>letra ${esc(lc)}</div>
+          <div><span class="lt-dot" style="background:${fondo(lc)}"></span>letra ${esc(rc(lc))}</div>
           <div class="lt-keys">${grupos[t][lc].filter(vis).map(k => `<div class="lt-k" aria-pressed="${ltHechas.has(k.id)}"><button type="button" class="cap-b" data-lt-k="${esc(k.id)}" aria-pressed="${ltHechas.has(k.id)}" aria-label="Tecla ${esc(t)}, letra ${esc(k.l)} ${esc(lc)}, de ${esc(k.pal)}">
             <span class="cap" style="background:${fondo(t)};color:${hexDe(lc)}">${capDe(k.l, hexDe(lc), 34)}${k.n > 1 ? `<span class="x">×${k.n}</span>` : ''}</span></button><button type="button" class="ver-b" data-lt-ir="${esc(k.v)}" data-lt-res="${esc(k.id)}" aria-label="Ver dónde va en el pedido"><small>${esc(k.pal)} ›</small></button></div>`).join('')}</div>
         </div>`).join('')}
@@ -2420,9 +2425,9 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         if (!bs.length && !cs.length && !ks.length) return '';
         return `<div class="lt-clk"><div class="lt-clk-t">${esc(pal0)}${n0 > 1 ? ' · ×' + n0 : ''}</div><div class="lt-fila">
         ${bs.length ? `<div class="lt-col"><span class="lt-lab">Base</span>${bs.map(x => `<button type="button" class="lt-k lt-base${ltRes === x.id ? ' resalta' : ''}" data-lt-k="${esc(x.id)}" aria-pressed="${ltHechas.has(x.id)}" aria-label="Base ${esc(x.color)}">
-          <span class="cap" style="background:${/acanal/.test(x.tipo) ? RAYAS + ',' : ''}${fondo(x.color)};color:${oscuro(x.color) ? '#fff' : '#242424'}">${x.tam}</span><small>${esc(x.color)} · ${esc(x.tipo)}</small></button>`).join('')}</div>` : ''}
+          <span class="cap" style="background:${/acanal/.test(x.tipo) ? RAYAS + ',' : ''}${fondo(x.color)};color:${oscuro(x.color) ? '#fff' : '#242424'}">${x.tam}</span><small>${esc(rc(x.color))} · ${esc(x.tipo)}</small></button>`).join('')}</div>` : ''}
         ${ks.length ? `<div class="lt-col teclas"><span class="lt-lab">Teclas, en orden</span><div class="lt-tira">${ks.map(k => { const i = ks0.indexOf(k); return `<button type="button" class="lt-k${ltRes === k.id ? ' resalta' : ''}" data-lt-k="${esc(k.id)}" aria-pressed="${ltHechas.has(k.id)}" aria-label="Tecla ${i + 1}: ${esc(k.t)}, letra ${esc(k.l)} ${esc(k.lc)}">
-          <span class="cap" style="background:${fondo(k.t)};color:${hexDe(k.lc)}">${capDe(k.l, hexDe(k.lc), 30)}</span><small>${i + 1}. ${esc(k.t)}</small></button>`; }).join('')}</div></div>` : ''}
+          <span class="cap" style="background:${fondo(k.t)};color:${hexDe(k.lc)}">${capDe(k.l, hexDe(k.lc), 30)}</span><small>${i + 1}. ${esc(rc(k.t))}</small></button>`; }).join('')}</div></div>` : ''}
         ${cs.length ? `<div class="lt-col charms"><span class="lt-lab">Charms</span><div class="lt-keys">${cs.map(x => `<button type="button" class="lt-k lt-charm${ltRes === x.id ? ' resalta' : ''}" data-lt-k="${esc(x.id)}" aria-pressed="${ltHechas.has(x.id)}" aria-label="${esc(charmNombre(x))}">
           <span class="cap dib">${charmDibujo(x, 44)}</span><small>${esc(charmNombre(x))}</small></button>`).join('')}</div></div>` : ''}
         </div></div>`; }).join('')}
@@ -2449,7 +2454,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     else g = `<circle cx="22" cy="22" r="15" fill="none" stroke="#9AA394" stroke-width="2.5" stroke-dasharray="4 4"/><text x="22" y="22" dy=".36em" text-anchor="middle" font-family="Figtree, sans-serif" font-weight="800" font-size="18" fill="#7A8474">?</text>`;
     return `<svg viewBox="0 0 44 44" width="${px}" height="${px}" aria-hidden="true">${g}</svg>`;
   }
-  const charmNombre = x => x.tipo === 'pers' ? 'Charm personalizado: ' + x.nombre : x.tipo === 'obj' ? 'Clicker ' + x.nombre : x.modelo + (x.color ? ' ' + x.color : '');
+  const charmNombre = x => x.tipo === 'pers' ? 'Charm personalizado: ' + x.nombre : x.tipo === 'obj' ? 'Clicker ' + x.nombre : x.modelo + (x.color ? ' ' + rc(x.color) : '');
   /* ---------- Orden de impresión: placas de máximo 4 colores (lo que cabe en el AMS) ---------- */
   // Cada pieza usa 1 color (base, charm, tecla del mismo color que su letra) o 2 (tecla + letra).
   // Se arman placas juntando piezas que comparten colores, sin pasar de 4 colores por placa.
@@ -2509,14 +2514,14 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       return `<section class="lt-grupo"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap">
         <div><b style="font-size:18px">Placa ${i + 1}</b><div class="chico">${tot} ${tot === 1 ? 'pieza' : 'piezas'} · ${pl.colores.length} ${pl.colores.length === 1 ? 'color' : 'colores'}${hechas ? ' · ' + hechas + ' listas' : ''}</div></div>
         <button type="button" class="btn chico" data-lt-placa="${esc(pl.items.map(x => x.id).join(','))}">${hechas === tot ? '↩️ Desmarcar placa' : '✓ Placa impresa'}</button></div>
-        <div class="ams">${pl.colores.map((c, j) => `<span><i style="background:${fondo(c)};color:${oscuroP(c) ? '#fff' : '#242424'}">${j + 1}</i>${esc(c)}</span>`).join('')}</div>
+        <div class="ams">${pl.colores.map((c, j) => `<span><i style="background:${fondo(c)};color:${oscuroP(c) ? '#fff' : '#242424'}">${j + 1}</i>${esc(rc(c))}</span>`).join('')}</div>
         ${(() => { // ordenado por color: bases por color, luego teclas por color de tecla y de letra, luego charms
           const pos = c => { const i = pl.colores.indexOf(c); return i < 0 ? 9 : i; };
           const c1 = it => it.tipo === 'tecla' ? it.x.t : it.x.color, c2 = it => it.tipo === 'tecla' ? it.x.lc : it.tipo === 'base' ? it.x.tipo : '';
           const ord = pl.items.slice().sort((a, b) => orden(a.tipo) - orden(b.tipo) || pos(c1(a)) - pos(c1(b)) || pos(c2(a)) - pos(c2(b)) || String(c2(a)).localeCompare(c2(b)) || String(a.x.pal).localeCompare(b.x.pal));
           const grupos = [];
           ord.forEach(it => { const k = it.tipo + '|' + c1(it) + '|' + (it.tipo === 'base' ? '' : c2(it)), g = grupos[grupos.length - 1]; if (g && g.k === k) g.its.push(it); else grupos.push({ k, it, its: [it] }); });
-          const nom = g => g.it.tipo === 'tecla' ? `tecla ${c1(g.it)} · letra ${c2(g.it)}` : g.it.tipo === 'base' ? `bases ${c1(g.it)}` : `charms ${c1(g.it)}`;
+          const nom = g => g.it.tipo === 'tecla' ? `tecla ${rc(c1(g.it))} · letra ${rc(c2(g.it))}` : g.it.tipo === 'base' ? `bases ${rc(c1(g.it))}` : `charms ${rc(c1(g.it))}`;
           const n = g => g.its.reduce((a, x) => a + x.n, 0);
           return '<div class="placa-grupos">' + grupos.map(g => `<div class="lt-sub"><div><span class="lt-dot" style="background:${fondo(c1(g.it))}"></span>${g.it.tipo === 'tecla' ? `<span class="lt-dot" style="background:${fondo(c2(g.it))}"></span>` : ''}${esc(nom(g))} · ${n(g)}</div><div class="lt-keys">${g.its.map(tile).join('')}</div></div>`).join('') + '</div>';
         })()}
