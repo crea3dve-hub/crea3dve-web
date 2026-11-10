@@ -798,7 +798,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261110121736';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261110123014';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1889,7 +1889,9 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     disEdit.persAntes = disEdit.pers.length;
   }
   const opColores = sel => Object.keys(COLOR_HEX).map(c => `<option${c === sel ? ' selected' : ''}>${esc(c)}</option>`).join('');
-  const tiraDis = d => `<div class="teclas" style="background:${hexDe(d.base)}">${d.teclas.map(k => `<span class="tecla" style="background:${hexDe(k.t)};color:${hexDe(k.lc)}">${capDe(k.l, hexDe(k.lc), 20)}</span>`).join('')}</div>`;
+  // base acanalada: rayitas verticales y un borde marcado; lisa: color liso
+  const fondoBase = (color, acan) => (acan ? 'repeating-linear-gradient(90deg, rgba(0,0,0,.22) 0 2px, rgba(255,255,255,.10) 2px 3px, transparent 3px 7px),' : '') + hexDe(color) + (acan ? ';box-shadow:inset 0 0 0 3px rgba(0,0,0,.18)' : '');
+  const tiraDis = d => `<div class="teclas" style="background:${fondoBase(d.base, /acanal/.test(d.tipo))}">${d.teclas.map(k => `<span class="tecla" style="background:${hexDe(k.t)};color:${hexDe(k.lc)}">${capDe(k.l, hexDe(k.lc), 20)}</span>`).join('')}</div>`;
   function editorDiseno() {
     const d = disEdit;
     return `<div class="dis-ed" data-dis-form>
@@ -1987,7 +1989,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         const base = /🧱 Base:\s*(?:\S+\s+)?\*([^*]+)\*\s*·\s*([^\n]+)/.exec(b);
         if (numero && bloques.length > 1 && !detAbierto.has(numero + '-' + n) && bloqueListo(b, numero, n)) {
           const ts = [...b.matchAll(/^\s*\d+\.\s*\*([^*]+)\*\s*→\s*tecla\s*(?:\S+\s+)?\*([^*]+)\*\s*·\s*letra\s*(?:\S+\s+)?\*([^*]+)\*/gm)];
-          listos.push(`<button type="button" class="clk-listo" data-det="${esc(numero + '-' + n)}" title="Clicker ${n + 1} listo · toca para ver el detalle"><span class="teclas" style="background:${hexDe(base && base[1])}">${ts.map(m => { const ch = SIMBOLO[m[1].trim().toLowerCase()] || m[1].trim(); return `<span class="tecla" style="background:${hexDe(m[2])};color:${hexDe(m[3])}">${capDe(ch, hexDe(m[3]), 20)}</span>`; }).join('')}</span></button>`);
+          listos.push(`<button type="button" class="clk-listo" data-det="${esc(numero + '-' + n)}" title="Clicker ${n + 1} listo · toca para ver el detalle"><span class="teclas" style="background:${fondoBase(base && base[1], /acanal/i.test(base ? base[2] : ''))}">${ts.map(m => { const ch = SIMBOLO[m[1].trim().toLowerCase()] || m[1].trim(); return `<span class="tecla" style="background:${hexDe(m[2])};color:${hexDe(m[3])}">${capDe(ch, hexDe(m[3]), 20)}</span>`; }).join('')}</span></button>`);
           return '';
         }
         const teclas = [...b.matchAll(/^\s*\d+\.\s*\*([^*]+)\*\s*→\s*tecla\s*(?:\S+\s+)?\*([^*]+)\*\s*·\s*letra\s*(?:\S+\s+)?\*([^*]+)\*/gm)];
@@ -2005,7 +2007,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         const falta = [faltan ? faltan + ' de ' + teclas.length * copias + (teclas.length * copias === 1 ? ' tecla' : ' teclas') : '', basesF ? (copias > 1 ? basesF + (basesF === 1 ? ' base' : ' bases') : 'la base') : '', chFalta ? chFalta + (chFalta === 1 ? ' charm' : ' charms') : ''].filter(Boolean);
         const arm = numero && teclas.length ? armadoDeBloque(b, numero, n) : [], armFalta = arm.filter(x => !(ltHechas && ltHechas.has(x.id)));
         const yFin = a => a.length > 1 ? a.slice(0, -1).join(', ') + ' y ' + a[a.length - 1] : a[0];
-        const tira = teclas.length ? `<div class="teclas" style="background:${hexDe(base && base[1])}">${teclas.map((m, i) => {
+        const tira = teclas.length ? `<div class="teclas" style="background:${fondoBase(base && base[1], /acanal/i.test(base ? base[2] : ''))}">${teclas.map((m, i) => {
             const ch = SIMBOLO[m[1].trim().toLowerCase()] || m[1].trim();
             return numero ? `<button type="button" class="tecla${hecha(i) ? ' hecha' : ''}" data-imp="${esc(numero + '-' + n + '-' + i)}" aria-pressed="${!!hecha(i)}" title="tecla ${esc(m[2])} · letra ${esc(m[3])} · toca para marcarla ${hecha(i) ? 'por imprimir' : 'impresa'}" style="background:${hexDe(m[2])};color:${hexDe(m[3])}">${capDe(ch, hexDe(m[3]), 20)}</button>`
               : `<span class="tecla" title="tecla ${esc(rc(m[2]))} · letra ${esc(rc(m[3]))}" style="background:${hexDe(m[2])};color:${hexDe(m[3])}">${capDe(ch, hexDe(m[3]), 20)}</span>`; }).join('')}</div>` : '';
@@ -2644,7 +2646,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         <div class="pedido-cab"><div><span class="num">${esc(p.numero)}</span> · ${esc(p.cliente || 'Sin nombre')}<div class="chico">${esc(p.fecha)} · ${esc(p.canal)}</div></div>
         <div style="text-align:right"><span class="pill ${conAbono(p) ? 'Abono' : esc(p.estado)}">${esc(conAbono(p) ? 'Abonó ' + Math.round(abonado(p) / p.total * 100) + '%' : PILL_TXT[p.estado] || p.estado)}</span><div style="font-weight:800;margin-top:4px">${regalo ? '🎁 Regalo' : fmt(p.total)}</div></div></div>
         <div class="listo-fila">${bloquesDe(p.diseno).map(b => { const base = /🧱 Base:\s*(?:\S+\s+)?\*([^*]+)\*/.exec(b); const ts = [...b.matchAll(/^\s*\d+\.\s*\*([^*]+)\*\s*→\s*tecla\s*(?:\S+\s+)?\*([^*]+)\*\s*·\s*letra\s*(?:\S+\s+)?\*([^*]+)\*/gm)];
-          return ts.length ? `<div class="teclas" style="background:${hexDe(base && base[1])}">${ts.map(m => { const ch = SIMBOLO[m[1].trim().toLowerCase()] || m[1].trim(); return `<span class="tecla" style="background:${hexDe(m[2])};color:${hexDe(m[3])}">${capDe(ch, hexDe(m[3]), 20)}</span>`; }).join('')}</div>` : ''; }).join('')}
+          return ts.length ? `<div class="teclas" style="background:${fondoBase(base && base[1], /🧱 Base:[^\n]*acanal/i.test(b))}">${ts.map(m => { const ch = SIMBOLO[m[1].trim().toLowerCase()] || m[1].trim(); return `<span class="tecla" style="background:${hexDe(m[2])};color:${hexDe(m[3])}">${capDe(ch, hexDe(m[3]), 20)}</span>`; }).join('')}</div>` : ''; }).join('')}
           <button type="button" class="btn-listo" data-det="${esc(p.numero)}">✓ Listo para entregar · ver detalle</button></div>
         ${cajaAbonos(p)}
         ${abonoAbierto === p.numero ? formAbono(p) : ''}
