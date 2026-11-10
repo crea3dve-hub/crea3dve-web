@@ -116,6 +116,8 @@ button.tecla{padding:0;cursor:pointer}
 .imp-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0;align-items:center}
 .imp-lab{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);min-width:58px}
 .card.listo{padding-block:12px}
+.tira-fila{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.tira-fila .teclas{margin:0}
 .dis-ed{display:grid;gap:10px;border:2px solid var(--ink);border-radius:12px;padding:12px;margin:6px 0}
 .dis-filas{display:grid;gap:6px}
 .dis-fila{display:grid;grid-template-columns:22px 56px minmax(0,1fr) minmax(0,1fr) auto auto;gap:6px;align-items:center}
@@ -779,7 +781,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261110073810';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261110074940';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1983,8 +1985,9 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         const piezas = numero ? (base ? [`<button type="button" class="imp-chip" data-imp="${esc(numero + '-' + n + '-base')}" aria-pressed="${!!baseLista}">${baseLista ? '✓' : '○'} 🧱 base ${esc(base[1])}</button>`] : [])
           .concat(chs.map(x => `<button type="button" class="imp-chip" data-imp="${esc(x.id)}" aria-pressed="${!!(ltHechas && ltHechas.has(x.id))}">${ltHechas && ltHechas.has(x.id) ? '✓' : '○'} ${charmDibujo(x, 20)} ${esc(charmNombre(x))}</button>`)) : [];
         if (numero && disEdit && disEdit.numero === numero && disEdit.n === n) return `<div class="web-clk">${bloques.length > 1 ? `<div class="tit">Clicker ${n + 1}</div>` : ''}${editorDiseno()}</div>`;
-        return `<div class="web-clk">${numero ? `<div style="display:flex;justify-content:flex-end"><button type="button" class="btn chico" data-dis-ed="${esc(numero)}" data-dis-n="${n}" style="width:auto">✏️ Cambiar letras y colores</button></div>` : ''}${bloques.length > 1 ? `<div class="tit">Clicker ${n + 1}${numero && detAbierto.has(numero + '-' + n) ? ` <button type="button" class="btn-listo" data-det="${esc(numero + '-' + n)}">Resumir ▲</button>` : ''}</div>` : ''}
-          ${tira}
+        const btnDis = numero ? `<button type="button" class="btn chico" data-dis-ed="${esc(numero)}" data-dis-n="${n}" style="width:auto">✏️ Cambiar letras y colores</button>` : '';
+        return `<div class="web-clk">${bloques.length > 1 ? `<div class="tit">Clicker ${n + 1}${numero && detAbierto.has(numero + '-' + n) ? ` <button type="button" class="btn-listo" data-det="${esc(numero + '-' + n)}">Resumir ▲</button>` : ''}</div>` : ''}
+          <div class="tira-fila">${tira}${btnDis}</div>
           ${piezas.length ? `<div class="imp-chips"><span class="imp-lab">Imprimir</span>${piezas.join('')}</div>` : ''}
           ${arm.length ? `<div class="imp-chips"><span class="imp-lab">Armar</span>${arm.map(x => `<button type="button" class="imp-chip" data-imp="${esc(x.id)}" aria-pressed="${!!(ltHechas && ltHechas.has(x.id))}">${ltHechas && ltHechas.has(x.id) ? '✓' : '○'} ${x.ico} ${esc(x.nombre)}</button>`).join('')}</div>` : ''}
           ${numero && teclas.length ? `<span class="imp-falta${falta.length || armFalta.length ? '' : ' ok'}">${falta.length ? '🖨️ Falta imprimir: ' + yFin(falta) + (armFalta.length ? ' · falta armar' : '') : armFalta.length ? '🔧 Impreso · falta armar: ' + yFin(armFalta.map(x => x.nombre.toLowerCase())) : '✓ Listo: impreso y armado'}</span>` : ''}
