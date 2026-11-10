@@ -208,6 +208,8 @@ button.tecla{padding:0;cursor:pointer}
 #lotes .ams{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 4px}
 #lotes .ams span{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;border:1px solid var(--line);border-radius:999px;padding:4px 10px 4px 4px;background:var(--bg)}
 #lotes .ams i{width:22px;height:22px;border-radius:50%;border:1px solid rgba(0,0,0,.2);display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:900}
+#lotes .placa-grupos{display:flex;flex-wrap:wrap;gap:4px 22px;align-items:flex-start;margin-top:4px}
+#lotes .placa-grupos .lt-sub{margin-top:8px}
 #lotes .placa-cfg{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px;font-size:14px}
 #lotes .placa-cfg input{width:70px}
 #lotes .lt-aviso{background:var(--amber-soft);color:var(--ink);border-radius:12px;padding:10px 12px;font-size:13px;margin-top:14px}
@@ -786,7 +788,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261110083608';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261110084210';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -2339,7 +2341,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         <div class="lt-gcab"><span class="lt-sw" style="background:${fondo(c)}"></span><div><b>Base ${esc(c)}</b><span class="chico">${faltanDe(gb[c])} por imprimir · ${cuentaB(gb[c])} en total</span></div></div>
         ${Object.keys(gb[c]).sort().filter(m => gb[c][m].some(vis)).map(m => `<div class="lt-sub"><div>${esc(m)}</div>
           <div class="lt-keys">${gb[c][m].filter(vis).map(x => `<div class="lt-k lt-base" aria-pressed="${ltHechas.has(x.id)}"><button type="button" class="cap-b" data-lt-k="${esc(x.id)}" aria-pressed="${ltHechas.has(x.id)}" aria-label="Base ${esc(c)} de ${x.tam} teclas, ${esc(x.tipo)}, de ${esc(x.pal)}">
-            <span class="cap" style="background:${fondo(c)};color:${['blanco', 'beige', 'amarillo', 'plateado', 'dorado', 'celeste', 'verde claro', 'mármol', 'amarillo mantequilla', 'rosado mate', 'madera', 'púrpura mate'].includes(c) ? '#242424' : '#fff'}">${x.tam}${x.n > 1 ? `<span class="x">×${x.n}</span>` : ''}</span></button><button type="button" class="ver-b" data-lt-ir="${esc(x.v)}" data-lt-res="${esc(x.id)}" aria-label="Ver dónde va en el pedido"><small>${esc(x.pal)} ›</small></button></div>`).join('')}</div></div>`).join('')}
+            <span class="cap" style="background:${/acanal/.test(x.tipo) ? RAYAS + ',' : ''}${fondo(c)};color:${['blanco', 'beige', 'amarillo', 'plateado', 'dorado', 'celeste', 'verde claro', 'mármol', 'amarillo mantequilla', 'rosado mate', 'madera', 'púrpura mate'].includes(c) ? '#242424' : '#fff'}">${x.tam}${x.n > 1 ? `<span class="x">×${x.n}</span>` : ''}</span></button><button type="button" class="ver-b" data-lt-ir="${esc(x.v)}" data-lt-res="${esc(x.id)}" aria-label="Ver dónde va en el pedido"><small>${esc(x.pal)} ›</small></button></div>`).join('')}</div></div>`).join('')}
       </section>`).join('') || '<p class="vacio">No hay bases por imprimir. 🎉</p>') : orden.map(t => `<section class="lt-grupo">
         <div class="lt-gcab"><span class="lt-sw" style="background:${fondo(t)}"></span><div><b>Tecla ${esc(t)}</b><span class="chico">${faltanDe(grupos[t])} por imprimir · ${cuenta(grupos[t])} en total</span></div></div>
         ${Object.keys(grupos[t]).sort((a, b) => cuenta({ x: grupos[t][b] }) - cuenta({ x: grupos[t][a] }) || a.localeCompare(b)).filter(lc => grupos[t][lc].some(vis)).map(lc => `<div class="lt-sub">
@@ -2418,7 +2420,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         if (!bs.length && !cs.length && !ks.length) return '';
         return `<div class="lt-clk"><div class="lt-clk-t">${esc(pal0)}${n0 > 1 ? ' · ×' + n0 : ''}</div><div class="lt-fila">
         ${bs.length ? `<div class="lt-col"><span class="lt-lab">Base</span>${bs.map(x => `<button type="button" class="lt-k lt-base${ltRes === x.id ? ' resalta' : ''}" data-lt-k="${esc(x.id)}" aria-pressed="${ltHechas.has(x.id)}" aria-label="Base ${esc(x.color)}">
-          <span class="cap" style="background:${fondo(x.color)};color:${oscuro(x.color) ? '#fff' : '#242424'}">${x.tam}</span><small>${esc(x.color)} · ${esc(x.tipo)}</small></button>`).join('')}</div>` : ''}
+          <span class="cap" style="background:${/acanal/.test(x.tipo) ? RAYAS + ',' : ''}${fondo(x.color)};color:${oscuro(x.color) ? '#fff' : '#242424'}">${x.tam}</span><small>${esc(x.color)} · ${esc(x.tipo)}</small></button>`).join('')}</div>` : ''}
         ${ks.length ? `<div class="lt-col teclas"><span class="lt-lab">Teclas, en orden</span><div class="lt-tira">${ks.map(k => { const i = ks0.indexOf(k); return `<button type="button" class="lt-k${ltRes === k.id ? ' resalta' : ''}" data-lt-k="${esc(k.id)}" aria-pressed="${ltHechas.has(k.id)}" aria-label="Tecla ${i + 1}: ${esc(k.t)}, letra ${esc(k.l)} ${esc(k.lc)}">
           <span class="cap" style="background:${fondo(k.t)};color:${hexDe(k.lc)}">${capDe(k.l, hexDe(k.lc), 30)}</span><small>${i + 1}. ${esc(k.t)}</small></button>`; }).join('')}</div></div>` : ''}
         ${cs.length ? `<div class="lt-col charms"><span class="lt-lab">Charms</span><div class="lt-keys">${cs.map(x => `<button type="button" class="lt-k lt-charm${ltRes === x.id ? ' resalta' : ''}" data-lt-k="${esc(x.id)}" aria-pressed="${ltHechas.has(x.id)}" aria-label="${esc(charmNombre(x))}">
@@ -2496,10 +2498,10 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const oscuroP = c => !['blanco', 'beige', 'amarillo', 'plateado', 'dorado', 'celeste', 'verde claro', 'mármol', 'amarillo mantequilla', 'rosado mate', 'madera', 'púrpura mate', ''].includes(c);
     const tile = it => { const x = it.x, h = ltHechas.has(it.id);
       const cap = it.tipo === 'tecla' ? `<span class="cap" style="background:${fondo(x.t)};color:${hexDe(x.lc)}">${capDe(x.l, hexDe(x.lc), 34)}${x.n > 1 ? `<span class="x">×${x.n}</span>` : ''}</span>`
-        : it.tipo === 'base' ? `<span class="cap" style="background:${fondo(x.color)};color:${oscuroP(x.color) ? '#fff' : '#242424'}">${x.tam}${x.n > 1 ? `<span class="x">×${x.n}</span>` : ''}</span>`
+        : it.tipo === 'base' ? `<span class="cap" style="background:${/acanal/.test(x.tipo) ? RAYAS + ',' : ''}${fondo(x.color)};color:${oscuroP(x.color) ? '#fff' : '#242424'}">${x.tam}${x.n > 1 ? `<span class="x">×${x.n}</span>` : ''}</span>`
         : `<span class="cap dib">${charmDibujo(x, 50)}${x.n > 1 ? `<span class="x">×${x.n}</span>` : ''}</span>`;
       const cls = it.tipo === 'base' ? ' lt-base' : it.tipo === 'charm' ? ' lt-charm' : '';
-      return `<div class="lt-k${cls}" aria-pressed="${h}"><button type="button" class="cap-b" data-lt-k="${esc(it.id)}" aria-pressed="${h}" aria-label="${it.tipo}">${cap}</button><button type="button" class="ver-b" data-lt-ir="${esc(x.v)}" data-lt-res="${esc(it.id)}"><small>${it.tipo === 'base' ? 'base · ' : it.tipo === 'charm' ? 'charm · ' : ''}${esc(x.pal)} ›</small></button></div>`; };
+      return `<div class="lt-k${cls}" aria-pressed="${h}"><button type="button" class="cap-b" data-lt-k="${esc(it.id)}" aria-pressed="${h}" aria-label="${it.tipo}">${cap}</button><button type="button" class="ver-b" data-lt-ir="${esc(x.v)}" data-lt-res="${esc(it.id)}"><small>${it.tipo === 'base' ? esc(x.tipo) + ' · ' : it.tipo === 'charm' ? 'charm · ' : ''}${esc(x.pal)} ›</small></button></div>`; };
     const cfg = `<div class="placa-cfg"><label for="porPlaca">Piezas por placa:</label><input id="porPlaca" type="number" min="4" max="200" value="${porPlaca}" inputmode="numeric">
       <span class="chico">Cada placa usa máximo 4 colores (los 4 del AMS). Una tecla con letra de otro color cuenta 2 colores.</span></div>`;
     return cfg + (placas.map((pl, i) => { const tot = pl.items.reduce((a, x) => a + x.n, 0), hechas = pl.items.filter(x => ltHechas.has(x.id)).reduce((a, x) => a + x.n, 0);
@@ -2508,10 +2510,20 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         <div><b style="font-size:18px">Placa ${i + 1}</b><div class="chico">${tot} ${tot === 1 ? 'pieza' : 'piezas'} · ${pl.colores.length} ${pl.colores.length === 1 ? 'color' : 'colores'}${hechas ? ' · ' + hechas + ' listas' : ''}</div></div>
         <button type="button" class="btn chico" data-lt-placa="${esc(pl.items.map(x => x.id).join(','))}">${hechas === tot ? '↩️ Desmarcar placa' : '✓ Placa impresa'}</button></div>
         <div class="ams">${pl.colores.map((c, j) => `<span><i style="background:${fondo(c)};color:${oscuroP(c) ? '#fff' : '#242424'}">${j + 1}</i>${esc(c)}</span>`).join('')}</div>
-        <div class="lt-keys" style="margin-top:8px">${pl.items.slice().sort((a, b) => orden(a.tipo) - orden(b.tipo) || a.cols.join().localeCompare(b.cols.join())).map(tile).join('')}</div>
+        ${(() => { // ordenado por color: bases por color, luego teclas por color de tecla y de letra, luego charms
+          const pos = c => { const i = pl.colores.indexOf(c); return i < 0 ? 9 : i; };
+          const c1 = it => it.tipo === 'tecla' ? it.x.t : it.x.color, c2 = it => it.tipo === 'tecla' ? it.x.lc : it.tipo === 'base' ? it.x.tipo : '';
+          const ord = pl.items.slice().sort((a, b) => orden(a.tipo) - orden(b.tipo) || pos(c1(a)) - pos(c1(b)) || pos(c2(a)) - pos(c2(b)) || String(c2(a)).localeCompare(c2(b)) || String(a.x.pal).localeCompare(b.x.pal));
+          const grupos = [];
+          ord.forEach(it => { const k = it.tipo + '|' + c1(it) + '|' + c2(it), g = grupos[grupos.length - 1]; if (g && g.k === k) g.its.push(it); else grupos.push({ k, it, its: [it] }); });
+          const nom = g => g.it.tipo === 'tecla' ? `tecla ${c1(g.it)} · letra ${c2(g.it)}` : g.it.tipo === 'base' ? `bases ${c1(g.it)} ${c2(g.it)}` : `charms ${c1(g.it)}`;
+          const n = g => g.its.reduce((a, x) => a + x.n, 0);
+          return '<div class="placa-grupos">' + grupos.map(g => `<div class="lt-sub"><div><span class="lt-dot" style="background:${fondo(c1(g.it))}"></span>${g.it.tipo === 'tecla' ? `<span class="lt-dot" style="background:${fondo(c2(g.it))}"></span>` : ''}${esc(nom(g))} · ${n(g)}</div><div class="lt-keys">${g.its.map(tile).join('')}</div></div>`).join('') + '</div>';
+        })()}
       </section>`; }).join('') || '<p class="vacio">No hay nada por imprimir. 🎉</p>')
       + (sinColor.length ? `<div class="lt-aviso"><b>Charms personalizados</b> (no tienen color definido, imprímelos aparte): ${sinColor.map(c => esc(c.nombre) + ' (' + esc(c.pal) + ')').join(' · ')}</div>` : '');
   }
+  const RAYAS = 'repeating-linear-gradient(90deg, rgba(0,0,0,.16) 0 2px, transparent 2px 7px)';   // dibujo de base acanalada
   const COLORES_FONDO = { 'plateado': 'linear-gradient(135deg,#F4F5F7,#C9CCD1 38%,#8E939A 62%,#F4F5F7)', 'morado metalizado': 'linear-gradient(135deg,#C7A6F2,#7E4FC0 38%,#4B2A80 62%,#C7A6F2)',
     'dorado': 'linear-gradient(135deg,#FFF6A6,#E2C233 38%,#9E8212 62%,#FFF6A6)' };
   // repinta sin mover nada: guarda dónde estabas en la lista y en el pedido abierto
