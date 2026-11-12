@@ -202,6 +202,12 @@ button.tecla{padding:0;cursor:pointer}
 }
 #lotes .lt-clk{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
 #lotes .lt-clk-t{font-weight:900;font-size:16px;margin-bottom:8px}
+#lotes .lt-nombre{all:unset;cursor:pointer;font-weight:900;font-size:17px;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}
+#lotes .lt-nombre:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:4px}
+#lotes .lt-cuelga{font-size:13px;color:var(--muted);margin:-4px 0 8px}
+#lotes .lt-det{margin:10px 0 0;padding:10px 12px;border-radius:10px;background:var(--blue-soft);font-size:14px;line-height:1.45}
+#lotes .lt-det p{margin:0 0 3px}
+#lotes .lt-det .t{font-weight:800;margin-top:6px}
 #lotes .lt-fila{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 14px;align-items:start}
 #lotes .lt-col{display:grid;gap:4px;min-width:0;align-content:start}
 #lotes .lt-col.charms{grid-column:1/-1}
@@ -798,7 +804,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261110124918';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261112143043';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -2442,7 +2448,14 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   }
   setTimeout(ltEnviar, 4000);   // si quedó algo sin mandar de antes
   let ltVer = null;   // pedido abierto arriba de la lista
-  var ltVista = 'pedidos', ltRecien = new Set(), ltRes = null;
+  var ltVista = 'pedidos', ltRecien = new Set(), ltRes = null, ltCompleto = new Set();
+  // el detalle de un clicker como lo pidió el cliente (sin links, precios ni subtotales)
+  function detalleBloque(b) {
+    return String(b || '').split('\n').map(l => l.trim()).filter(l => l && !/^(🔗|Subtotal|💰|📸|✨|✍️)/.test(l) && !/Teclas:$/.test(l))
+      .map(l => { const tecla = /^\d+\./.test(l), titulo = /^Extras:?$/.test(l);
+        l = l.replace(/\*/g, '').replace(/\s*—\s*\$[\d.,]+/, '').replace(/\(sujeto a disponibilidad\)/, '').trim();
+        return `<p${titulo ? ' class="t"' : ''}${tecla ? ' style="padding-left:10px"' : ''}>${esc(l)}</p>`; }).join('');
+  }
   function verPedidoLote(v, teclas, bases, charms, enLista) {
     const ver = x => !enLista || !(ltOcultar && ltHechas.has(x.id) && !ltRecien.has(x.id));
     const p = datos.ventas.find(x => x.numero === v); if (!p) return '';
@@ -2454,21 +2467,23 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const oscuro = c => !['blanco', 'beige', 'amarillo', 'plateado', 'dorado', 'celeste', 'verde claro', 'mármol', 'amarillo mantequilla', 'rosado mate', 'madera', 'púrpura mate', ''].includes(c);
     return `<section class="lt-grupo" style="border-color:var(--ink)">
       <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
-        <div><b style="font-size:17px">${esc(p.cliente || 'Sin nombre')}</b><div class="chico">${esc(v)} · ${h === todo.length ? '✓ todo impreso' : h + ' de ' + todo.length + ' piezas impresas · faltan ' + (todo.length - h)}</div></div>
+        <div><button type="button" class="lt-nombre" data-lt-completo="${esc(v)}" aria-expanded="${ltCompleto.has(v)}" title="Ver el pedido completo">${esc(p.cliente || 'Sin nombre')} ${ltCompleto.has(v) ? '▴' : '▾'}</button><div class="chico">${esc(v)} · ${h === todo.length ? '✓ todo impreso' : h + ' de ' + todo.length + ' piezas impresas · faltan ' + (todo.length - h)}</div></div>
         ${enLista ? '' : '<button type="button" class="btn chico" data-lt-vercerrar>✕</button>'}</div>
       <div class="lt-prog"><i style="width:${todo.length ? Math.round(h / todo.length * 100) : 0}%"></i></div>
       ${ltRes && todo.some(t => t.id === ltRes) ? `<p class="chico" style="margin:8px 0 0">La pieza con el borde negro es la que tocaste: así ves dónde va en el llavero.</p>` : ''}
       ${Object.values(por).map(ks0 => { const kk = ks0[0].id.split('-').slice(-2, -1)[0], pal0 = ks0[0].pal, n0 = ks0[0].n;
         const bs = misBases.filter(x => String(x.k) === kk && ver(x)), cs = misCharms.filter(x => String(x.k) === kk && ver(x)), ks = ks0.filter(ver);
-        if (!bs.length && !cs.length && !ks.length) return '';
-        return `<div class="lt-clk"><div class="lt-clk-t">${esc(pal0)}${n0 > 1 ? ' · ×' + n0 : ''}</div><div class="lt-fila">
+        const completo = ltCompleto.has(v), blq = bloquesDe(p.diseno)[+kk] || '';
+        if (!bs.length && !cs.length && !ks.length && !completo) return '';
+        const cuelga = armadoDeBloque(blq, v, kk).slice(1).map(a => a.ico + ' ' + a.nombre).join(' · ');
+        return `<div class="lt-clk"><div class="lt-clk-t">${esc(pal0)}${n0 > 1 ? ' · ×' + n0 : ''}</div>${cuelga ? `<div class="lt-cuelga">${esc(cuelga)}</div>` : ''}<div class="lt-fila">
         ${bs.length ? `<div class="lt-col"><span class="lt-lab">Base</span>${bs.map(x => `<button type="button" class="lt-k lt-base${ltRes === x.id ? ' resalta' : ''}" data-lt-k="${esc(x.id)}" aria-pressed="${ltHechas.has(x.id)}" aria-label="Base ${esc(x.color)}">
           <span class="cap" style="background:${/acanal/.test(x.tipo) ? RAYAS + ',' : ''}${fondo(x.color)};color:${oscuro(x.color) ? '#fff' : '#242424'}">${x.tam}</span><small>${esc(rc(x.color))} · ${esc(x.tipo)}</small></button>`).join('')}</div>` : ''}
         ${ks.length ? `<div class="lt-col teclas"><span class="lt-lab">Teclas, en orden</span><div class="lt-tira">${ks.map(k => { const i = ks0.indexOf(k); return `<button type="button" class="lt-k${ltRes === k.id ? ' resalta' : ''}" data-lt-k="${esc(k.id)}" aria-pressed="${ltHechas.has(k.id)}" aria-label="Tecla ${i + 1}: ${esc(k.t)}, letra ${esc(k.l)} ${esc(k.lc)}">
           <span class="cap" style="background:${fondo(k.t)};color:${hexDe(k.lc)}">${capDe(k.l, hexDe(k.lc), 30)}</span><small>${i + 1}. tecla ${esc(rc(k.t))}<br>letra ${esc(rc(k.lc))}</small></button>`; }).join('')}</div></div>` : ''}
         ${cs.length ? `<div class="lt-col charms"><span class="lt-lab">Charms</span><div class="lt-keys">${cs.map(x => `<button type="button" class="lt-k lt-charm${ltRes === x.id ? ' resalta' : ''}" data-lt-k="${esc(x.id)}" aria-pressed="${ltHechas.has(x.id)}" aria-label="${esc(charmNombre(x))}">
           <span class="cap dib">${charmDibujo(x, 44)}</span><small>${esc(charmNombre(x))}</small></button>`).join('')}</div></div>` : ''}
-        </div></div>`; }).join('')}
+        </div>${completo ? `<div class="lt-det">${detalleBloque(blq)}</div>` : ''}</div>`; }).join('')}
       <button type="button" class="btn chico" data-lt-sacar="${esc(v)}" style="margin-top:12px">${fuera ? '➕ Volver a meterlo en la lista' : '➖ Sacarlo de la lista (ya está hecho)'}</button>
     </section>`;
   }
@@ -2613,6 +2628,8 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       ids.forEach(id => { if (todas) ltHechas.delete(id); else ltHechas.add(id); ltRecien.add(id); ltCambio('hechas', id, !todas); }); repintarLotes(); return; }
     const vb = e.target.closest('[data-lt-vista]'); if (vb) { ltVista = vb.dataset.ltVista; repintarLotes(); return; }
     if (e.target.closest('[data-lt-vercerrar]')) { ltVer = null; ltRes = null; repintarLotes(); return; }
+    const cp = e.target.closest('[data-lt-completo]');
+    if (cp) { const v = cp.dataset.ltCompleto; ltCompleto.has(v) ? ltCompleto.delete(v) : ltCompleto.add(v); repintarLotes(); return; }
     const vp = e.target.closest('[data-lt-ped]');
     if (vp) { ltRes = null; ltVer = ltVer === vp.dataset.ltPed ? null : vp.dataset.ltPed; repintarLotes(); return; }
     const pd = e.target.closest('[data-lt-sacar]');
