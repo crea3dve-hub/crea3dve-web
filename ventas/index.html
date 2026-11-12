@@ -152,6 +152,7 @@ button.tecla{padding:0;cursor:pointer}
 .r-tile span{display:block;font-size:12.5px;color:var(--muted);line-height:1.3}
 .r-tile b{display:block;font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:4px}
 .r-tile small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.r-tile b em{font-style:normal;font-size:14px;font-weight:700;color:var(--accion);margin-left:6px}
 .r-tile .sube{color:var(--accion)} .r-tile .baja{color:var(--warn)}
 .r-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
 .r-nav b{font-size:16px;text-align:center;flex:1}
@@ -847,7 +848,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261112181018';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261112182823';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1392,9 +1393,9 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       + fila('Margen de error (' + Math.round(err * 100) + '%)', fmt(fallos)) + fila('Tu trabajo', fmt(trab)) + (ins ? fila('Insumos', fmt(ins)) : '')
       + fila('<b>Costo total</b>', fmt(costo))
       + `<div class="cobrar"><small>PRECIO AL DETAL · ×${String(mult).replace('.', ',')}</small><b>${fmt(kSug)}</b>`
-      + `<span>Te quedan ${fmt(kSug - costo)} por pieza${bs(kSug)}</span></div>`
+      + `<span>Te quedan ${fmt(kSug - costo)} por pieza (${kSug ? Math.round((kSug - costo) / kSug * 100) : 0}%)${bs(kSug)}</span></div>`
       + `<div class="cobrar mayor"><small>PRECIO AL MAYOR · ×${String(multM).replace('.', ',')}</small><b>${fmt(may)}</b>`
-      + `<span>Te quedan ${fmt(may - costo)} por pieza${bs(may)}</span></div>`;
+      + `<span>Te quedan ${fmt(may - costo)} por pieza (${may ? Math.round((may - costo) / may * 100) : 0}%)${bs(may)}</span></div>`;
     $('#kUsar').hidden = false;
     kCosto = costo;
     if (!precioTocado) $('#otroPrecio').value = kSug.toFixed(2);
@@ -3251,7 +3252,11 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     datos.gastos.forEach(g => { const d = dDe(g.fecha); if (d && d >= desde && d < hasta) c.gastado += g.miParte || 0; });
     return c;
   }
-  var rSem = 0, rMesOff = 0, rGrafModo = 'mes';
+  var rSem = 0, rMesOff = 0, rGrafModo = 'mes', rGrafSel = -1;
+  // ganancia con su porcentaje de lo vendido: "$109,16 (25%)"
+  const pctGan = (g, v) => v > 0 ? Math.round(g / v * 100) + '%' : '';
+  const ganTxt = (g, v) => fmt(g) + (v > 0 ? ' (' + pctGan(g, v) + ')' : '');
+  const ganB = (g, v) => fmt(g) + (v > 0 ? `<em>${pctGan(g, v)}</em>` : '');
   const tile = (a, b, extra) => `<div class="r-tile"><span>${a}</span><b>${b}</b>${extra ? `<small>${extra}</small>` : ''}</div>`;
   const cambio = (ahora, antes, que) => { if (!antes) return ahora ? 'nuevo vs ' + que : ''; const pc = Math.round((ahora - antes) / antes * 100);
     return `<span class="${pc >= 0 ? 'sube' : 'baja'}">${pc >= 0 ? '▲' : '▼'} ${Math.abs(pc)}%</span> vs ${que}`; };
@@ -3259,7 +3264,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     return `<div class="r-tiles">
       ${tile('Vendido', fmt(c.vendido), cambio(c.vendido, prev.vendido, que))}
       ${tile('Cobrado', fmt(c.cobrado), cambio(c.cobrado, prev.cobrado, que))}
-      ${tile('Ganancia de lo vendido', c.hayGan ? fmt(c.ganancia) : '—', c.hayGan ? cambio(c.ganancia, prev.ganancia, que) : 'aparece al actualizar')}
+      ${tile('Ganancia de lo vendido', c.hayGan ? ganB(c.ganancia, c.vendido) : '—', c.hayGan ? cambio(c.ganancia, prev.ganancia, que) : 'aparece al actualizar')}
       ${tile('Gastado', fmt(c.gastado), '')}
       ${tile('Pedidos', c.pedidos, c.pedidos ? 'promedio ' + fmt(c.vendido / c.pedidos) : '')}
       ${tile('Teclas vendidas', c.teclas, '')}
@@ -3294,21 +3299,28 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     for (let k = 0; k <= 3; k++) { const v = max / 3 * k, y = esc2(v); g += `<line x1="${izq}" x2="${W - 4}" y1="${y}" y2="${y}" stroke="var(--line)" stroke-width="1"/><text x="${izq - 6}" y="${y}" dy=".35em" text-anchor="end" font-size="11" fill="var(--muted)">${redondo(v)}</text>`; }
     cols.forEach((x, i) => {
       const cx = izq + paso * i + paso / 2, yv = esc2(x.c.vendido), yg = esc2(x.c.gastado);
-      g += `<g><title>${x.tit}: vendido ${fmt(x.c.vendido)} · cobrado ${fmt(x.c.cobrado)} · gastado ${fmt(x.c.gastado)}</title>
+      const sel = i === rGrafSel;
+      g += `<g data-rcol="${i}" style="cursor:pointer"><title>${x.tit}: vendido ${fmt(x.c.vendido)} · gastado ${fmt(x.c.gastado)}</title>
+        <rect x="${izq + paso * i + 2}" y="${top - 18}" width="${paso - 4}" height="${H - bot - top + 18}" rx="6" fill="${sel ? 'var(--brand-soft)' : 'transparent'}"/>
         <rect x="${cx - bw - 1}" y="${yv}" width="${bw}" height="${Math.max(0, H - bot - yv)}" rx="3" fill="var(--accion)"/>
         <rect x="${cx + 1}" y="${yg}" width="${bw}" height="${Math.max(0, H - bot - yg)}" rx="3" fill="#B9BFB3"/>
         ${x.c.vendido ? `<text x="${cx - bw / 2 - 1}" y="${yv - 5}" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--ink)">${redondo(x.c.vendido)}</text>` : ''}
-        <text x="${cx}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--muted)">${x.lab}</text></g>`;
+        ${x.c.gastado ? `<text x="${cx + bw / 2 + 1}" y="${yg - 5}" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--muted)">${redondo(x.c.gastado)}</text>` : ''}
+        <text x="${cx}" y="${H - 8}" text-anchor="middle" font-size="11" fill="${sel ? 'var(--ink)' : 'var(--muted)'}" font-weight="${sel ? 700 : 400}">${x.lab}</text></g>`;
     });
     $('#rGraf').innerHTML = `<div class="chips" role="group" aria-label="Ver por"><button type="button" data-rgraf="mes" aria-pressed="${rGrafModo === 'mes'}">Por mes</button><button type="button" data-rgraf="semana" aria-pressed="${rGrafModo === 'semana'}">Por semana</button></div>
       <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Vendido y gastado ${rGrafModo === 'mes' ? 'por mes' : 'por semana'}">${g}</svg>
-      <div class="r-ley"><span><i style="background:var(--accion)"></i>Vendido</span><span><i style="background:#B9BFB3"></i>Gastado</span><span>Toca una barra para ver el detalle</span></div>`;
+      <div class="r-ley"><span><i style="background:var(--accion)"></i>Vendido</span><span><i style="background:#B9BFB3"></i>Gastado</span>${rGrafSel < 0 ? '<span>Toca una barra para ver el detalle</span>' : ''}</div>
+      ${rGrafSel >= 0 && cols[rGrafSel] ? (x => `<div style="margin-top:12px"><div class="fila" style="justify-content:space-between;margin-bottom:8px"><b>${x.tit[0].toUpperCase() + x.tit.slice(1)}</b><button type="button" class="btn chico" data-rcol="-1">✕</button></div>
+        <div class="r-tiles">${tile('Vendido', fmt(x.c.vendido), x.c.pedidos + ' pedidos')}${tile('Cobrado', fmt(x.c.cobrado), '')}${tile('Ganancia', x.c.hayGan ? ganB(x.c.ganancia, x.c.vendido) : '—', x.c.hayGan ? 'el % es de lo vendido' : '')}
+        ${tile('Gastado', fmt(x.c.gastado), '')}${tile('Vendido − gastado', fmt(x.c.vendido - x.c.gastado), '')}${tile('Teclas vendidas', x.c.teclas, '')}</div></div>`)(cols[rGrafSel]) : ''}`;
   }
   ['#rSemana', '#rMes', '#rGraf'].forEach(id => $(id).addEventListener('click', e => {
     const a = e.target.closest('[data-rsem]'), b = e.target.closest('[data-rmes]'), c = e.target.closest('[data-rgraf]');
     if (a && !a.disabled) { rSem = Math.max(0, rSem + +a.dataset.rsem); pintarSemana(); }
     if (b && !b.disabled) { rMesOff = Math.max(0, rMesOff + +b.dataset.rmes); pintarMes(); }
-    if (c) { rGrafModo = c.dataset.rgraf; pintarGrafico(); }
+    if (c) { rGrafModo = c.dataset.rgraf; rGrafSel = -1; pintarGrafico(); }
+    const col = e.target.closest('[data-rcol]'); if (col) { const i = +col.dataset.rcol; rGrafSel = i === rGrafSel ? -1 : i; pintarGrafico(); }
   }));
   function pintarResumen() {
     pintarHoy();
@@ -3319,6 +3331,8 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const abonosParciales = datos.ventas.filter(p => p.estado !== 'Cancelado' && !yaCobrada(p)).reduce((s, p) => s + (p.abonado || 0), 0);
     const cobrado = (r.cobrado || 0) + abonosParciales;
     const pctT = invTotal ? cobrado / invTotal : 0, pctS = sinImp ? cobrado / sinImp : 0;
+    // lo vendido de los pedidos pagados o entregados (la ganancia de la hoja se cuenta sobre esos)
+    const vendidoCerrado = datos.ventas.filter(p => p.estado === 'Pagado' || p.estado === 'Entregado').reduce((a, p) => a + sinDelivery(p), 0);
     const pc = x => Math.round(x * 100) + '%';
     $('#rRecupera').innerHTML = `<div class="chico">Recuperado de todo lo que has invertido (con impresoras)</div>
       <div class="r-big">${pc(Math.min(1, pctT))}</div>
@@ -3334,7 +3348,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       tile('Inversión en impresoras', fmt(impresoras), datos.gastos.filter(esImpresora).length + ' máquinas') +
       tile('Invertido para recuperar', fmt(sinImp), 'filamento, insumos, bazar, equipos') +
       tile('Cobrado', fmt(cobrado), abonosParciales ? 'incluye ' + fmt(abonosParciales) + ' de abonos' : 'sin delivery') +
-      tile('Ganancia de lo vendido', fmt(r.ganancia), 'ya restado material, máquina y tu trabajo') +
+      tile('Ganancia de lo vendido', ganB(r.ganancia, vendidoCerrado), 'el % es de lo vendido · tu trabajo cuenta como ganancia') +
       tile('Pedidos que te deben', fmt(r.porCobrar), '') +
       (porPagar().length ? tile('💸 Me falta pagar', fmt(porPagar().reduce((s, g) => s + g.miParte, 0)), '') : '');
     pintarSemana(); pintarMes(); pintarGrafico();
@@ -3343,10 +3357,10 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     // la ganancia = vendido − costo de lo vendido − gastos del bazar (el costo se saca de lo otro para que las cuentas cuadren)
     const costoBazar = (r.bazarVendido || 0) - (r.bazarGastos || 0) - (r.bazarGanancia || 0);
     $('#rBazar').innerHTML = fila('Vendido en el bazar', fmt(r.bazarVendido)) +
-      fila('− Costo de lo que vendiste <span class="chico">(material, switches, aros, máquina, tu trabajo, comisión del punto)</span>', fmt(costoBazar)) +
+      fila('− Costo de lo que vendiste <span class="chico">(material, switches, aros, máquina, comisión del punto)</span>', fmt(costoBazar)) +
       fila('− Gastos del bazar <span class="chico">(tu mitad del stand y la mesa, camisas, uso del punto)</span>', fmt(r.bazarGastos)) +
-      fila('<b>= Ganancia del bazar</b>', fmt(r.bazarGanancia)) +
-      '<p class="chico" style="margin:8px 0 0">El stand y la mesa son de los dos días: con lo que vendas hoy domingo esto sube. Tu trabajo ya está pagado dentro del costo.</p>';
+      fila('<b>= Ganancia del bazar</b>', ganTxt(r.bazarGanancia, r.bazarVendido)) +
+      '<p class="chico" style="margin:8px 0 0">El stand y la mesa son de los dos días: con lo que vendas hoy domingo esto sube. Tu trabajo cuenta como ganancia; el % es de lo vendido en el bazar.</p>';
   }
 
   /* ---------- Análisis de ventas: qué es lo que más se vende ---------- */
@@ -3413,7 +3427,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       const sum = ent.reduce((a, x) => a + x[1], 0), max = Math.max(1, ...ent.map(x => x[1]));
       if (!ent.length) return '<p class="vacio" style="margin:6px 0">Todavía no hay datos.</p>';
       return ent.slice(0, opt.top || 10).map(([k, v]) => { const nom = opt.nom ? opt.nom(k) : esc(rc ? k : k);
-        return `<div class="an-row"><span class="n">${nom}</span><span class="bar"><i style="width:${(v / max * 100).toFixed(1)}%"></i></span><span class="v">${opt.dinero ? fmt(v) : v}<small>${Math.round(v / sum * 100)}%</small></span></div>`; }).join('') +
+        return `<div class="an-row"><span class="n">${nom}</span><span class="bar"><i style="width:${(v / max * 100).toFixed(1)}%"></i></span><span class="v">${opt.dinero ? fmt(v) : v}<small>${opt.pct ? opt.pct(k, v) : Math.round(v / sum * 100) + '%'}</small></span></div>`; }).join('') +
         (ent.length > (opt.top || 10) ? `<p class="an-nota">y ${ent.length - (opt.top || 10)} más</p>` : ''); };
     const conColor = k => sw(k) + esc(k);
     const sec = (t, cuerpo, nota) => `<div class="card an-sec"><h3>${t}</h3>${cuerpo}${nota ? `<p class="an-nota">${nota}</p>` : ''}</div>`;
@@ -3423,6 +3437,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       <div class="r-tiles">
         ${tile('Vendido', fmt(total), ventas.length + ' pedidos')}
         ${tile('Pedido promedio', ventas.length ? fmt(total / ventas.length) : '—', '')}
+        ${(() => { const g = ventas.reduce((a, p) => a + p.items.reduce((b, i) => b + (i.ganancia || 0), 0), 0); return tile('Ganancia', ganB(g, total), total ? pctGan(g, total) + ' de lo vendido' : ''); })()}
         ${tile('Clickers vendidos', nClk, nClk ? Math.min(100, Math.round(conCharm / nClk * 100)) + '% llevan charm' : '')}
         ${tile('Base que más sale', esc(nombreTop(top1(bases))), esc(top1(tipoBase)))}
         ${tile('Tecla que más sale', esc(top1(tecla)), 'letra ' + esc(top1(letra)))}
@@ -3445,7 +3460,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         ${sec('Letras más usadas', lista(letras, { top: 12, nom: k => '<b>' + esc(k) + '</b>' }), 'Sirve para tener teclas listas de las letras que más salen.')}
         ${sec('Productos más vendidos (cantidad)', lista(prodQ, { nom: k => esc(k) }))}
         ${sec('Productos que más dinero traen', lista(prodD, { dinero: true, nom: k => esc(k) }))}
-        ${Object.keys(prodG).some(k => typeof prodG[k] === 'number') ? sec('Productos que más ganancia dejan', lista(prodG, { dinero: true, nom: k => esc(k) })) : ''}
+        ${Object.keys(prodG).some(k => typeof prodG[k] === 'number') ? sec('Productos que más ganancia dejan', lista(prodG, { dinero: true, nom: k => esc(k), pct: (k, v) => prodD[k] ? pctGan(v, prodD[k]) + ' de ganancia' : '' }), 'El % es cuánto de lo que cobras por ese producto te queda de ganancia (tu trabajo cuenta como ganancia).') : ''}
         ${sec('Por dónde llegan las ventas', lista(canal, { dinero: true, nom: k => esc(k) }))}
         ${sec('Día de la semana', lista(dia, { dinero: true, orden: ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'], nom: k => esc(k[0].toUpperCase() + k.slice(1)) }))}
         ${sec('Mejores clientes', lista(cli, { dinero: true, top: 8, nom: k => esc(k) }))}
@@ -3470,7 +3485,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
           <summary><span><b>${esc(x.nombre)}</b><small>${x.web ? '<span class="web-si">🌐 web</span> ' + esc(x.web) : 'Solo interno'}</small></span><span class="pr">${x.precio ? fmt(x.precio) : '—'}</span></summary>
           <div class="cat-ficha">
             ${fila('Precio al detal', x.precio ? fmt(x.precio) : '—')}${fila('Precio al mayor', x.mayor ? fmt(x.mayor) : '—')}
-            ${fila('Costo real', x.costo ? fmt(x.costo) : '—')}${x.precio && x.costo ? fila('Te quedan', fmt(x.precio - x.costo)) : ''}
+            ${fila('Costo real', x.costo ? fmt(x.costo) : '—')}${x.precio && x.costo ? fila('Te quedan', fmt(x.precio - x.costo) + ' (' + Math.round((x.precio - x.costo) / x.precio * 100) + '%)') : ''}
             ${fila('Tiempo de impresión', horasTxt(x.horas))}${fila('Gramos', x.gramos ? x.gramos.toLocaleString('es-VE') + ' g' : '—')}
             ${fila('Impresora · filamento', esc((x.impresora || '—') + ' · ' + (x.filamento || '—')))}
             ${fila('Diseño', x.propio ? 'Propio' : 'Bambu / MakerWorld')}${fila('Insumos', x.insumoCosto ? fmt(x.insumoCosto) + (x.insumo ? ' · ' + esc(x.insumo) : '') : '—')}
