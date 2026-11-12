@@ -734,7 +734,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         <div class="ktotplacas" id="kTotPlacas" hidden></div>
         <p class="chico" style="margin:6px 0 0">Copia de Bambu las horas, minutos y gramos de cada placa.</p>
         <div class="dos">
-          <div><label for="kErr">Margen de error %</label><input id="kErr" type="number" inputmode="decimal" min="0" max="90"></div>
+          <div><label for="kErr">Margen de error %</label><input id="kErr" type="number" inputmode="decimal" min="0" max="100"></div>
           <div></div>
         </div>
         <label style="margin-top:10px">¿De quién es el diseño?</label>
@@ -856,7 +856,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261112185827';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261112190932';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1395,8 +1395,8 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const luz = h * n('#kW') / 1000 * n('#kKwh');
     const vida = n('#kVida') || 3000;
     const desg = h * (n('#kPrecioImp') + n('#kRep')) / vida;
-    const err = Math.min(0.9, n('#kErr') / 100);
-    const fallos = (mat + luz + desg) * (err >= 1 ? 0 : 1 / (1 - err) - 1);
+    const err = Math.min(1, n('#kErr') / 100);
+    const fallos = (mat + luz + desg) * err;   // error 50% = se suma la mitad de lo que cuesta imprimir
     const trab = n('#kT') / 60 * n('#kHora');
     const costo = mat + luz + desg + fallos + trab + ins + (c.gastoFijo || 0);
     const mult = n('#kMultP') || (1 + c.ganancia), multM = n('#kMultMay') || 1.4;
@@ -1409,15 +1409,15 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const fila = (a, b) => `<div class="stat"><span>${a}</span><b>${b}</b></div>`;
     $('#kRes').hidden = false;
     $('#kRes').innerHTML = fila('Material (' + String(+g.toFixed(2)).replace('.', ',') + ' g)', fmt(mat)) + (n('#kKwh') ? fila('Luz', fmt(luz)) : '') + fila('Desgaste de la máquina', fmt(desg))
-      + fila('Margen de error (' + Math.round(err * 100) + '%)', fmt(fallos)) + fila('Tu trabajo', fmt(trab)) + (ins ? fila('Insumos', fmt(ins)) : '')
+      + fila('Margen de error (' + Math.round(err * 100) + '% de ' + fmt(mat + luz + desg) + ')', fmt(fallos)) + fila('Tu trabajo', fmt(trab)) + (ins ? fila('Insumos', fmt(ins)) : '')
       + fila('<b>Costo total</b>', fmt(costo))
       + `<div class="cobrar"><small>PRECIO AL DETAL · ${manD ? 'tu precio (sugerido ' + fmt(sugD) + ')' : '×' + String(mult).replace('.', ',')}</small><b>${fmt(kSug)} <span class="kpct">${kSug ? Math.round((kSug - costo + trab) / kSug * 100) : 0}% ganancia</span></b>`
-      + `<span>Te quedan ${fmt(kSug - costo + trab)} por pieza (${kSug ? Math.round((kSug - costo + trab) / kSug * 100) : 0}%) con tu trabajo${bs(kSug)}</span></div>`
+      + `<span>Te quedan ${fmt(kSug - costo + trab)} por pieza (${kSug ? Math.round((kSug - costo + trab) / kSug * 100) : 0}%)${bs(kSug)}</span></div>`
       + `<div class="cobrar mayor"><small>PRECIO AL MAYOR · ${manM ? 'tu precio (sugerido ' + fmt(sugM) + ')' : '×' + String(multM).replace('.', ',')}</small><b>${fmt(may)} <span class="kpct">${may ? Math.round((may - costo + trab) / may * 100) : 0}% ganancia</span></b>`
-      + `<span>Te quedan ${fmt(may - costo + trab)} por pieza (${may ? Math.round((may - costo + trab) / may * 100) : 0}%) con tu trabajo${bs(may)}</span></div>`;
+      + `<span>Te quedan ${fmt(may - costo + trab)} por pieza (${may ? Math.round((may - costo + trab) / may * 100) : 0}%)${bs(may)}</span></div>`;
     $('#kUsar').hidden = false;
     // ganancia de tu precio (o del sugerido) al lado de las casillas, para verla mientras escribes
-    const gt = (pr, lab) => tile(lab, fmt(pr - costo + trab) + `<em>${pr ? Math.round((pr - costo + trab) / pr * 100) : 0}%</em>`, 'ganancia a ' + fmt(pr) + ' · con tu trabajo');
+    const gt = (pr, lab) => tile(lab, fmt(pr - costo + trab) + `<em>${pr ? Math.round((pr - costo + trab) / pr * 100) : 0}%</em>`, 'ganancia a ' + fmt(pr));
     $('#kManInfo').hidden = false; $('#kManInfo').innerHTML = gt(kSug, 'Al detal te quedan') + gt(may, 'Al mayor te quedan');
     kCosto = costo; kTrab = trab;
     if (!precioTocado) $('#otroPrecio').value = kSug.toFixed(2);
@@ -1501,7 +1501,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const gan = p - kCosto + kTrab;
     t.hidden = false;
     t.style.color = gan < 0 ? 'var(--warn)' : '';
-    t.textContent = (gan < 0 ? 'Pierdes ' + fmt(-gan) : 'Ganancia ' + fmt(gan) + ' (' + Math.round(gan / (p || 1) * 100) + '% del precio' + (kTrab ? ', incluye tu trabajo ' + fmt(kTrab) : '') + ')')
+    t.textContent = (gan < 0 ? 'Pierdes ' + fmt(-gan) : 'Ganancia ' + fmt(gan) + ' (' + Math.round(gan / (p || 1) * 100) + '% del precio' + ')')
       + (datos && datos.tasa ? ' · ' + fmtBs(p * datos.tasa.valor) : '');
   }
   // acepta 1.4 · 1,4 · 1:20 · 1h20 · 1h 20m · 80m
@@ -3372,7 +3372,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       tile('Inversión en impresoras', fmt(impresoras), datos.gastos.filter(esImpresora).length + ' máquinas') +
       tile('Invertido para recuperar', fmt(sinImp), 'filamento, insumos, bazar, equipos') +
       tile('Cobrado', fmt(cobrado), abonosParciales ? 'incluye ' + fmt(abonosParciales) + ' de abonos' : 'sin delivery') +
-      tile('Ganancia de lo vendido', ganB(r.ganancia, vendidoCerrado), 'el % es de lo vendido · tu trabajo cuenta como ganancia') +
+      tile('Ganancia de lo vendido', ganB(r.ganancia, vendidoCerrado), 'el % es de lo vendido') +
       tile('Pedidos que te deben', fmt(r.porCobrar), '') +
       (porPagar().length ? tile('💸 Me falta pagar', fmt(porPagar().reduce((s, g) => s + g.miParte, 0)), '') : '');
     pintarSemana(); pintarMes(); pintarGrafico();
@@ -3384,7 +3384,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       fila('− Costo de lo que vendiste <span class="chico">(material, switches, aros, máquina, comisión del punto)</span>', fmt(costoBazar)) +
       fila('− Gastos del bazar <span class="chico">(tu mitad del stand y la mesa, camisas, uso del punto)</span>', fmt(r.bazarGastos)) +
       fila('<b>= Ganancia del bazar</b>', ganTxt(r.bazarGanancia, r.bazarVendido)) +
-      '<p class="chico" style="margin:8px 0 0">El stand y la mesa son de los dos días: con lo que vendas hoy domingo esto sube. Tu trabajo cuenta como ganancia; el % es de lo vendido en el bazar.</p>';
+      '<p class="chico" style="margin:8px 0 0">El stand y la mesa son de los dos días: con lo que vendas hoy domingo esto sube. El % es de lo vendido en el bazar.</p>';
   }
 
   /* ---------- Análisis de ventas: qué es lo que más se vende ---------- */
@@ -3486,7 +3486,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         ${sec('Letras más usadas', lista(letras, { top: 12, nom: k => '<b>' + esc(k) + '</b>' }), 'Sirve para tener teclas listas de las letras que más salen.')}
         ${sec('Productos más vendidos (cantidad)', lista(prodQ, { nom: k => esc(k) }))}
         ${sec('Productos que más dinero traen', lista(prodD, { dinero: true, nom: k => esc(k) }))}
-        ${Object.keys(prodG).some(k => typeof prodG[k] === 'number') ? sec('Productos que más ganancia dejan', lista(prodG, { dinero: true, nom: k => esc(k), pct: (k, v) => prodD[k] ? pctGan(v, prodD[k]) + ' de ganancia' : '' }), 'El % es cuánto de lo que cobras por ese producto te queda de ganancia (tu trabajo cuenta como ganancia).') : ''}
+        ${Object.keys(prodG).some(k => typeof prodG[k] === 'number') ? sec('Productos que más ganancia dejan', lista(prodG, { dinero: true, nom: k => esc(k), pct: (k, v) => prodD[k] ? pctGan(v, prodD[k]) + ' de ganancia' : '' }), 'El % es cuánto de lo que cobras por ese producto te queda de ganancia.') : ''}
         ${sec('Por dónde llegan las ventas', lista(canal, { dinero: true, nom: k => esc(k) }))}
         ${sec('Día de la semana', lista(dia, { dinero: true, orden: ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'], nom: k => esc(k[0].toUpperCase() + k.slice(1)) }))}
         ${sec('Mejores clientes', lista(cli, { dinero: true, top: 8, nom: k => esc(k) }))}
@@ -3522,7 +3522,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       ${inp('nota', 'Nota', x.nota || '')}
       <div class="dos" style="margin-top:12px"><button type="button" class="btn primario" data-cp-guardar>Guardar cambios</button>
         <button type="button" class="btn peligro" data-cp-borrar>🗑 Borrar producto</button></div>
-      <p class="chico" style="margin:6px 0 0">El costo real se recalcula solo en tu hoja con estos datos (tu trabajo se suma al costo para el precio, pero en la ganancia cuenta como tuyo).</p>`;
+      <p class="chico" style="margin:6px 0 0">El costo real se recalcula solo en tu hoja con estos datos.</p>`;
   }
   function pintarCatalogo(forzar) {
     // si estás editando un producto, la actualización automática no te borra lo que escribiste
@@ -3538,7 +3538,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
           <summary><span><b>${esc(x.nombre)}</b><small>${x.web ? '<span class="web-si">🌐 web</span> ' + esc(x.web) : 'Solo interno'}</small></span><span class="pr">${x.precio ? fmt(x.precio) : '—'}</span></summary>
           <div class="cat-ficha">
             ${fila('Precio al detal', x.precio ? fmt(x.precio) : '—')}${fila('Precio al mayor', x.mayor ? fmt(x.mayor) : '—')}
-            ${fila('Costo real <span class="chico">(filamento, máquina, insumos y tu trabajo)</span>', x.costoPend ? 'recalculando…' : x.costo ? fmt(x.costo) : '—')}${x.precio && x.costo && !x.costoPend ? (t => fila('Te quedan <span class="chico">(con tu trabajo)</span>', fmt(x.precio - x.costo + t) + ' (' + Math.round((x.precio - x.costo + t) / x.precio * 100) + '%)'))((x.minTrabajo || 0) / 60 * conf().hora) : ''}
+            ${fila('Costo real <span class="chico">(filamento, máquina, insumos y tu trabajo)</span>', x.costoPend ? 'recalculando…' : x.costo ? fmt(x.costo) : '—')}${x.precio && x.costo && !x.costoPend ? (t => fila('Te quedan', fmt(x.precio - x.costo + t) + ' (' + Math.round((x.precio - x.costo + t) / x.precio * 100) + '%)'))((x.minTrabajo || 0) / 60 * conf().hora) : ''}
             ${fila('Tiempo de impresión', horasTxt(x.horas))}${fila('Gramos', x.gramos ? x.gramos.toLocaleString('es-VE') + ' g' : '—')}
             ${fila('Impresora · filamento', esc((x.impresora || '—') + ' · ' + (x.filamento || '—')))}
             ${fila('Diseño', x.propio ? 'Propio' : 'Bambu / MakerWorld')}${fila('Insumos', x.insumoCosto ? fmt(x.insumoCosto) + (x.insumo ? ' · ' + esc(x.insumo) : '') : '—')}
