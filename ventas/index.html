@@ -856,7 +856,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261112185243';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261112185827';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -3538,7 +3538,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
           <summary><span><b>${esc(x.nombre)}</b><small>${x.web ? '<span class="web-si">🌐 web</span> ' + esc(x.web) : 'Solo interno'}</small></span><span class="pr">${x.precio ? fmt(x.precio) : '—'}</span></summary>
           <div class="cat-ficha">
             ${fila('Precio al detal', x.precio ? fmt(x.precio) : '—')}${fila('Precio al mayor', x.mayor ? fmt(x.mayor) : '—')}
-            ${fila('Costo real <span class="chico">(filamento, máquina, insumos y tu trabajo)</span>', x.costo ? fmt(x.costo) : '—')}${x.precio && x.costo ? (t => fila('Te quedan <span class="chico">(con tu trabajo)</span>', fmt(x.precio - x.costo + t) + ' (' + Math.round((x.precio - x.costo + t) / x.precio * 100) + '%)'))((x.minTrabajo || 0) / 60 * conf().hora) : ''}
+            ${fila('Costo real <span class="chico">(filamento, máquina, insumos y tu trabajo)</span>', x.costoPend ? 'recalculando…' : x.costo ? fmt(x.costo) : '—')}${x.precio && x.costo && !x.costoPend ? (t => fila('Te quedan <span class="chico">(con tu trabajo)</span>', fmt(x.precio - x.costo + t) + ' (' + Math.round((x.precio - x.costo + t) / x.precio * 100) + '%)'))((x.minTrabajo || 0) / 60 * conf().hora) : ''}
             ${fila('Tiempo de impresión', horasTxt(x.horas))}${fila('Gramos', x.gramos ? x.gramos.toLocaleString('es-VE') + ' g' : '—')}
             ${fila('Impresora · filamento', esc((x.impresora || '—') + ' · ' + (x.filamento || '—')))}
             ${fila('Diseño', x.propio ? 'Propio' : 'Bambu / MakerWorld')}${fila('Insumos', x.insumoCosto ? fmt(x.insumoCosto) + (x.insumo ? ' · ' + esc(x.insumo) : '') : '—')}
@@ -3569,6 +3569,11 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         minTrabajo: nm('trabajo'), insumos: +Math.max(0, nm('insumos') - gIns).toFixed(3), propio: v('propio') === '1', precio, mayor: mayor > 0 ? mayor : null,
         nota: v('nota') }, 'Producto guardado: ' + nombre);
       const pr = (datos.productos || []).find(y => y.nombre === x.nombre); if (pr) { pr.nombre = nombre; pr.precio = precio; }
+      // el costo se recalcula aquí mismo (igual que en la hoja) para no mostrar el viejo mientras llega el nuevo
+      const hora = conf().hora || 3, trabViejo = (x.minTrabajo || 0) / 60 * hora, trabNuevo = nm('trabajo') / 60 * hora;
+      const cambioImpresion = nm('gramos') !== (x.gramos || 0) || Math.abs(horas - (x.horas || 0)) > 1e-3 || v('imp') !== x.impresora || v('fil') !== x.filamento;
+      x.costo = Math.max(0, (x.costo || 0) - trabViejo + trabNuevo - (x.insumoCosto || 0) + nm('insumos'));
+      if (cambioImpresion) x.costoPend = true;
       Object.assign(x, { nombre, web: v('web'), link: v('link'), categoria: v('categoria'), descripcion: v('desc'), filamento: v('fil'), impresora: v('imp'),
         gramos: nm('gramos'), horas, minTrabajo: nm('trabajo'), insumoCosto: nm('insumos'), insumosExtra: Math.max(0, nm('insumos') - gIns), propio: v('propio') === '1',
         precio, mayor: mayor > 0 ? mayor : null, nota: v('nota') });
