@@ -856,7 +856,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261112184541';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261112185243';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -3499,7 +3499,34 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   /* ---------- Catálogo: todos los productos con su ficha ---------- */
   const horasTxt = h => { const hh = Math.floor(h), mm = Math.round((h - hh) * 60); return h ? (hh ? hh + ' h ' : '') + (mm ? mm + ' min' : '') : '—'; };
   let catAbierto = null;
-  function pintarCatalogo() {
+  // formulario para editar todo el producto desde el Catálogo
+  function formProducto(x) {
+    const ops = (sel, val) => { const o = [...document.querySelectorAll(sel + ' option')].map(e => e.value); if (val && !o.includes(val)) o.unshift(val);
+      return o.map(v => `<option${v === val ? ' selected' : ''}>${esc(v)}</option>`).join(''); };
+    const hh = Math.floor(x.horas || 0), mm = Math.round(((x.horas || 0) - hh) * 60);
+    const inp = (k, lab, val, t, extra) => `<div><label>${lab}</label><input data-f="${k}" ${t === 'n' ? 'type="number" inputmode="decimal" min="0" step="any"' : 'autocomplete="off"'} value="${esc(val == null ? '' : String(val))}"${extra || ''}></div>`;
+    return `
+      <label>Nombre del producto</label><input data-f="nombre" autocomplete="off" value="${esc(x.nombre)}">
+      <p class="chico" style="margin:4px 0 0">Si le cambias el nombre, también se cambia en Inventario y en las ventas que ya hiciste.</p>
+      <div class="dos">${inp('precio', 'Precio al detal $', x.precio || '', 'n')}${inp('mayor', 'Precio al mayor $', x.mayor || '', 'n', ' placeholder="—"')}</div>
+      <div class="dos">${inp('web', 'Nombre en la web <span class="chico">(vacío = no sale)</span>', x.web || '')}
+        <div><label>Categoría en la web</label><select data-f="categoria">${ops('#kCat', x.categoria || '')}</select></div></div>
+      ${inp('desc', 'Descripción corta para la web', x.descripcion || '')}
+      <div class="dos"><div><label>Impresora</label><select data-f="imp">${ops('#kImp', x.impresora || '')}</select></div>
+        <div><label>Filamento</label><select data-f="fil">${ops('#kFil', x.filamento || '')}</select></div></div>
+      <div class="dos">${inp('hh', 'Horas de impresión', hh || '', 'n')}${inp('mm', 'Minutos', mm || '', 'n')}</div>
+      <div class="dos">${inp('gramos', 'Gramos', x.gramos || '', 'n')}${inp('trabajo', 'Minutos de tu trabajo', x.minTrabajo || 0, 'n')}</div>
+      <div class="dos">${inp('insumos', 'Insumos $ <span class="chico">(switch, aros, bolsa…)</span>', x.insumoCosto ? +x.insumoCosto.toFixed(3) : '', 'n')}
+        <div><label>Diseño</label><select data-f="propio"><option value="0"${x.propio ? '' : ' selected'}>Bambu / MakerWorld</option><option value="1"${x.propio ? ' selected' : ''}>Propio</option></select></div></div>
+      ${inp('link', 'Link de impresión <span class="chico">(solo para ti)</span>', x.link || '')}
+      ${inp('nota', 'Nota', x.nota || '')}
+      <div class="dos" style="margin-top:12px"><button type="button" class="btn primario" data-cp-guardar>Guardar cambios</button>
+        <button type="button" class="btn peligro" data-cp-borrar>🗑 Borrar producto</button></div>
+      <p class="chico" style="margin:6px 0 0">El costo real se recalcula solo en tu hoja con estos datos (tu trabajo se suma al costo para el precio, pero en la ganancia cuenta como tuyo).</p>`;
+  }
+  function pintarCatalogo(forzar) {
+    // si estás editando un producto, la actualización automática no te borra lo que escribiste
+    if (!forzar && document.querySelector('#listaCat .cat-edit[open]')) return;
     const lista = datos.catalogo || [];
     const st = n => (datos.productos || []).find(p => p.nombre === n);
     const sinT = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -3518,31 +3545,46 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
             ${s ? fila('En inventario', s.disponibles + ' disponibles') : ''}
             ${x.web ? fila('En la web', esc(x.web) + (x.categoria ? ' · ' + esc(x.categoria) : '')) : ''}
             ${x.nota ? `<p class="chico" style="margin:6px 0 0">${esc(x.nota)}</p>` : ''}
-            <div class="dos" style="margin-top:10px">
-              <div><label>Precio al detal $</label><input data-cp-d type="number" inputmode="decimal" min="0" step="any" value="${x.precio || ''}"></div>
-              <div><label>Precio al mayor $</label><input data-cp-m type="number" inputmode="decimal" min="0" step="any" value="${x.mayor || ''}" placeholder="—"></div>
-            </div>
-            <button type="button" class="btn chico primario" data-cp-g="${i}" style="margin-top:8px">Guardar precio</button>
+            <details class="kajustes cat-edit" style="margin-top:10px"><summary>✏️ Editar o borrar este producto</summary>
+              <div class="cat-form" data-cp="${i}">${formProducto(x)}</div>
+            </details>
             <div class="acc">
               ${x.link ? `<a class="btn chico" href="${esc(x.link)}" target="_blank" rel="noopener">🔗 Link de impresión</a>` : '<span class="chico">Sin link de impresión</span>'}
               <button type="button" class="btn chico" data-calc="${i}">🧮 Abrir en la calculadora</button>
             </div>
           </div></details>`; }).join('') || '<p class="vacio">No hay productos con ese nombre.</p>';
-    // cambiar el precio aquí mismo, sin pasar por la calculadora
-    $('#listaCat').querySelectorAll('[data-cp-g]').forEach(b => b.onclick = () => {
-      const x = lista.filter(y => !q || sinT(y.nombre + ' ' + y.web).includes(q))[+b.dataset.cpG]; if (!x) return;
-      const box = b.closest('.cat-ficha'), d = parseFloat(box.querySelector('[data-cp-d]').value), m = parseFloat(box.querySelector('[data-cp-m]').value);
-      if (!(d > 0)) return avisar('Pon el precio al detal', true);
-      accionFondo({ accion: 'guardarProducto', nombre: x.nombre, nombreWeb: x.web || '', link: x.link || '', categoria: x.categoria || '', descripcion: x.descripcion || '',
-        filamento: x.filamento, impresora: x.impresora, gramos: x.gramos || 0, horas: x.horas || 0, minTrabajo: x.minTrabajo || 0, insumos: x.insumosExtra || 0,
-        propio: !!x.propio, precio: d, mayor: m > 0 ? m : null, nota: x.nota || '' }, 'Precio de ' + x.nombre + ' guardado');
-      x.precio = d; x.mayor = m > 0 ? m : null; const pr = (datos.productos || []).find(y => y.nombre === x.nombre); if (pr) pr.precio = d;
-      pintarCatalogo(); pintarProductos();
+    // editar o borrar el producto aquí mismo, sin pasar por la calculadora
+    const visibles = lista.filter(y => !q || sinT(y.nombre + ' ' + y.web).includes(q));
+    $('#listaCat').querySelectorAll('[data-cp-guardar]').forEach(b => b.onclick = () => {
+      const box = b.closest('.cat-form'), x = visibles[+box.dataset.cp]; if (!x) return;
+      const v = k => box.querySelector(`[data-f="${k}"]`).value.trim(), nm = k => Math.max(0, parseFloat(String(v(k)).replace(',', '.')) || 0);
+      const nombre = v('nombre'), precio = nm('precio');
+      if (!nombre) return avisar('El producto necesita un nombre', true);
+      if (!(precio > 0)) return avisar('Pon el precio al detal', true);
+      if (nombre !== x.nombre && lista.some(y => y.nombre === nombre)) return avisar('Ya hay un producto con ese nombre', true);
+      const gIns = Math.max(0, (x.insumoCosto || 0) - (x.insumosExtra || 0));   // insumo de la lista de la hoja (columna G), si tiene
+      const horas = nm('hh') + nm('mm') / 60, mayor = nm('mayor');
+      accionFondo({ accion: 'guardarProducto', nombre, nombreAnterior: nombre !== x.nombre ? x.nombre : '', nombreWeb: v('web'), link: v('link'),
+        categoria: v('categoria'), descripcion: v('desc'), filamento: v('fil'), impresora: v('imp'), gramos: nm('gramos'), horas: +horas.toFixed(4),
+        minTrabajo: nm('trabajo'), insumos: +Math.max(0, nm('insumos') - gIns).toFixed(3), propio: v('propio') === '1', precio, mayor: mayor > 0 ? mayor : null,
+        nota: v('nota') }, 'Producto guardado: ' + nombre);
+      const pr = (datos.productos || []).find(y => y.nombre === x.nombre); if (pr) { pr.nombre = nombre; pr.precio = precio; }
+      Object.assign(x, { nombre, web: v('web'), link: v('link'), categoria: v('categoria'), descripcion: v('desc'), filamento: v('fil'), impresora: v('imp'),
+        gramos: nm('gramos'), horas, minTrabajo: nm('trabajo'), insumoCosto: nm('insumos'), insumosExtra: Math.max(0, nm('insumos') - gIns), propio: v('propio') === '1',
+        precio, mayor: mayor > 0 ? mayor : null, nota: v('nota') });
+      catAbierto = nombre; pintarCatalogo(true); pintarProductos();
+    });
+    $('#listaCat').querySelectorAll('[data-cp-borrar]').forEach(b => b.onclick = () => {
+      const x = visibles[+b.closest('.cat-form').dataset.cp]; if (!x) return;
+      if (!confirm('¿Borrar "' + x.nombre + '"?\n\nSe quita de Productos, Inventario y Vender. Las ventas que ya hiciste de este producto se quedan como están, con su costo y su ganancia.')) return;
+      accionFondo({ accion: 'borrarProducto', nombre: x.nombre }, 'Producto borrado: ' + x.nombre);
+      datos.catalogo = (datos.catalogo || []).filter(y => y !== x); datos.productos = (datos.productos || []).filter(y => y.nombre !== x.nombre);
+      catAbierto = null; pintarCatalogo(true); pintarProductos();
     });
     $('#listaCat').querySelectorAll('[data-calc]').forEach(b => b.onclick = () => { const x = lista.filter(y => !q || sinT(y.nombre + ' ' + y.web).includes(q))[+b.dataset.calc]; if (x) cargarEnCalc(x); });
-    $('#listaCat').querySelectorAll('details').forEach(d => d.addEventListener('toggle', () => { if (d.open) catAbierto = d.dataset.cat; else if (catAbierto === d.dataset.cat) catAbierto = null; }));
+    $('#listaCat').querySelectorAll('details.cat-item').forEach(d => d.addEventListener('toggle', () => { if (d.open) catAbierto = d.dataset.cat; else if (catAbierto === d.dataset.cat) catAbierto = null; }));
   }
-  $('#buscaCat').addEventListener('input', () => pintarCatalogo());
+  $('#buscaCat').addEventListener('input', () => pintarCatalogo(true));
   // Todo en orden alfabético (sin importar tildes ni mayúsculas)
   function alfa(a, b) { return String(a || '').localeCompare(String(b || ''), 'es', { sensitivity: 'base', numeric: true }); }
   function ordenarDatos() {
