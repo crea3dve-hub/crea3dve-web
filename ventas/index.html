@@ -780,6 +780,21 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     </div>
     <p class="chico" id="kGuardarTxt" style="margin:6px 0 0">Se guarda en tu hoja (Productos e Inventario), aparece para vender aquí y, si tiene nombre para la web, en crea3dve.com.</p>
   </section>
+  <section id="tab-ventas" data-tab hidden>
+    <h2>Histórico de ventas</h2>
+    <div class="chips" id="vhVista" role="group" aria-label="Ver">
+      <button type="button" data-vh="venta" aria-pressed="true">Por venta</button>
+      <button type="button" data-vh="cliente" aria-pressed="false">Por cliente</button>
+    </div>
+    <div class="chips" id="vhPer" role="group" aria-label="Período">
+      <button type="button" data-vp="todo" aria-pressed="true">Todo</button>
+      <button type="button" data-vp="mes" aria-pressed="false">Este mes</button>
+      <button type="button" data-vp="pasado" aria-pressed="false">Mes pasado</button>
+    </div>
+    <input id="buscaCliente" placeholder="Buscar por cliente, número, cédula o teléfono" autocomplete="off" style="margin-bottom:8px">
+    <div id="vhRes" class="r-tiles" style="margin-bottom:10px"></div>
+    <div class="card" id="rClientes"></div>
+  </section>
   <section id="tab-analisis" data-tab hidden>
     <h2>Análisis de ventas</h2>
     <div class="chips" id="anPer" role="group" aria-label="Período">
@@ -804,7 +819,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     <div class="card" id="rMes"></div>
     <h3>Movimiento de ventas</h3>
     <div class="card r-graf" id="rGraf"></div>
-    <button type="button" class="btn ancho solo-movil" id="btnIrAnalisis" style="margin-top:12px">📊 Ver análisis de ventas</button>
+    <div class="dos solo-movil" style="margin-top:12px"><button type="button" class="btn" id="btnIrVentas">🧾 Histórico de ventas</button><button type="button" class="btn" id="btnIrAnalisis">📊 Análisis de ventas</button></div>
     <p class="chico" style="margin:8px 4px"><a id="probarPuente" href="#" target="_blank" rel="noopener">🔧 Probar el puente</a> (abre la conexión con la hoja; si sale un error, mándale captura a Claude)</p>
     <h3>Bazar</h3>
     <div class="card" id="rBazar"></div>
@@ -814,9 +829,6 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       <textarea id="txtPago" rows="6" placeholder="Pago móvil: Banco ..., 0424-..., C.I. ...&#10;Zelle: correo@...&#10;Binance: ..."></textarea>
       <button class="btn primario ancho" id="btnPago" style="margin-top:10px">Guardar datos de pago</button>
     </details>
-    <h3>Clientes</h3>
-    <input id="buscaCliente" placeholder="Buscar por nombre, cédula o teléfono" autocomplete="off" style="margin-bottom:8px">
-    <div class="card" id="rClientes"></div>
     <p class="chico" style="text-align:center"><button class="btn chico" id="btnSalir">Cerrar sesión en este teléfono</button></p>
   </section>
 </main>
@@ -829,6 +841,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   <button role="tab" data-ir="catalogo" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Catálogo</button>
   <button role="tab" data-ir="calcular" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M8 6h8"/><path d="M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h.01M12 19h4"/></svg>Calcular</button>
   <button role="tab" data-ir="gastos" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 15h3"/></svg>Gastos</button>
+  <button role="tab" data-ir="ventas" class="solo-pc" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>Ventas</button>
   <button role="tab" data-ir="resumen" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Resumen</button>
   <button role="tab" data-ir="analisis" class="solo-pc" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9v9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg>Análisis</button>
 </nav>
@@ -856,7 +869,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261112190932';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261112191617';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1053,6 +1066,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     if (!$('#lotes').hidden) { $('#lotes').hidden = true; document.body.style.overflow = ''; $('#navImprimir').removeAttribute('aria-selected'); pintarPedidos(); }
     document.querySelectorAll('[data-tab]').forEach(s => { s.hidden = s.id !== 'tab-' + t; });
     if (t === 'analisis' && datos) pintarAnalisis();
+    if (t === 'ventas' && datos) pintarClientes();
     document.querySelectorAll('nav.tabs button[data-ir]').forEach(b => b.setAttribute('aria-selected', b.dataset.ir === t));
     window.scrollTo(0, 0);
     guardar('c3_tab', t);   // al recargar, la página vuelve a esta pestaña
@@ -1103,15 +1117,44 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     if (!$('#cTel').value) $('#cTel').value = c.telefono || '';
     mostrarHallado(c);
   });
+  /* ---------- Histórico de ventas: cada venta (o cada cliente) con lo que dejó de ganancia ---------- */
+  var vhVista = 'venta', vhPer = 'todo';
   function pintarClientes() {
     $('#listaClientes').innerHTML = (datos.clientes || []).map(c => `<option value="${esc(c.nombre)}">`).join('');
-    const q = ($('#buscaCliente').value || '').trim().toLowerCase();
-    const lista = (datos.clientes || []).filter(c => !q || (c.nombre + ' ' + c.telefono + ' ' + c.cedula).toLowerCase().includes(q))
-      .sort((a, b) => b.total - a.total);
-    $('#rClientes').innerHTML = lista.map(c => `<div class="stat"><span><b>${esc(c.nombre)}</b><div class="chico">${[c.cedula && 'C.I. ' + c.cedula, c.telefono].filter(Boolean).map(esc).join(' · ') || 'Sin cédula ni teléfono'}${c.ultima ? ' · última: ' + esc(c.ultima) : ''}</div></span><b>${fmt(c.total)}<div class="chico" style="text-align:right">${c.compras} ${c.compras === 1 ? 'compra' : 'compras'}</div></b></div>`).join('')
-      || '<p class="vacio">Todavía no hay clientes.</p>';
+    if ($('#tab-ventas').hidden) return;   // solo se arma cuando abres la pestaña (no hace la página más lenta)
+    const q = ($('#buscaCliente').value || '').trim().toLowerCase(), h = new Date();
+    const rango = vhPer === 'mes' ? [new Date(h.getFullYear(), h.getMonth(), 1), new Date(h.getFullYear(), h.getMonth() + 1, 1)]
+      : vhPer === 'pasado' ? [new Date(h.getFullYear(), h.getMonth() - 1, 1), new Date(h.getFullYear(), h.getMonth(), 1)] : null;
+    const dDe2 = t => { const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(t || ''); return m ? new Date(+m[3], m[2] - 1, +m[1]) : null; };
+    const vend = p => p.items.reduce((a, i) => a + (i.producto === 'Delivery' ? 0 : (i.total || 0)), 0);
+    const gan = p => p.items.reduce((a, i) => a + (i.ganancia || 0), 0), hayG = p => p.items.some(i => i.ganancia != null);
+    const pct = (g, v) => v > 0 ? Math.round(g / v * 100) + '%' : '—';
+    const ventas = datos.ventas.filter(p => { if (p.estado === 'Cancelado') return false; if (rango) { const d = dDe2(p.fecha); if (!d || d < rango[0] || d >= rango[1]) return false; } return true; });
+    const cli = {}; (datos.clientes || []).forEach(c => { cli[c.nombre] = c; });
+    const totV = ventas.reduce((a, p) => a + vend(p), 0), totG = ventas.reduce((a, p) => a + gan(p), 0);
+    $('#vhRes').innerHTML = `<div class="r-tile"><span>Vendido</span><b>${fmt(totV)}</b><small>${ventas.length} ventas</small></div>
+      <div class="r-tile"><span>Ganancia</span><b>${fmt(totG)}<em>${pct(totG, totV)}</em></b><small>el % es de lo vendido</small></div>
+      <div class="r-tile"><span>Venta promedio</span><b>${ventas.length ? fmt(totV / ventas.length) : '—'}</b><small>${ventas.length ? 'ganancia ' + fmt(totG / ventas.length) : ''}</small></div>`;
+    const derecha = (v, g, extra) => `<b style="text-align:right">${fmt(v)}<div class="chico" style="color:${g < 0 ? 'var(--warn)' : 'var(--accion)'};font-weight:700">ganancia ${fmt(g)} · ${pct(g, v)}</div>${extra ? `<div class="chico">${extra}</div>` : ''}</b>`;
+    let html = '';
+    if (vhVista === 'venta') {
+      html = ventas.filter(p => { if (!q) return true; const c = cli[p.cliente] || {}; return (p.numero + ' ' + p.cliente + ' ' + (c.telefono || '') + ' ' + (c.cedula || '')).toLowerCase().includes(q); })
+        .map(p => `<div class="stat"><span><b>${esc(p.cliente || 'Sin nombre')}</b><div class="chico">${esc(p.numero)} · ${esc(p.fecha)} · ${esc(p.canal || '')} · ${esc(p.estado)}</div></span>
+          ${hayG(p) ? derecha(vend(p), gan(p)) : `<b style="text-align:right">${fmt(vend(p))}<div class="chico">ganancia: falta el costo</div></b>`}</div>`).join('');
+    } else {
+      const g = {};
+      ventas.forEach(p => { const k = p.cliente || 'Sin nombre'; const x = g[k] = g[k] || { v: 0, g: 0, n: 0, ult: null, ultT: '' };
+        x.v += vend(p); x.g += gan(p); x.n++; const d = dDe2(p.fecha); if (d && (!x.ult || d > x.ult)) { x.ult = d; x.ultT = p.fecha; } });
+      html = Object.entries(g).filter(([k]) => { if (!q) return true; const c = cli[k] || {}; return (k + ' ' + (c.telefono || '') + ' ' + (c.cedula || '')).toLowerCase().includes(q); })
+        .sort((a, b) => b[1].v - a[1].v)
+        .map(([k, x]) => { const c = cli[k] || {}; return `<div class="stat"><span><b>${esc(k)}</b><div class="chico">${[c.cedula && 'C.I. ' + c.cedula, c.telefono].filter(Boolean).map(esc).join(' · ') || 'Sin cédula ni teléfono'}${x.ultT ? ' · última: ' + esc(x.ultT) : ''}</div></span>
+          ${derecha(x.v, x.g, x.n + (x.n === 1 ? ' compra' : ' compras'))}</div>`; }).join('');
+    }
+    $('#rClientes').innerHTML = html || '<p class="vacio">No hay ventas con eso.</p>';
   }
   $('#buscaCliente').addEventListener('input', () => pintarClientes());
+  $('#vhVista').addEventListener('click', e => { const b = e.target.closest('[data-vh]'); if (!b) return; vhVista = b.dataset.vh; $('#vhVista').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); pintarClientes(); });
+  $('#vhPer').addEventListener('click', e => { const b = e.target.closest('[data-vp]'); if (!b) return; vhPer = b.dataset.vp; $('#vhPer').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); pintarClientes(); });
   let pagado = false, delQuien = 'cliente';
   const esObjeto = n => n.startsWith('Clicker de objeto');
   const esLetra = n => n.startsWith('Clicker – cada letra');
@@ -3392,6 +3435,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   $('#anPer').addEventListener('click', e => { const b = e.target.closest('[data-an]'); if (!b) return; anPer = b.dataset.an;
     $('#anPer').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); pintarAnalisis(); });
   $('#btnIrAnalisis').addEventListener('click', () => irA('analisis'));
+  $('#btnIrVentas').addEventListener('click', () => irA('ventas'));
   function pintarAnalisis() {
     const h = new Date();
     const rango = anPer === 'mes' ? [new Date(h.getFullYear(), h.getMonth(), 1), new Date(h.getFullYear(), h.getMonth() + 1, 1)]
