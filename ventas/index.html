@@ -766,8 +766,8 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         <p class="chico" style="margin:6px 0 0">Detal: ×1,75 tu precio normal · ×2,5–3 piezas especiales · ×4 piezas chicas. Mayor: ×1,4 (12 o más) · ×1,3 pedidos muy grandes.</p>
         <b class="ktit" style="margin-top:12px">O pon tú el precio</b>
         <div class="dos">
-          <div><label for="kPrecioMan">Precio al detal $</label><input id="kPrecioMan" type="number" inputmode="decimal" min="0" step="0.5" placeholder="el sugerido"></div>
-          <div><label for="kPrecioManMay">Precio al mayor $</label><input id="kPrecioManMay" type="number" inputmode="decimal" min="0" step="0.5" placeholder="el sugerido"></div>
+          <div><label for="kPrecioMan">Precio al detal $</label><input id="kPrecioMan" type="number" inputmode="decimal" min="0" step="any" placeholder="el sugerido"></div>
+          <div><label for="kPrecioManMay">Precio al mayor $</label><input id="kPrecioManMay" type="number" inputmode="decimal" min="0" step="any" placeholder="el sugerido"></div>
         </div>
         <p class="chico" style="margin:6px 0 0">Si lo dejas vacío se usa el precio sugerido. Si lo llenas, ese es el precio que se guarda.</p>
         <div id="kManInfo" class="r-tiles" style="margin-top:10px" hidden></div>
@@ -856,7 +856,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261112184031';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261112184405';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1381,7 +1381,16 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const n = id => Math.max(0, parseFloat($(id).value) || 0);
     pintarInsumos();
     const g = totGramos(), h = totHoras(), ins = costoInsumos();
-    if (!g && !h) { $('#kRes').hidden = true; $('#kManInfo').hidden = true; kSug = null; kCosto = null; actualizarGanancia(); return; }
+    if (!g && !h) {
+      $('#kRes').hidden = true; kSug = null; kCosto = null; actualizarGanancia();
+      // sin horas ni gramos: si pusiste tu precio, igual se ve cuánto te queda (solo con insumos; tu trabajo es ganancia)
+      const pD = n('#kPrecioMan'), pM = n('#kPrecioManMay'), cIns = ins + (c.gastoFijo || 0);
+      const gt = (pr, lab) => tile(lab, fmt(pr - cIns) + `<em>${Math.round((pr - cIns) / pr * 100)}%</em>`, 'ganancia a ' + fmt(pr) + ' · solo resta insumos (' + fmt(cIns) + ')');
+      $('#kManInfo').hidden = !(pD || pM);
+      $('#kManInfo').innerHTML = (pD ? gt(pD, 'Al detal te quedan') : '') + (pM ? gt(pM, 'Al mayor te quedan') : '') +
+        '<p class="chico" style="grid-column:1/-1;margin:0">Para restar también el filamento y la máquina, pon las horas y los gramos en el paso 3.</p>';
+      return;
+    }
     const mat = g * n('#kKg') / 1000;
     const luz = h * n('#kW') / 1000 * n('#kKwh');
     const vida = n('#kVida') || 3000;
