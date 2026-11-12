@@ -847,7 +847,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261112180214';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261112181018';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -3365,8 +3365,23 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       charms = cuenta(), charmColor = cuenta(), pers = cuenta(), cuelga = cuenta(), metal = cuenta(), objetos = cuenta();
     let nClk = 0, conCharm = 0;
     const SIM = { 'corazón': '♥', 'estrella': '★', 'flor': '✿', 'carita': '☺', 'trébol': '♣', 'huella': '🐾', 'balón': '⚽', 'cruz': '✝', 'rayo': '⚡' };
+    let nBazar = 0;
     ventas.forEach(p => {
-      if (!p.diseno) return;
+      if (!p.diseno) {
+        // ventas sin diseño (bazar, WhatsApp): se cuenta lo que dice cada producto — base y sus teclas, charms, aros y cómo se cuelga
+        let nb = 0, especiales = 0;
+        p.items.forEach(i => { const q = i.cantidad || 0, n = i.producto; let m;
+          if ((m = /^Base de clicker – (\d+) tecla/.exec(n))) { const k = +m[1]; largos.add(k >= 8 ? '8 o más' : String(k), q); nb += q; }
+          else if ((m = /^Charm (.+?)(?:\s*\(|$)/.exec(n)) && !/personalizado/i.test(n)) { charms.add(m[1].trim().toLowerCase(), q); conCharm += q; }
+          else if (/^Charm personalizado/i.test(n)) { pers.add('(sin nombre, ' + (p.canal || 'venta') + ')', q); conCharm += q; }
+          else if ((m = /^Clicker de objeto – (.+)/.exec(n))) objetos.add(m[1].trim().toLowerCase(), q);
+          else if (/^Aro de llavero/.test(n)) { cuelga.add('Aro de llavero', q); especiales += q; }
+          else if (/^Cadenita de colores/.test(n)) { cuelga.add('Cadenita de colores', q); especiales += q; }
+          else if (/\(metal\)/.test(n)) metal.add(n.replace(/\s*\(metal\)/, ''), q);
+        });
+        if (nb) { nClk += nb; nBazar += nb; if (nb > especiales) cuelga.add('Cadena plateada', nb - especiales); }
+        return;
+      }
       const bl = bloquesDe(p.diseno).filter(b => RE_TECLA.test(b.split('\n').find(l => RE_TECLA.test(l)) || ''));
       const teclasDis = bl.reduce((a, b) => a + b.split('\n').filter(l => RE_TECLA.test(l)).length, 0);
       const letrasVend = p.items.filter(i => /^Clicker – cada letra/.test(i.producto)).reduce((a, i) => a + i.cantidad, 0);
@@ -3408,14 +3423,14 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       <div class="r-tiles">
         ${tile('Vendido', fmt(total), ventas.length + ' pedidos')}
         ${tile('Pedido promedio', ventas.length ? fmt(total / ventas.length) : '—', '')}
-        ${tile('Clickers con diseño', nClk, nClk ? Math.round(conCharm / nClk * 100) + '% llevan charm' : '')}
+        ${tile('Clickers vendidos', nClk, nClk ? Math.min(100, Math.round(conCharm / nClk * 100)) + '% llevan charm' : '')}
         ${tile('Base que más sale', esc(nombreTop(top1(bases))), esc(top1(tipoBase)))}
         ${tile('Tecla que más sale', esc(top1(tecla)), 'letra ' + esc(top1(letra)))}
         ${tile('Charm que más sale', esc(top1(charms)), '')}
       </div>
       <div class="an-dos">
         ${sec('Clickers por cantidad de letras', lista(largos, { orden: ['1', '2', '3', '4', '5', '6', '7', '8 o más'], nom: k => k + (k === '1' ? ' letra' : ' letras') }))}
-        ${sec('Base: lisa o acanalada', lista(tipoBase, { nom: k => esc(k[0].toUpperCase() + k.slice(1)) }))}
+        ${sec('Base: lisa o acanalada', lista(tipoBase, { nom: k => esc(k[0].toUpperCase() + k.slice(1)) }), 'Solo pedidos con diseño.')}
         ${sec('Color de base', lista(bases, { nom: conColor }))}
         ${sec('Color de tecla', lista(tecla, { nom: conColor }))}
         ${sec('Color de letra', lista(letra, { nom: conColor }))}
@@ -3435,7 +3450,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         ${sec('Día de la semana', lista(dia, { dinero: true, orden: ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'], nom: k => esc(k[0].toUpperCase() + k.slice(1)) }))}
         ${sec('Mejores clientes', lista(cli, { dinero: true, top: 8, nom: k => esc(k) }))}
       </div>
-      <p class="an-nota" style="margin-top:12px">Colores, bases y charms salen de los pedidos que tienen diseño (los que llegaron por la web o se cargaron con su diseño). Si un cliente pidió varios iguales, cuentan todos. No incluye pedidos cancelados ni el delivery.</p>`;
+      <p class="an-nota" style="margin-top:12px">Letras por base, charms, aros y cómo lo cuelgan incluyen todas las ventas (bazar, WhatsApp y web)${nBazar ? ': ' + nBazar + ' clickers vienen de ventas sin diseño' : ''}. Lisa o acanalada y los colores solo salen de los pedidos que tienen el diseño guardado, porque en el bazar eso no se anota. Si un cliente pidió varios iguales, cuentan todos. No incluye pedidos cancelados ni el delivery.</p>`;
   }
 
   $('#btnPago').addEventListener('click', () => { guardar('c3_pago', $('#txtPago').value.trim()); avisar('Datos de pago guardados'); $('#cardPago').open = false; });
