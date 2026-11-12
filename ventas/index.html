@@ -869,7 +869,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261112191617';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261112191736';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1135,12 +1135,12 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     $('#vhRes').innerHTML = `<div class="r-tile"><span>Vendido</span><b>${fmt(totV)}</b><small>${ventas.length} ventas</small></div>
       <div class="r-tile"><span>Ganancia</span><b>${fmt(totG)}<em>${pct(totG, totV)}</em></b><small>el % es de lo vendido</small></div>
       <div class="r-tile"><span>Venta promedio</span><b>${ventas.length ? fmt(totV / ventas.length) : '—'}</b><small>${ventas.length ? 'ganancia ' + fmt(totG / ventas.length) : ''}</small></div>`;
-    const derecha = (v, g, extra) => `<b style="text-align:right">${fmt(v)}<div class="chico" style="color:${g < 0 ? 'var(--warn)' : 'var(--accion)'};font-weight:700">ganancia ${fmt(g)} · ${pct(g, v)}</div>${extra ? `<div class="chico">${extra}</div>` : ''}</b>`;
+    const derecha = (v, g, extra) => `<b style="text-align:right">${fmt(v)}<div class="chico" style="color:${g < 0 ? 'var(--warn)' : 'var(--accion)'};font-weight:700">${fmt(g)} · ${pct(g, v)}</div>${extra ? `<div class="chico">${extra}</div>` : ''}</b>`;
     let html = '';
     if (vhVista === 'venta') {
       html = ventas.filter(p => { if (!q) return true; const c = cli[p.cliente] || {}; return (p.numero + ' ' + p.cliente + ' ' + (c.telefono || '') + ' ' + (c.cedula || '')).toLowerCase().includes(q); })
         .map(p => `<div class="stat"><span><b>${esc(p.cliente || 'Sin nombre')}</b><div class="chico">${esc(p.numero)} · ${esc(p.fecha)} · ${esc(p.canal || '')} · ${esc(p.estado)}</div></span>
-          ${hayG(p) ? derecha(vend(p), gan(p)) : `<b style="text-align:right">${fmt(vend(p))}<div class="chico">ganancia: falta el costo</div></b>`}</div>`).join('');
+          ${hayG(p) ? derecha(vend(p), gan(p)) : `<b style="text-align:right">${fmt(vend(p))}<div class="chico">falta el costo</div></b>`}</div>`).join('');
     } else {
       const g = {};
       ventas.forEach(p => { const k = p.cliente || 'Sin nombre'; const x = g[k] = g[k] || { v: 0, g: 0, n: 0, ult: null, ultT: '' };
@@ -1150,7 +1150,8 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         .map(([k, x]) => { const c = cli[k] || {}; return `<div class="stat"><span><b>${esc(k)}</b><div class="chico">${[c.cedula && 'C.I. ' + c.cedula, c.telefono].filter(Boolean).map(esc).join(' · ') || 'Sin cédula ni teléfono'}${x.ultT ? ' · última: ' + esc(x.ultT) : ''}</div></span>
           ${derecha(x.v, x.g, x.n + (x.n === 1 ? ' compra' : ' compras'))}</div>`; }).join('');
     }
-    $('#rClientes').innerHTML = html || '<p class="vacio">No hay ventas con eso.</p>';
+    const cab = `<div class="stat chico" style="padding-top:0;color:var(--muted)"><span>${vhVista === 'venta' ? 'Venta' : 'Cliente'}</span><span style="text-align:right">Vendido<br><b style="color:var(--accion)">Ganancia · %</b></span></div>`;
+    $('#rClientes').innerHTML = html ? cab + html : '<p class="vacio">No hay ventas con eso.</p>';
   }
   $('#buscaCliente').addEventListener('input', () => pintarClientes());
   $('#vhVista').addEventListener('click', e => { const b = e.target.closest('[data-vh]'); if (!b) return; vhVista = b.dataset.vh; $('#vhVista').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); pintarClientes(); });
