@@ -343,6 +343,16 @@ details[open] > summary{margin-bottom:4px}
 .inv-edit,.g-edit{padding:10px 0;border-bottom:1px solid var(--line)}
 .inv-edit:last-child,.g-edit:last-child{border-bottom:0}
 .g-row b{white-space:nowrap}
+.g-dia{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;padding:14px 0 6px;border-bottom:1px solid var(--line)}
+.g-dia:first-child{padding-top:2px}
+.g-tipos{margin-top:12px}
+.g-tipos .stat{padding:7px 0;font-size:14px}
+.g-bar{display:block;height:6px;border-radius:3px;background:var(--brand-soft);margin-top:4px;overflow:hidden}
+.g-bar i{display:block;height:100%;background:var(--accion)}
+button.r-tile{font:inherit;color:inherit;text-align:left;cursor:pointer;width:100%}
+button.r-tile[aria-expanded="true"]{border-color:var(--accion);box-shadow:0 0 0 1px var(--accion) inset}
+.r-gastos{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px 14px 10px}
+.r-gastos .stat{padding:8px 0;font-size:14px}
 .ed-item{display:grid;grid-template-columns:1fr 56px 72px auto;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
 .ed-item .nom{font-size:13px;font-weight:600;line-height:1.25}
 .ed-item input{padding:7px 6px;text-align:right}
@@ -679,7 +689,8 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     <div class="card" id="formGasto"></div>
 
     <h3>Mis gastos</h3>
-    <input id="buscaGasto" placeholder="Buscar gasto" autocomplete="off" style="margin-bottom:8px">
+    <div class="card" id="gPer" style="margin-bottom:10px"></div>
+    <input id="buscaGasto" placeholder="Buscar en todos los gastos" autocomplete="off" style="margin-bottom:8px">
     <div class="card" id="listaGastos"></div>
   </section>
 
@@ -880,7 +891,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261112192724';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261112194007';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -3205,16 +3216,74 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     pintarListaGastos();
     document.querySelectorAll('.fg').forEach(actualizarConv);
   }
+  /* Gastos por período (día / semana / mes / todo), igual que el resumen de ventas */
+  var gVista = 'semana', gOff = 0;
+  const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  function rangoGastos(vista, off) {
+    const h = new Date(); h.setHours(0, 0, 0, 0);
+    if (vista === 'dia') { const a = masDias(h, -off); return { a, b: masDias(a, 1), pa: masDias(a, -1),
+      tit: (off === 0 ? 'Hoy · ' : off === 1 ? 'Ayer · ' : '') + DIAS[a.getDay()] + ' ' + dCorta(a), que: 'el día anterior' }; }
+    if (vista === 'semana') { const a = masDias(lunesDe(h), -7 * off); return { a, b: masDias(a, 7), pa: masDias(a, -7),
+      tit: (off === 0 ? 'Esta semana' : off === 1 ? 'Semana pasada' : 'Semana') + ' · ' + dCorta(a) + ' – ' + dCorta(masDias(a, 6)), que: 'la semana anterior' }; }
+    if (vista === 'mes') { const a = new Date(h.getFullYear(), h.getMonth() - off, 1), nom = MESES[a.getMonth()];
+      return { a, b: new Date(a.getFullYear(), a.getMonth() + 1, 1), pa: new Date(a.getFullYear(), a.getMonth() - 1, 1),
+        tit: nom[0].toUpperCase() + nom.slice(1) + ' ' + a.getFullYear() + (off === 0 ? ' · este mes' : off === 1 ? ' · mes pasado' : ''), que: MESES[(a.getMonth() + 11) % 12] }; }
+    return null;   // todo
+  }
+  const gastosEntre = (a, b) => datos.gastos.filter(g => { const d = dDe(g.fecha); return d && d >= a && d < b; });
+  const sumaG = l => l.reduce((s, g) => s + (g.miParte || 0), 0);
+  // ordenados del más nuevo al más viejo; los que no tienen fecha van al final
+  const ordenG = l => l.map((g, i) => ({ g, i, d: dDe(g.fecha) })).sort((x, y) => (y.d ? y.d.getTime() : -1) - (x.d ? x.d.getTime() : -1) || y.i - x.i).map(x => x.g);
+  function filaGasto(g) {
+    if (editG === g.fila) return `<div class="g-edit" data-g="${g.fila}">${formGasto(g, 'editar')}</div>`;
+    return `<div class="stat g-row"><span><b>${esc(g.que)}</b><div class="chico">${gVista === 'dia' ? '' : esc(g.fecha || 'sin fecha') + ' · '}${esc(g.tipo || 'Sin tipo')} · ${esc(g.para)}${g.pct < 1 ? ' · tu mitad' : ''}${g.monto === null ? ' · ⚠️ sin monto' : ''}</div></span>
+      <span class="fila" style="gap:8px"><b>${fmt(g.miParte)}</b><button class="icono-btn" data-g-ed="${g.fila}" aria-label="Editar">✏️</button></span></div>`;
+  }
   function pintarListaGastos() {
     const q = ($('#buscaGasto').value || '').trim().toLowerCase();
-    const lista = datos.gastos.filter(g => !q || (g.que + ' ' + g.tipo + ' ' + g.nota).toLowerCase().includes(q));
-    const total = lista.reduce((s, g) => s + g.miParte, 0);
-    $('#listaGastos').innerHTML = (lista.length ? `<div class="stat"><span class="chico">${lista.length} ${lista.length === 1 ? 'gasto' : 'gastos'}</span><b>Tu parte: ${fmt(total)}</b></div>` : '') +
-      lista.map(g => editG === g.fila ? `<div class="g-edit" data-g="${g.fila}">${formGasto(g, 'editar')}</div>` : `
-      <div class="stat g-row"><span><b>${esc(g.que)}</b><div class="chico">${esc(g.fecha || 'sin fecha')} · ${esc(g.para)}${g.pct < 1 ? ' · tu mitad' : ''}${g.monto === null ? ' · ⚠️ sin monto' : ''}</div></span>
-      <span class="fila" style="gap:8px"><b>${fmt(g.miParte)}</b><button class="icono-btn" data-g-ed="${g.fila}" aria-label="Editar">✏️</button></span></div>`).join('')
-      || '<p class="vacio">Sin gastos registrados.</p>';
+    const r = rangoGastos(gVista, gOff);
+    const enPer = r ? gastosEntre(r.a, r.b) : datos.gastos.slice();
+    const total = sumaG(enPer), prevTot = r ? sumaG(gastosEntre(r.pa, r.a)) : 0;
+    // en qué se fue el dinero (por tipo)
+    const tipos = {}; enPer.forEach(g => { const t = g.tipo || 'Sin tipo'; tipos[t] = (tipos[t] || 0) + (g.miParte || 0); });
+    const tiposOrd = Object.entries(tipos).sort((x, y) => y[1] - x[1]), maxT = tiposOrd.length ? tiposOrd[0][1] : 0;
+    const mayor = enPer.reduce((m, g) => (g.miParte || 0) > (m ? m.miParte || 0 : -1) ? g : m, null);
+    $('#gPer').innerHTML = `<div class="chips" role="group" aria-label="Ver gastos por">${[['dia', 'Día'], ['semana', 'Semana'], ['mes', 'Mes'], ['todo', 'Todo']].map(([k, t]) =>
+        `<button type="button" data-gvista="${k}" aria-pressed="${gVista === k}">${t}</button>`).join('')}</div>` +
+      (r ? `<div class="r-nav"><button type="button" data-goff="1" aria-label="Anterior">‹</button><b>${r.tit}</b>
+        <button type="button" data-goff="-1" aria-label="Siguiente"${gOff === 0 ? ' disabled' : ''}>›</button></div>` : '<div class="r-nav"><b>Todos tus gastos</b></div>') +
+      `<div class="r-tiles">${tile('Gastado', fmt(total), r ? cambio(total, prevTot, r.que) : '')}${tile('Compras', enPer.length, enPer.length ? 'promedio ' + fmt(total / enPer.length) : '')}${tile('La más grande', mayor ? fmt(mayor.miParte) : '—', mayor ? esc(mayor.que) : '')}</div>` +
+      (tiposOrd.length > 1 ? `<div class="g-tipos"><div class="chico" style="font-weight:700;margin-bottom:2px">En qué se fue</div>${tiposOrd.map(([t, v]) =>
+        `<div class="stat"><span style="flex:1;min-width:0">${esc(t)}<span class="g-bar"><i style="width:${maxT ? Math.round(v / maxT * 100) : 0}%"></i></span></span><b>${fmt(v)}${total ? ` <span class="chico">${Math.round(v / total * 100)}%</span>` : ''}</b></div>`).join('')}</div>` : '');
+    let html = '';
+    if (q) {
+      const lista = ordenG(datos.gastos.filter(g => (g.que + ' ' + g.tipo + ' ' + g.nota + ' ' + g.para).toLowerCase().includes(q)));
+      html = (lista.length ? `<div class="stat"><span class="chico">${lista.length} ${lista.length === 1 ? 'gasto encontrado' : 'gastos encontrados'} (en todas las fechas)</span><b>${fmt(sumaG(lista))}</b></div>` : '') +
+        lista.map(filaGasto).join('') || '<p class="vacio">No encontré gastos con eso.</p>';
+    } else if (!enPer.length) {
+      html = `<p class="vacio">${r ? 'No compraste nada en este período.' : 'Sin gastos registrados.'}</p>`;
+    } else if (gVista === 'dia') {
+      html = ordenG(enPer).map(filaGasto).join('');
+    } else {
+      // agrupados por día, con lo que gastaste ese día
+      const grupos = []; ordenG(enPer).forEach(g => { const k = g.fecha || 'Sin fecha', u = grupos[grupos.length - 1]; if (u && u.k === k) u.l.push(g); else grupos.push({ k, l: [g] }); });
+      html = grupos.map(x => { const d = dDe(x.k);
+        return `<div class="g-dia"><span>${d ? DIAS[d.getDay()] + ' ' + dCorta(d) + (gVista === 'todo' ? ' ' + d.getFullYear() : '') : 'Sin fecha'}</span><span>${fmt(sumaG(x.l))}</span></div>` + x.l.map(filaGasto).join(''); }).join('');
+    }
+    $('#listaGastos').innerHTML = html;
     document.querySelectorAll('#listaGastos .fg').forEach(actualizarConv);
+  }
+  $('#gPer').addEventListener('click', e => {
+    const v = e.target.closest('[data-gvista]'), o = e.target.closest('[data-goff]');
+    if (v) { gVista = v.dataset.gvista; gOff = 0; editG = null; pintarListaGastos(); }
+    if (o && !o.disabled) { gOff = Math.max(0, gOff + +o.dataset.goff); editG = null; pintarListaGastos(); }
+  });
+  // desde el Resumen: abrir Gastos en el mismo período
+  function verGastosDe(vista, off) {
+    gVista = vista; gOff = off; editG = null; $('#buscaGasto').value = '';
+    const b = document.querySelector('nav.tabs button[data-ir="gastos"]'); if (b) b.click();
+    pintarListaGastos();
+    setTimeout(() => { const el = $('#gPer'), h = document.querySelector('header'); if (el) scrollTo({ top: el.getBoundingClientRect().top + scrollY - (h ? h.offsetHeight : 60) - 40, behavior: 'smooth' }); }, 60);
   }
   $('#buscaGasto').addEventListener('input', pintarListaGastos);
 
@@ -3352,22 +3421,31 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const tile = (a, b, extra) => `<div class="r-tile"><span>${a}</span><b>${b}</b>${extra ? `<small>${extra}</small>` : ''}</div>`;
   const cambio = (ahora, antes, que) => { if (!antes) return ahora ? 'nuevo vs ' + que : ''; const pc = Math.round((ahora - antes) / antes * 100);
     return `<span class="${pc >= 0 ? 'sube' : 'baja'}">${pc >= 0 ? '▲' : '▼'} ${Math.abs(pc)}%</span> vs ${que}`; };
-  function bloquePeriodo(c, prev, que) {
+  // tarjeta "Gastado" que se toca para ver qué se compró en ese período
+  var rGastAb = { sem: false, mes: false, graf: false };
+  const tileGasto = (key, c) => `<button type="button" class="r-tile" data-rgast="${key}" aria-expanded="${rGastAb[key]}"><span>Gastado</span><b>${fmt(c.gastado)}</b><small>${rGastAb[key] ? 'Ocultar ▴' : 'Toca para ver qué ▾'}</small></button>`;
+  function listaGastosRes(key, a, b, vista, off) {
+    if (!rGastAb[key]) return '';
+    const l = ordenG(gastosEntre(a, b));
+    return `<div class="r-gastos">${l.length ? l.map(g => `<div class="stat"><span><b>${esc(g.que)}</b><div class="chico">${esc(g.fecha)} · ${esc(g.tipo || 'Sin tipo')}${g.pct < 1 ? ' · tu mitad' : ''}</div></span><b>${fmt(g.miParte)}</b></div>`).join('') : '<p class="vacio">No hay gastos en este período.</p>'}
+      ${vista ? `<button type="button" class="btn chico ancho" data-vergastos="${vista}:${off}" style="margin-top:8px">Ver en Gastos (por tipo y por día) →</button>` : ''}</div>`;
+  }
+  function bloquePeriodo(c, prev, que, key, a, b, vista, off) {
     return `<div class="r-tiles">
       ${tile('Vendido', fmt(c.vendido), cambio(c.vendido, prev.vendido, que))}
       ${tile('Cobrado', fmt(c.cobrado), cambio(c.cobrado, prev.cobrado, que))}
       ${tile('Ganancia de lo vendido', c.hayGan ? ganB(c.ganancia, c.vendido) : '—', c.hayGan ? cambio(c.ganancia, prev.ganancia, que) : 'aparece al actualizar')}
-      ${tile('Gastado', fmt(c.gastado), '')}
+      ${tileGasto(key, c)}
       ${tile('Pedidos', c.pedidos, c.pedidos ? 'promedio ' + fmt(c.vendido / c.pedidos) : '')}
       ${tile('Teclas vendidas', c.teclas, '')}
-    </div>`;
+    </div>` + listaGastosRes(key, a, b, vista, off);
   }
   function pintarSemana() {
     const l = masDias(lunesDe(new Date()), -7 * rSem), fin = masDias(l, 7);
     const c = cuentasPeriodo(l, fin), prev = cuentasPeriodo(masDias(l, -7), l);
     $('#rSemana').innerHTML = `<div class="r-nav"><button type="button" data-rsem="1" aria-label="Semana anterior">‹</button>
       <b>${rSem === 0 ? 'Esta semana' : rSem === 1 ? 'Semana pasada' : 'Semana'} · ${dCorta(l)} – ${dCorta(masDias(fin, -1))}</b>
-      <button type="button" data-rsem="-1" aria-label="Semana siguiente"${rSem === 0 ? ' disabled' : ''}>›</button></div>` + bloquePeriodo(c, prev, 'la semana anterior');
+      <button type="button" data-rsem="-1" aria-label="Semana siguiente"${rSem === 0 ? ' disabled' : ''}>›</button></div>` + bloquePeriodo(c, prev, 'la semana anterior', 'sem', l, fin, 'semana', rSem);
   }
   function pintarMes() {
     const h = new Date(), ini = new Date(h.getFullYear(), h.getMonth() - rMesOff, 1), fin = new Date(ini.getFullYear(), ini.getMonth() + 1, 1);
@@ -3375,12 +3453,12 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const nom = MESES[ini.getMonth()];
     $('#rMes').innerHTML = `<div class="r-nav"><button type="button" data-rmes="1" aria-label="Mes anterior">‹</button>
       <b>${nom[0].toUpperCase() + nom.slice(1)} ${ini.getFullYear()}${rMesOff === 0 ? ' · este mes' : rMesOff === 1 ? ' · mes pasado' : ''}</b>
-      <button type="button" data-rmes="-1" aria-label="Mes siguiente"${rMesOff === 0 ? ' disabled' : ''}>›</button></div>` + bloquePeriodo(c, prev, MESES[(ini.getMonth() + 11) % 12]);
+      <button type="button" data-rmes="-1" aria-label="Mes siguiente"${rMesOff === 0 ? ' disabled' : ''}>›</button></div>` + bloquePeriodo(c, prev, MESES[(ini.getMonth() + 11) % 12], 'mes', ini, fin, 'mes', rMesOff);
   }
   function pintarGrafico() {
     const h = new Date(), cols = [];
-    if (rGrafModo === 'mes') for (let k = 11; k >= 0; k--) { const a = new Date(h.getFullYear(), h.getMonth() - k, 1), b = new Date(a.getFullYear(), a.getMonth() + 1, 1); cols.push({ lab: MES3[a.getMonth()], tit: MESES[a.getMonth()] + ' ' + a.getFullYear(), c: cuentasPeriodo(a, b) }); }
-    else for (let k = 11; k >= 0; k--) { const a = masDias(lunesDe(h), -7 * k); cols.push({ lab: dCorta(a), tit: 'semana del ' + dCorta(a), c: cuentasPeriodo(a, masDias(a, 7)) }); }
+    if (rGrafModo === 'mes') for (let k = 11; k >= 0; k--) { const a = new Date(h.getFullYear(), h.getMonth() - k, 1), b = new Date(a.getFullYear(), a.getMonth() + 1, 1); cols.push({ lab: MES3[a.getMonth()], tit: MESES[a.getMonth()] + ' ' + a.getFullYear(), c: cuentasPeriodo(a, b), a, b, off: k }); }
+    else for (let k = 11; k >= 0; k--) { const a = masDias(lunesDe(h), -7 * k); cols.push({ lab: dCorta(a), tit: 'semana del ' + dCorta(a), c: cuentasPeriodo(a, masDias(a, 7)), a, b: masDias(a, 7), off: k }); }
     // los meses sin nada al principio no se dibujan (el negocio empezó en octubre)
     while (cols.length > 2 && !cols[0].c.vendido && !cols[0].c.gastado) cols.shift();
     const movil = innerWidth < 600; if (movil) cols.splice(0, Math.max(0, cols.length - 6));
@@ -3405,7 +3483,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       <div class="r-ley"><span><i style="background:var(--accion)"></i>Vendido</span><span><i style="background:#B9BFB3"></i>Gastado</span>${rGrafSel < 0 ? '<span>Toca una barra para ver el detalle</span>' : ''}</div>
       ${rGrafSel >= 0 && cols[rGrafSel] ? (x => `<div style="margin-top:12px"><div class="fila" style="justify-content:space-between;margin-bottom:8px"><b>${x.tit[0].toUpperCase() + x.tit.slice(1)}</b><button type="button" class="btn chico" data-rcol="-1">✕</button></div>
         <div class="r-tiles">${tile('Vendido', fmt(x.c.vendido), x.c.pedidos + ' pedidos')}${tile('Cobrado', fmt(x.c.cobrado), '')}${tile('Ganancia', x.c.hayGan ? ganB(x.c.ganancia, x.c.vendido) : '—', x.c.hayGan ? 'el % es de lo vendido' : '')}
-        ${tile('Gastado', fmt(x.c.gastado), '')}${tile('Vendido − gastado', fmt(x.c.vendido - x.c.gastado), '')}${tile('Teclas vendidas', x.c.teclas, '')}</div></div>`)(cols[rGrafSel]) : ''}`;
+        ${tileGasto('graf', x.c)}${tile('Vendido − gastado', fmt(x.c.vendido - x.c.gastado), '')}${tile('Teclas vendidas', x.c.teclas, '')}</div>${listaGastosRes('graf', x.a, x.b, rGrafModo, x.off)}</div>`)(cols[rGrafSel]) : ''}`;
   }
   ['#rSemana', '#rMes', '#rGraf'].forEach(id => $(id).addEventListener('click', e => {
     const a = e.target.closest('[data-rsem]'), b = e.target.closest('[data-rmes]'), c = e.target.closest('[data-rgraf]');
@@ -3413,6 +3491,10 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     if (b && !b.disabled) { rMesOff = Math.max(0, rMesOff + +b.dataset.rmes); pintarMes(); }
     if (c) { rGrafModo = c.dataset.rgraf; rGrafSel = -1; pintarGrafico(); }
     const col = e.target.closest('[data-rcol]'); if (col) { const i = +col.dataset.rcol; rGrafSel = i === rGrafSel ? -1 : i; pintarGrafico(); }
+    const rg = e.target.closest('[data-rgast]');
+    if (rg) { const k = rg.dataset.rgast; rGastAb[k] = !rGastAb[k]; if (k === 'sem') pintarSemana(); else if (k === 'mes') pintarMes(); else pintarGrafico(); }
+    const vg = e.target.closest('[data-vergastos]');
+    if (vg) { const [vista, off] = vg.dataset.vergastos.split(':'); verGastosDe(vista, +off); }
   }));
   function pintarResumen() {
     pintarHoy();
