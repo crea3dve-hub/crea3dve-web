@@ -145,6 +145,16 @@ button.tecla{padding:0;cursor:pointer}
 .web-det details summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--muted)}
 .acciones{display:flex;gap:6px;flex-wrap:wrap}
 .chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:8px}
+/* Histórico de ventas: tocar una venta o un cliente abre el detalle */
+details.vh > summary{list-style:none;cursor:pointer}
+details.vh > summary::-webkit-details-marker{display:none}
+details.vh > summary{font-weight:400}
+details.vh > summary > span:first-child > b::after{content:" ▾";color:var(--muted);font-size:12px;font-weight:400}
+details.vh[open] > summary > span:first-child > b::after{content:" ▴"}
+.vh-det{background:var(--bg);border-radius:10px;padding:8px 12px;margin:2px 0 10px;font-size:14px}
+.vh-it{display:flex;justify-content:space-between;gap:10px;padding:2px 0}
+.vh-it span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}
+.vh-venta + .vh-venta{border-top:1px solid var(--line);margin-top:6px;padding-top:6px}
 /* Resumen y Análisis */
 .r-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 @media (max-width:640px){ .r-tiles{grid-template-columns:repeat(2,minmax(0,1fr))} }
@@ -869,7 +879,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261112191736';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261112192206';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1118,7 +1128,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     mostrarHallado(c);
   });
   /* ---------- Histórico de ventas: cada venta (o cada cliente) con lo que dejó de ganancia ---------- */
-  var vhVista = 'venta', vhPer = 'todo';
+  var vhVista = 'venta', vhPer = 'todo', vhAbiertos = new Set();
   function pintarClientes() {
     $('#listaClientes').innerHTML = (datos.clientes || []).map(c => `<option value="${esc(c.nombre)}">`).join('');
     if ($('#tab-ventas').hidden) return;   // solo se arma cuando abres la pestaña (no hace la página más lenta)
@@ -1136,22 +1146,31 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       <div class="r-tile"><span>Ganancia</span><b>${fmt(totG)}<em>${pct(totG, totV)}</em></b><small>el % es de lo vendido</small></div>
       <div class="r-tile"><span>Venta promedio</span><b>${ventas.length ? fmt(totV / ventas.length) : '—'}</b><small>${ventas.length ? 'ganancia ' + fmt(totG / ventas.length) : ''}</small></div>`;
     const derecha = (v, g, extra) => `<b style="text-align:right">${fmt(v)}<div class="chico" style="color:${g < 0 ? 'var(--warn)' : 'var(--accion)'};font-weight:700">${fmt(g)} · ${pct(g, v)}</div>${extra ? `<div class="chico">${extra}</div>` : ''}</b>`;
+    // qué compró en una venta (sin lo incluido en el precio ni el delivery)
+    const queCompro = p => p.items.filter(i => !esIncluido(i) && i.producto !== 'Delivery').map(i => `<div class="vh-it"><span>${i.cantidad} × ${esc(nombreCorto(i.producto))}</span><span>${fmt(i.total || 0)}</span></div>`).join('')
+      + (p.items.some(i => i.producto === 'Delivery') ? '<div class="vh-it chico"><span>+ delivery (lo pagó el cliente)</span><span></span></div>' : '')
+      + (p.nota ? `<div class="chico" style="margin-top:4px">📝 ${esc(p.nota)}</div>` : '');
+    const fila = (key, izq, der, cuerpo) => `<details class="vh" data-vk="${esc(key)}"${vhAbiertos.has(key) ? ' open' : ''}><summary class="stat"><span>${izq}</span>${der}</summary><div class="vh-det">${cuerpo}</div></details>`;
     let html = '';
     if (vhVista === 'venta') {
       html = ventas.filter(p => { if (!q) return true; const c = cli[p.cliente] || {}; return (p.numero + ' ' + p.cliente + ' ' + (c.telefono || '') + ' ' + (c.cedula || '')).toLowerCase().includes(q); })
-        .map(p => `<div class="stat"><span><b>${esc(p.cliente || 'Sin nombre')}</b><div class="chico">${esc(p.numero)} · ${esc(p.fecha)} · ${esc(p.canal || '')} · ${esc(p.estado)}</div></span>
-          ${hayG(p) ? derecha(vend(p), gan(p)) : `<b style="text-align:right">${fmt(vend(p))}<div class="chico">falta el costo</div></b>`}</div>`).join('');
+        .map(p => fila('v:' + p.numero, `<b>${esc(p.cliente || 'Sin nombre')}</b><div class="chico">${esc(p.numero)} · ${esc(p.fecha)} · ${esc(p.canal || '')} · ${esc(p.estado)}</div>`,
+          hayG(p) ? derecha(vend(p), gan(p)) : `<b style="text-align:right">${fmt(vend(p))}<div class="chico">falta el costo</div></b>`, queCompro(p))).join('');
     } else {
       const g = {};
       ventas.forEach(p => { const k = p.cliente || 'Sin nombre'; const x = g[k] = g[k] || { v: 0, g: 0, n: 0, ult: null, ultT: '' };
         x.v += vend(p); x.g += gan(p); x.n++; const d = dDe2(p.fecha); if (d && (!x.ult || d > x.ult)) { x.ult = d; x.ultT = p.fecha; } });
       html = Object.entries(g).filter(([k]) => { if (!q) return true; const c = cli[k] || {}; return (k + ' ' + (c.telefono || '') + ' ' + (c.cedula || '')).toLowerCase().includes(q); })
         .sort((a, b) => b[1].v - a[1].v)
-        .map(([k, x]) => { const c = cli[k] || {}; return `<div class="stat"><span><b>${esc(k)}</b><div class="chico">${[c.cedula && 'C.I. ' + c.cedula, c.telefono].filter(Boolean).map(esc).join(' · ') || 'Sin cédula ni teléfono'}${x.ultT ? ' · última: ' + esc(x.ultT) : ''}</div></span>
-          ${derecha(x.v, x.g, x.n + (x.n === 1 ? ' compra' : ' compras'))}</div>`; }).join('');
+        .map(([k, x]) => { const c = cli[k] || {};
+          const suyas = ventas.filter(p => (p.cliente || 'Sin nombre') === k);
+          const cuerpo = suyas.map(p => `<div class="vh-venta"><div class="vh-it"><b>${esc(p.fecha)} · ${esc(p.numero)} · ${esc(p.estado)}</b><b>${fmt(vend(p))}${hayG(p) ? ` <span style="color:${gan(p) < 0 ? 'var(--warn)' : 'var(--accion)'}">${fmt(gan(p))} · ${pct(gan(p), vend(p))}</span>` : ''}</b></div>${queCompro(p)}</div>`).join('');
+          return fila('c:' + k, `<b>${esc(k)}</b><div class="chico">${[c.cedula && 'C.I. ' + c.cedula, c.telefono].filter(Boolean).map(esc).join(' · ') || 'Sin cédula ni teléfono'}${x.ultT ? ' · última: ' + esc(x.ultT) : ''}</div>`,
+            derecha(x.v, x.g, x.n + (x.n === 1 ? ' compra' : ' compras')), cuerpo); }).join('');
     }
     const cab = `<div class="stat chico" style="padding-top:0;color:var(--muted)"><span>${vhVista === 'venta' ? 'Venta' : 'Cliente'}</span><span style="text-align:right">Vendido<br><b style="color:var(--accion)">Ganancia · %</b></span></div>`;
     $('#rClientes').innerHTML = html ? cab + html : '<p class="vacio">No hay ventas con eso.</p>';
+    $('#rClientes').querySelectorAll('details.vh').forEach(d => d.addEventListener('toggle', () => { d.open ? vhAbiertos.add(d.dataset.vk) : vhAbiertos.delete(d.dataset.vk); }));
   }
   $('#buscaCliente').addEventListener('input', () => pintarClientes());
   $('#vhVista').addEventListener('click', e => { const b = e.target.closest('[data-vh]'); if (!b) return; vhVista = b.dataset.vh; $('#vhVista').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); pintarClientes(); });
