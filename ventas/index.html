@@ -152,6 +152,7 @@ button.tecla{padding:0;cursor:pointer}
 .r-tile span{display:block;font-size:12.5px;color:var(--muted);line-height:1.3}
 .r-tile b{display:block;font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:4px}
 .r-tile small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.cobrar .kpct{font-size:15px;font-weight:700;opacity:.85;margin-left:8px;white-space:nowrap}
 .r-tile b em{font-style:normal;font-size:14px;font-weight:700;color:var(--accion);margin-left:6px}
 .r-tile .sube{color:var(--accion)} .r-tile .baja{color:var(--warn)}
 .r-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
@@ -768,7 +769,8 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
           <div><label for="kPrecioMan">Precio al detal $</label><input id="kPrecioMan" type="number" inputmode="decimal" min="0" step="0.5" placeholder="el sugerido"></div>
           <div><label for="kPrecioManMay">Precio al mayor $</label><input id="kPrecioManMay" type="number" inputmode="decimal" min="0" step="0.5" placeholder="el sugerido"></div>
         </div>
-        <p class="chico" style="margin:6px 0 0">Si lo dejas vacío se usa el precio sugerido. Si lo llenas, ese es el precio que se guarda y abajo ves cuánto te queda.</p>
+        <p class="chico" style="margin:6px 0 0">Si lo dejas vacío se usa el precio sugerido. Si lo llenas, ese es el precio que se guarda.</p>
+        <div id="kManInfo" class="r-tiles" style="margin-top:10px" hidden></div>
       </details>
       <div id="kRes" class="kres" hidden></div>
     </div>
@@ -854,7 +856,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261112183751';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261112184031';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1379,7 +1381,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const n = id => Math.max(0, parseFloat($(id).value) || 0);
     pintarInsumos();
     const g = totGramos(), h = totHoras(), ins = costoInsumos();
-    if (!g && !h) { $('#kRes').hidden = true; kSug = null; kCosto = null; actualizarGanancia(); return; }
+    if (!g && !h) { $('#kRes').hidden = true; $('#kManInfo').hidden = true; kSug = null; kCosto = null; actualizarGanancia(); return; }
     const mat = g * n('#kKg') / 1000;
     const luz = h * n('#kW') / 1000 * n('#kKwh');
     const vida = n('#kVida') || 3000;
@@ -1400,11 +1402,14 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     $('#kRes').innerHTML = fila('Material (' + String(+g.toFixed(2)).replace('.', ',') + ' g)', fmt(mat)) + (n('#kKwh') ? fila('Luz', fmt(luz)) : '') + fila('Desgaste de la máquina', fmt(desg))
       + fila('Margen de error (' + Math.round(err * 100) + '%)', fmt(fallos)) + fila('Tu trabajo', fmt(trab)) + (ins ? fila('Insumos', fmt(ins)) : '')
       + fila('<b>Costo total</b>', fmt(costo))
-      + `<div class="cobrar"><small>PRECIO AL DETAL · ${manD ? 'tu precio (sugerido ' + fmt(sugD) + ')' : '×' + String(mult).replace('.', ',')}</small><b>${fmt(kSug)}</b>`
+      + `<div class="cobrar"><small>PRECIO AL DETAL · ${manD ? 'tu precio (sugerido ' + fmt(sugD) + ')' : '×' + String(mult).replace('.', ',')}</small><b>${fmt(kSug)} <span class="kpct">${kSug ? Math.round((kSug - costo + trab) / kSug * 100) : 0}% ganancia</span></b>`
       + `<span>Te quedan ${fmt(kSug - costo + trab)} por pieza (${kSug ? Math.round((kSug - costo + trab) / kSug * 100) : 0}%) con tu trabajo${bs(kSug)}</span></div>`
-      + `<div class="cobrar mayor"><small>PRECIO AL MAYOR · ${manM ? 'tu precio (sugerido ' + fmt(sugM) + ')' : '×' + String(multM).replace('.', ',')}</small><b>${fmt(may)}</b>`
+      + `<div class="cobrar mayor"><small>PRECIO AL MAYOR · ${manM ? 'tu precio (sugerido ' + fmt(sugM) + ')' : '×' + String(multM).replace('.', ',')}</small><b>${fmt(may)} <span class="kpct">${may ? Math.round((may - costo + trab) / may * 100) : 0}% ganancia</span></b>`
       + `<span>Te quedan ${fmt(may - costo + trab)} por pieza (${may ? Math.round((may - costo + trab) / may * 100) : 0}%) con tu trabajo${bs(may)}</span></div>`;
     $('#kUsar').hidden = false;
+    // ganancia de tu precio (o del sugerido) al lado de las casillas, para verla mientras escribes
+    const gt = (pr, lab) => tile(lab, fmt(pr - costo + trab) + `<em>${pr ? Math.round((pr - costo + trab) / pr * 100) : 0}%</em>`, 'ganancia a ' + fmt(pr) + ' · con tu trabajo');
+    $('#kManInfo').hidden = false; $('#kManInfo').innerHTML = gt(kSug, 'Al detal te quedan') + gt(may, 'Al mayor te quedan');
     kCosto = costo; kTrab = trab;
     if (!precioTocado) $('#otroPrecio').value = kSug.toFixed(2);
     actualizarGanancia();
