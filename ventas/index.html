@@ -848,7 +848,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261112182959';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261112183112';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1393,11 +1393,11 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       + fila('Margen de error (' + Math.round(err * 100) + '%)', fmt(fallos)) + fila('Tu trabajo', fmt(trab)) + (ins ? fila('Insumos', fmt(ins)) : '')
       + fila('<b>Costo total</b>', fmt(costo))
       + `<div class="cobrar"><small>PRECIO AL DETAL · ×${String(mult).replace('.', ',')}</small><b>${fmt(kSug)}</b>`
-      + `<span>Te quedan ${fmt(kSug - costo)} por pieza (${kSug ? Math.round((kSug - costo) / kSug * 100) : 0}%)${bs(kSug)}</span></div>`
+      + `<span>Te quedan ${fmt(kSug - costo + trab)} por pieza (${kSug ? Math.round((kSug - costo + trab) / kSug * 100) : 0}%) con tu trabajo${bs(kSug)}</span></div>`
       + `<div class="cobrar mayor"><small>PRECIO AL MAYOR · ×${String(multM).replace('.', ',')}</small><b>${fmt(may)}</b>`
-      + `<span>Te quedan ${fmt(may - costo)} por pieza (${may ? Math.round((may - costo) / may * 100) : 0}%)${bs(may)}</span></div>`;
+      + `<span>Te quedan ${fmt(may - costo + trab)} por pieza (${may ? Math.round((may - costo + trab) / may * 100) : 0}%) con tu trabajo${bs(may)}</span></div>`;
     $('#kUsar').hidden = false;
-    kCosto = costo;
+    kCosto = costo; kTrab = trab;
     if (!precioTocado) $('#otroPrecio').value = kSug.toFixed(2);
     actualizarGanancia();
   }
@@ -1470,14 +1470,14 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const imp = $('#kImp').value, patch = { ['kg_' + $('#kFil').value]: null };
     ['p_', 'v_', 'r_', 'w_', 'kwh_', 'h_', 't_'].forEach(k => { patch[k + imp] = null; });
     delete kAj.kwh; delete kAj.hora; guardarCalc(patch, 'Perfil de la ' + imp + ' como en la hoja', imp, true); ponerAjustes(); calcular(); });
-  let kCosto = null;
+  let kCosto = null, kTrab = 0;   // el costo incluye tu trabajo (para el precio); en la ganancia tu trabajo se suma de vuelta
   function actualizarGanancia() {
     const p = parseFloat($('#otroPrecio').value), t = $('#kGan');
     if (kCosto === null || !(p >= 0) || $('#kRes').hidden) { t.hidden = true; return; }
-    const gan = p - kCosto;
+    const gan = p - kCosto + kTrab;
     t.hidden = false;
     t.style.color = gan < 0 ? 'var(--warn)' : '';
-    t.textContent = (gan < 0 ? 'Pierdes ' + fmt(-gan) : 'Ganancia ' + fmt(gan) + ' (' + Math.round(gan / (p || 1) * 100) + '% del precio)')
+    t.textContent = (gan < 0 ? 'Pierdes ' + fmt(-gan) : 'Ganancia ' + fmt(gan) + ' (' + Math.round(gan / (p || 1) * 100) + '% del precio' + (kTrab ? ', incluye tu trabajo ' + fmt(kTrab) : '') + ')')
       + (datos && datos.tasa ? ' · ' + fmtBs(p * datos.tasa.valor) : '');
   }
   // acepta 1.4 · 1,4 · 1:20 · 1h20 · 1h 20m · 80m
@@ -3487,7 +3487,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
           <summary><span><b>${esc(x.nombre)}</b><small>${x.web ? '<span class="web-si">🌐 web</span> ' + esc(x.web) : 'Solo interno'}</small></span><span class="pr">${x.precio ? fmt(x.precio) : '—'}</span></summary>
           <div class="cat-ficha">
             ${fila('Precio al detal', x.precio ? fmt(x.precio) : '—')}${fila('Precio al mayor', x.mayor ? fmt(x.mayor) : '—')}
-            ${fila('Costo real', x.costo ? fmt(x.costo) : '—')}${x.precio && x.costo ? fila('Te quedan', fmt(x.precio - x.costo) + ' (' + Math.round((x.precio - x.costo) / x.precio * 100) + '%)') : ''}
+            ${fila('Costo real', x.costo ? fmt(x.costo) : '—')}${x.precio && x.costo ? (t => fila('Te quedan <span class="chico">(con tu trabajo)</span>', fmt(x.precio - x.costo + t) + ' (' + Math.round((x.precio - x.costo + t) / x.precio * 100) + '%)'))((x.minTrabajo || 0) / 60 * conf().hora) : ''}
             ${fila('Tiempo de impresión', horasTxt(x.horas))}${fila('Gramos', x.gramos ? x.gramos.toLocaleString('es-VE') + ' g' : '—')}
             ${fila('Impresora · filamento', esc((x.impresora || '—') + ' · ' + (x.filamento || '—')))}
             ${fila('Diseño', x.propio ? 'Propio' : 'Bambu / MakerWorld')}${fila('Insumos', x.insumoCosto ? fmt(x.insumoCosto) + (x.insumo ? ' · ' + esc(x.insumo) : '') : '—')}
