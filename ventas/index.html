@@ -804,7 +804,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261112143043';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261112170538';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1072,7 +1072,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     delQuien = q;
     $('#delCliente').setAttribute('aria-pressed', q === 'cliente'); $('#delYo').setAttribute('aria-pressed', q === 'yo');
     $('#txtDel').textContent = q === 'cliente'
-      ? 'Se suma al total del cliente. Como tú le pagas al motorizado, también queda como gasto: tu ganancia no cambia.'
+      ? 'Se suma al total del cliente y se lo pasas al motorizado. No es un gasto tuyo ni cuenta como ganancia.'
       : 'No se le cobra al cliente. Queda anotado como gasto del negocio.';
     pintarCarrito();
   }
@@ -1632,7 +1632,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const nota = $('#vNota').value.trim();
     if (nota) cuerpo.nota = nota;
     const ok = accionFondo(cuerpo, 'Venta guardada');
-    if (ok && del) {
+    if (ok && del && delQuien === 'yo') {
       accionFondo({ accion: 'gasto', que: 'Delivery – ' + (cuerpo.cliente || 'encargo'), monto: del, pct: 1, tipo: 'Otro',
         para: 'Negocio', metodo: '', nota: delQuien === 'cliente' ? 'Lo pagó el cliente (incluido en su venta)' : 'Envío gratis para el cliente' }, 'Delivery anotado');
     }
@@ -1704,7 +1704,11 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         <button class="btn chico peligro" data-quitar aria-label="Quitar">✕</button>
       </div>`).join('')}
       <p class="chico" style="margin:6px 0 0">Cantidad y precio por unidad. ✕ quita el producto (vuelve al inventario).</p>
-      ${p.items.some(i => i.producto === 'Delivery') ? '' : `<button class="btn ancho" data-add-delivery style="margin-top:10px">🛵 Agregar delivery ($3)</button>`}
+      ${p.items.some(i => i.producto === 'Delivery') ? '' : `<div class="fila" style="margin-top:10px;gap:8px;align-items:center;flex-wrap:nowrap">
+        <label for="del-${esc(p.numero)}" style="margin:0;white-space:nowrap">🛵 Delivery $</label>
+        <input id="del-${esc(p.numero)}" data-del-monto type="number" inputmode="decimal" step="0.5" min="0" value="3" style="width:80px;flex:none">
+        <button type="button" class="btn" data-add-delivery style="flex:1">Agregar delivery</button></div>
+      <p class="chico" style="margin:6px 0 0">Se le cobra al cliente (sale en su total). No se anota como gasto.</p>`}
       <div class="ed-agregar">
         <button class="btn ancho" data-add-vender>➕ Agregar productos a este pedido</button>
         <p class="chico" style="margin:6px 0 0">Te lleva a Vender para escoger lo que sea: clickers, charms, aros, llaveros u "Otro producto" con el nombre y precio que quieras. Todo se suma a este mismo pedido.</p>
@@ -1734,15 +1738,14 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       setTimeout(() => { const ed = document.querySelector('.editor'); if (ed) ed.scrollIntoView({ block: 'start' }); }, 50); }
   }
   $('#agrCancelar').addEventListener('click', () => { carrito = []; pintarCarrito(); terminarAgregar(true); });
-  // Suma el delivery ($3) a un pedido ya guardado: se le cobra al cliente y queda como gasto (lo pagas al motorizado)
-  function agregarDelivery(num) {
+  // Suma el delivery a un pedido ya guardado: se le cobra al cliente (tú se lo pasas al motorizado, no es gasto)
+  function agregarDelivery(num, card) {
     const p = datos.ventas.find(v => v.numero === num); if (!p) return;
-    if (!confirm('¿Sumar delivery de $3 a ' + num + ' (' + (p.cliente || 'sin nombre') + ')?')) return;
+    const inp = card && card.querySelector('[data-del-monto]'), monto = Math.round((parseFloat(String(inp ? inp.value : '3').replace(',', '.')) || 0) * 100) / 100;
+    if (!(monto > 0)) { alert('Pon cuánto cuesta el delivery.'); if (inp) inp.focus(); return; }
     accionFondo({ accion: 'venta', numero: p.numero, cliente: p.cliente, canal: p.canal, metodo: p.metodo, estado: p.estado,
-      fecha: aISO(p.fecha), nota: p.nota || undefined, items: [{ producto: 'Delivery', cantidad: 1, precio: 3, precioManual: true }] }, 'Delivery sumado a ' + num);
-    accionFondo({ accion: 'gasto', que: 'Delivery – ' + (p.cliente || num), monto: 3, pct: 1, tipo: 'Otro', para: 'Negocio', metodo: '',
-      nota: 'Lo pagó el cliente (incluido en ' + num + ')' }, 'Delivery sumado a ' + num);
-    p.items.push({ producto: 'Delivery', cantidad: 1, precio: 3, total: 3 }); p.total += 3;
+      fecha: aISO(p.fecha), nota: p.nota || undefined, items: [{ producto: 'Delivery', cantidad: 1, precio: monto, precioManual: true }] }, 'Delivery sumado a ' + num);
+    p.items.push({ producto: 'Delivery', cantidad: 1, precio: monto, total: monto }); p.total += monto;
     editando = null; pintarTodo();
   }
   async function guardarEdicion(card) {
@@ -2839,7 +2842,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       else if (e.target.closest('[data-quitar]')) { const row = e.target.closest('.ed-item'); row.classList.toggle('quitado'); }
       else if (e.target.closest('[data-guardar]')) guardarEdicion(card);
       else if (e.target.closest('[data-add-vender]')) empezarAgregar(card.dataset.ed);
-      else if (e.target.closest('[data-add-delivery]')) agregarDelivery(card.dataset.ed);
+      else if (e.target.closest('[data-add-delivery]')) agregarDelivery(card.dataset.ed, card);
       else if (e.target.closest('[data-regalo]')) {
         // Regalo = todo a $0 (se guarda al tocar "Guardar cambios"). Quitarlo devuelve los precios normales.
         const b = e.target.closest('[data-regalo]'), era = b.getAttribute('aria-pressed') === 'true';
