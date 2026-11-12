@@ -763,6 +763,12 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
           <div><label for="kMultMay">Mayor × (otro valor)</label><input id="kMultMay" type="number" inputmode="decimal" min="1" step="0.05" value="1.4"></div>
         </div>
         <p class="chico" style="margin:6px 0 0">Detal: ×1,75 tu precio normal · ×2,5–3 piezas especiales · ×4 piezas chicas. Mayor: ×1,4 (12 o más) · ×1,3 pedidos muy grandes.</p>
+        <b class="ktit" style="margin-top:12px">O pon tú el precio</b>
+        <div class="dos">
+          <div><label for="kPrecioMan">Precio al detal $</label><input id="kPrecioMan" type="number" inputmode="decimal" min="0" step="0.5" placeholder="el sugerido"></div>
+          <div><label for="kPrecioManMay">Precio al mayor $</label><input id="kPrecioManMay" type="number" inputmode="decimal" min="0" step="0.5" placeholder="el sugerido"></div>
+        </div>
+        <p class="chico" style="margin:6px 0 0">Si lo dejas vacío se usa el precio sugerido. Si lo llenas, ese es el precio que se guarda y abajo ves cuánto te queda.</p>
       </details>
       <div id="kRes" class="kres" hidden></div>
     </div>
@@ -848,7 +854,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261112183112';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261112183751';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1237,7 +1243,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     filamentos: { 'PLA': 0.0254, 'PLA Silk': 0.026, 'PETG': 0.026, 'TPU': 0.026 },
     impresoras: { 'X1C': 2015 / 3000, 'A1': 890 / 3000, 'A1 mini': 850 / 3000 } };
   const conf = () => Object.assign({}, CONF_BASE, (datos && datos.config) || {});
-  let kSug = null, precioTocado = false;
+  let kSug = null, kMay = null, precioTocado = false;
   // Ajustes de la calculadora: salen de la hoja (Configuración) y se pueden cambiar; se guardan en el teléfono
   const W_IMP = { 'X1C': 150, 'A1': 95, 'A1 mini': 80 };
   const PRECIO_IMP = { 'X1C': 2015, 'A1': 890, 'A1 mini': 850 };
@@ -1364,7 +1370,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     numerarPlacas();
     const h = totHoras(), g = totGramos(), np = placas().length;
     $('#kInfoPieza').textContent = (h || g) ? [np > 1 ? np + ' placas' : '', h ? horasTexto(h) : '', g ? num(+g.toFixed(2)) + ' g' : '', $('#kPers').value === '1' ? 'propio' : 'Bambu'].filter(Boolean).join(' · ') : 'Toca para llenar';
-    $('#kInfoGan').textContent = '×' + num(v('#kMultP')) + ' detal · ×' + num(v('#kMultMay')) + ' mayor';
+    $('#kInfoGan').textContent = (parseFloat($('#kPrecioMan').value) > 0 ? 'tu precio ' + fmt(parseFloat($('#kPrecioMan').value)) : '×' + num(v('#kMultP')) + ' detal') + ' · ' + (parseFloat($('#kPrecioManMay').value) > 0 ? fmt(parseFloat($('#kPrecioManMay').value)) + ' mayor' : '×' + num(v('#kMultMay')) + ' mayor');
   }
   ['#kNom', '#kHh', '#kMin', '#kG'].forEach(sel => $(sel).addEventListener('input', pintarInfo));
   function calcular() {
@@ -1384,17 +1390,19 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const costo = mat + luz + desg + fallos + trab + ins + (c.gastoFijo || 0);
     const mult = n('#kMultP') || (1 + c.ganancia), multM = n('#kMultMay') || 1.4;
     const r = c.redondeo || 0.5;
-    kSug = Math.ceil(costo * mult / r - 1e-9) * r;
-    const may = Math.ceil(costo * multM / r - 1e-9) * r;
+    const sugD = Math.ceil(costo * mult / r - 1e-9) * r, sugM = Math.ceil(costo * multM / r - 1e-9) * r;
+    const manD = n('#kPrecioMan'), manM = n('#kPrecioManMay');
+    kSug = manD || sugD;   // el precio que se guarda: el tuyo si lo pusiste, si no el sugerido
+    const may = manM || sugM; kMay = may;
     const bs = v => datos && datos.tasa ? ' · ' + fmtBs(v * datos.tasa.valor) : '';
     const fila = (a, b) => `<div class="stat"><span>${a}</span><b>${b}</b></div>`;
     $('#kRes').hidden = false;
     $('#kRes').innerHTML = fila('Material (' + String(+g.toFixed(2)).replace('.', ',') + ' g)', fmt(mat)) + (n('#kKwh') ? fila('Luz', fmt(luz)) : '') + fila('Desgaste de la máquina', fmt(desg))
       + fila('Margen de error (' + Math.round(err * 100) + '%)', fmt(fallos)) + fila('Tu trabajo', fmt(trab)) + (ins ? fila('Insumos', fmt(ins)) : '')
       + fila('<b>Costo total</b>', fmt(costo))
-      + `<div class="cobrar"><small>PRECIO AL DETAL · ×${String(mult).replace('.', ',')}</small><b>${fmt(kSug)}</b>`
+      + `<div class="cobrar"><small>PRECIO AL DETAL · ${manD ? 'tu precio (sugerido ' + fmt(sugD) + ')' : '×' + String(mult).replace('.', ',')}</small><b>${fmt(kSug)}</b>`
       + `<span>Te quedan ${fmt(kSug - costo + trab)} por pieza (${kSug ? Math.round((kSug - costo + trab) / kSug * 100) : 0}%) con tu trabajo${bs(kSug)}</span></div>`
-      + `<div class="cobrar mayor"><small>PRECIO AL MAYOR · ×${String(multM).replace('.', ',')}</small><b>${fmt(may)}</b>`
+      + `<div class="cobrar mayor"><small>PRECIO AL MAYOR · ${manM ? 'tu precio (sugerido ' + fmt(sugM) + ')' : '×' + String(multM).replace('.', ',')}</small><b>${fmt(may)}</b>`
       + `<span>Te quedan ${fmt(may - costo + trab)} por pieza (${may ? Math.round((may - costo + trab) / may * 100) : 0}%) con tu trabajo${bs(may)}</span></div>`;
     $('#kUsar').hidden = false;
     kCosto = costo; kTrab = trab;
@@ -1439,14 +1447,15 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   $('#kGuardar').addEventListener('click', async () => {
     const nom = $('#kNom').value.trim();
     if (!nom) { avisar('Ponle nombre al producto arriba', true); $('#kNom').focus(); return; }
-    if (kSug === null) { avisar('Primero pon las horas y los gramos', true); return; }
     const n = id => Math.max(0, parseFloat($(id).value) || 0);
+    // sin horas ni gramos se puede guardar igual si pusiste tú el precio
+    if (kSug === null && !n('#kPrecioMan')) { avisar('Pon las horas y los gramos, o escribe tú el precio en el paso 5', true); return; }
     const detalle = INSUMOS.filter(([id]) => kInsQ[id]).map(([id, nm]) => kInsQ[id] + ' ' + nm).concat(n('#kIns') ? ['otro ' + fmt(n('#kIns'))] : []).join(', ');
-    const mayor = Math.ceil(kCosto * (n('#kMultMay') || 1.4) / 0.5 - 1e-9) * 0.5;
+    const mayor = kSug === null ? (n('#kPrecioManMay') || null) : (kMay || Math.ceil(kCosto * (n('#kMultMay') || 1.4) / 0.5 - 1e-9) * 0.5);
     const cuerpo = { accion: 'guardarProducto', nombre: nom, nombreWeb: $('#kWeb').value.trim(), link: $('#kLink').value.trim(),
       categoria: $('#kCat').value, descripcion: $('#kDesc').value.trim(), filamento: $('#kFil').value, impresora: $('#kImp').value,
       gramos: +totGramos().toFixed(2), horas: +totHoras().toFixed(4), minTrabajo: n('#kT'), insumos: +costoInsumos().toFixed(3),
-      propio: $('#kPers').value === '1', precio: kSug, mayor,
+      propio: $('#kPers').value === '1', precio: kSug === null ? n('#kPrecioMan') : kSug, mayor,
       nota: 'Calculadora: ' + (placas().length > 1 ? placas().length + ' placas (' + placas().map(p => horasTexto(p.h + p.m / 60) + ' ' + p.g + ' g').join(' + ') + ') = ' : '') + horasTexto(totHoras()) + ' · error ' + n('#kErr') + '%' + (detalle ? ' · insumos: ' + detalle : '') };
     $('#kGuardar').disabled = true;
     try { if (accionFondo(cuerpo, 'Producto guardado')) $('#kGuardarTxt').textContent = '✓ Guardado: ' + nom + (cuerpo.nombreWeb ? ' · sale en la web como "' + cuerpo.nombreWeb + '"' : ''); }
@@ -1464,6 +1473,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     $('#kPers').value = x.propio ? '1' : '0';
     document.querySelectorAll('#kDis button').forEach(b => b.setAttribute('aria-pressed', b.dataset.dis === $('#kPers').value));
     kInsQ = {}; $('#kIns').value = x.insumoCosto ? x.insumoCosto.toFixed(2) : '';
+    $('#kPrecioMan').value = x.precio || ''; $('#kPrecioManMay').value = x.mayor || '';
     ponerAjustes(); $('#kT').value = x.minTrabajo || $('#kT').value; pintarPerfilTxt(); precioTocado = false; calcular();
   }
   $('#kReset').addEventListener('click', () => {
@@ -1489,7 +1499,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     m = t.match(/^(\d+(\.\d+)?)\s*h?$/); if (m) return +m[1];
     return 0;
   }
-  ['#kG', '#kHh', '#kMin', '#kIns', '#kT'].forEach(sel => $(sel).addEventListener('input', calcular));
+  ['#kG', '#kHh', '#kMin', '#kIns', '#kT', '#kPrecioMan', '#kPrecioManMay'].forEach(sel => $(sel).addEventListener('input', calcular));
   $('#otroPrecio').addEventListener('input', () => { precioTocado = $('#otroPrecio').value !== '' ; actualizarGanancia(); });
   $('#btnCopiarPrecio').addEventListener('click', async () => {
     const n = $('#otroNombre').value.trim() || 'la pieza', p = parseFloat($('#otroPrecio').value), c = Math.max(1, parseInt($('#otroCant').value || '1', 10));
@@ -1500,7 +1510,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     try { await navigator.clipboard.writeText(msg); avisar('Mensaje copiado, pégalo en WhatsApp'); }
     catch (e) { prompt('Copia este mensaje:', msg); }
   });
-  function limpiarCalc() { ['#kG', '#kHh', '#kMin', '#kIns'].forEach(s => { $(s).value = ''; }); $('#kPlacas').innerHTML = ''; $('#kPers').value = '0'; document.querySelectorAll('#kDis button').forEach(x => x.setAttribute('aria-pressed', x.dataset.dis === '0')); kInsQ = Object.assign({}, INS_BASE); pintarInsumos(); ponerAjustes(); precioTocado = false; kCosto = null; $('#kRes').hidden = true; $('#kGan').hidden = true; }
+  function limpiarCalc() { ['#kG', '#kHh', '#kMin', '#kIns'].forEach(s => { $(s).value = ''; }); $('#kPlacas').innerHTML = ''; $('#kPers').value = '0'; document.querySelectorAll('#kDis button').forEach(x => x.setAttribute('aria-pressed', x.dataset.dis === '0')); kInsQ = Object.assign({}, INS_BASE); pintarInsumos(); $('#kPrecioMan').value = ''; $('#kPrecioManMay').value = ''; ponerAjustes(); precioTocado = false; kCosto = null; $('#kRes').hidden = true; $('#kGan').hidden = true; }
   $('#btnAgregarOtro').addEventListener('click', () => {
     const n = $('#otroNombre').value.trim(); const pr = parseFloat($('#otroPrecio').value);
     const c = Math.max(1, parseInt($('#otroCant').value || '1', 10));
