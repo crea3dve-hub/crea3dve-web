@@ -619,6 +619,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       <button data-f="Entregado" aria-pressed="false">Entregados</button>
       <button data-f="todos" aria-pressed="false">Todos</button>
     </div>
+    <input id="buscaPedido" type="search" placeholder="🔍 Buscar pedido: cliente, número (V-0155), producto o palabra" autocomplete="off" style="margin-bottom:10px">
     <button class="btn ancho" id="btnLotes" type="button" style="margin-bottom:10px" hidden>🎨 Lista para imprimir (teclas, bases y charms)</button>
     <div class="card" id="cardEnviar" hidden></div>
     <div id="listaPedidos"></div>
@@ -879,7 +880,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261112192206';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261112192724';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -2373,6 +2374,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const queda = Math.max(0, Math.round((falta(p) - a.usd) * 100) / 100);
     f.querySelector('[data-ab-resumen]').innerHTML = a.usd > 0 ? (queda <= 0.01 ? '✅ Con esto queda <b>todo pagado</b>.' : `Después de este pago le faltará <b>${fmt(queda)}</b>.`) : '';
   }
+  $('#buscaPedido').addEventListener('input', () => pintarPedidos());
   $('#listaPedidos').addEventListener('input', e => { const f = e.target.closest('[data-abf]'); if (f) pintarFormAbono(f); });
   $('#listaPedidos').addEventListener('change', e => {
     const f = e.target.closest('[data-abf]'); if (!f) return;
@@ -2774,11 +2776,14 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     if (pd) { const v = pd.dataset.ltSacar, sera = !ltFuera.has(v); sera ? ltFuera.add(v) : ltFuera.delete(v); ltCambio('fuera', v, sera); repintarLotes(); }
   });
 
+  const sinAcento = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   function pintarPedidos() {
     if ($('#lotes').hidden) aplicarLote(datos.lote);
     pintarEnviar();
     pintarWeb();
-    const lista = datos.ventas.filter(p =>
+    // si escribes en el buscador, busca en TODOS los pedidos (sin importar el filtro de arriba)
+    const qp = sinAcento(($('#buscaPedido').value || '').trim());
+    const lista = datos.ventas.filter(p => qp ? sinAcento(p.numero + ' ' + p.cliente + ' ' + (p.nota || '') + ' ' + p.estado + ' ' + p.items.map(i => i.producto).join(' ') + ' ' + (p.diseno || '').replace(/\*/g, '')).includes(qp) :
       filtro === 'todos' ? true : filtro === 'pend' ? (p.estado === 'Pedido' || p.estado === 'Pagado') : filtro === 'Pedido' ? (p.estado === 'Pedido' || debe(p)) : p.estado === filtro);
     $('#listaPedidos').innerHTML = lista.map(p => {
       const botones = [];
