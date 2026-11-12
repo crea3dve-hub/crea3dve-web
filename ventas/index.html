@@ -178,6 +178,8 @@ details.vh[open] > summary > span:first-child > b::after{content:" ▴"}
 .an-row{display:grid;grid-template-columns:minmax(90px,38%) 1fr auto;gap:10px;align-items:center;padding:5px 0;font-size:14px}
 .an-row .n{display:flex;align-items:center;gap:7px;min-width:0;overflow-wrap:anywhere}
 .an-row .sw{width:16px;height:16px;border-radius:5px;flex:none;border:1px solid rgba(0,0,0,.18)}
+.r-tile b .sw{display:inline-block;width:14px;height:14px;border-radius:4px;border:1px solid rgba(0,0,0,.18);margin-right:5px;vertical-align:-1px}
+.r-tile b .sw + .sw{margin-left:-2px}
 .an-row .bar{height:12px;border-radius:99px;background:var(--line);overflow:hidden}
 .an-row .bar i{display:block;height:100%;background:var(--accion);border-radius:99px}
 .an-row .v{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;text-align:right}
@@ -891,7 +893,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261112194007';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261112194619';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -3551,7 +3553,8 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const ventas = datos.ventas.filter(p => { if (p.estado === 'Cancelado') return false; if (!rango) return true; const d = dDe(p.fecha); return d && d >= rango[0] && d < rango[1]; });
     const cuenta = () => { const o = {}; o.add = (k, n) => { if (!k) return; o[k] = (o[k] || 0) + (n == null ? 1 : n); }; return o; };
     const largos = cuenta(), bases = cuenta(), tipoBase = cuenta(), tecla = cuenta(), letra = cuenta(), combo = cuenta(), simbolos = cuenta(), letras = cuenta(),
-      charms = cuenta(), charmColor = cuenta(), pers = cuenta(), cuelga = cuenta(), metal = cuenta(), objetos = cuenta();
+      charms = cuenta(), charmColor = cuenta(), pers = cuenta(), cuelga = cuenta(), metal = cuenta(), objetos = cuenta(),
+      baseFull = cuenta(), combo3 = cuenta();   // base color|tipo|letras · base|tecla|letra
     let nClk = 0, conCharm = 0;
     const SIM = { 'corazón': '♥', 'estrella': '★', 'flor': '✿', 'carita': '☺', 'trébol': '♣', 'huella': '🐾', 'balón': '⚽', 'cruz': '✝', 'rayo': '⚡' };
     let nBazar = 0;
@@ -3581,9 +3584,10 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         const ks = b.split('\n').map(l => RE_TECLA.exec(l)).filter(Boolean);
         nClk += mult; largos.add(ks.length >= 8 ? '8 o más' : String(ks.length), mult);
         const mb = /🧱 Base:\s*(?:\S+\s+)?\*([^*]+)\*\s*·\s*([a-záéíóú]+)/i.exec(b);
-        if (mb) { bases.add(mb[1].trim().toLowerCase(), mult); tipoBase.add(mb[2].toLowerCase(), mult); }
+        const colB = mb ? mb[1].trim().toLowerCase() : '';
+        if (mb) { bases.add(colB, mult); tipoBase.add(mb[2].toLowerCase(), mult); baseFull.add(colB + '|' + mb[2].toLowerCase() + '|' + ks.length, mult); }
         ks.forEach(m => { const l = m[1].trim(), t = m[2].trim().toLowerCase(), c = m[3].trim().toLowerCase();
-          tecla.add(t, mult); letra.add(c, mult); combo.add(t + '|' + c, mult);
+          tecla.add(t, mult); letra.add(c, mult); combo.add(t + '|' + c, mult); if (colB) combo3.add(colB + '|' + t + '|' + c, mult);
           if (SIM[l.toLowerCase()] || l.length > 1) simbolos.add(SIM[l.toLowerCase()] ? SIM[l.toLowerCase()] + ' ' + l.toLowerCase() : l, mult); else letras.add(l.toUpperCase(), mult); });
         const cs = charmsDeBloque(b, p.numero, 0, '');
         if (cs.some(x => x.tipo !== 'obj')) conCharm += mult;
@@ -3610,15 +3614,26 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const sec = (t, cuerpo, nota) => `<div class="card an-sec"><h3>${t}</h3>${cuerpo}${nota ? `<p class="an-nota">${nota}</p>` : ''}</div>`;
     const top1 = o => { const e = Object.entries(o).filter(([k, v]) => typeof v === 'number').sort((a, b) => b[1] - a[1])[0]; return e ? e[0] : '—'; };
     const nombreTop = k => k === '—' ? '—' : k.split('|')[0];
+    const topN = (o, n) => Object.entries(o).filter(([k, v]) => typeof v === 'number' && v > 0).sort((a, b) => b[1] - a[1]).slice(0, n);
+    // lo que más sale de cada cosa, para las tarjetas de arriba
+    const tBase = topN(baseFull, 2).map(([k, v]) => { const [c, t, n] = k.split('|'); return { c, txt: c + ' · ' + t + ' de ' + n + (n === '1' ? ' letra' : ' letras'), v }; });
+    const tCombo = topN(combo3, 1)[0], tCombo2 = topN(combo, 1)[0];
+    const tCharm = topN(charmColor, 1)[0], tCharmSolo = topN(charms, 1)[0];
+    const tLetras = topN(letras, 5), tObj = topN(objetos, 1)[0];
+    const tileTop = (titulo, cuerpo, extra) => tile(titulo, cuerpo || '—', extra || '');
     $('#anCuerpo').innerHTML = `
       <div class="r-tiles">
         ${tile('Vendido', fmt(total), ventas.length + ' pedidos')}
         ${tile('Pedido promedio', ventas.length ? fmt(total / ventas.length) : '—', '')}
         ${(() => { const g = ventas.reduce((a, p) => a + p.items.reduce((b, i) => b + (i.ganancia || 0), 0), 0); return tile('Ganancia', ganB(g, total), total ? pctGan(g, total) + ' de lo vendido' : ''); })()}
         ${tile('Clickers vendidos', nClk, nClk ? Math.min(100, Math.round(conCharm / nClk * 100)) + '% llevan charm' : '')}
-        ${tile('Base que más sale', esc(nombreTop(top1(bases))), esc(top1(tipoBase)))}
-        ${tile('Tecla que más sale', esc(top1(tecla)), 'letra ' + esc(top1(letra)))}
-        ${tile('Charm que más sale', esc(top1(charms)), '')}
+        ${tileTop('Base que más sale', tBase[0] ? sw(tBase[0].c) + esc(tBase[0].txt) : '', tBase[0] ? tBase[0].v + ' clickers' + (tBase[1] ? ' · le sigue ' + esc(tBase[1].txt) : '') : '')}
+        ${tCombo ? (([b, t, c]) => tileTop('Combinación de colores que más sale', sw(t) + sw(c) + esc(t + ' + ' + c), esc('tecla + letra, en base ' + b) + ' · ' + tCombo[1] + ' teclas'))(tCombo[0].split('|'))
+          : tCombo2 ? (([t, c]) => tileTop('Combinación de colores que más sale', sw(t) + sw(c) + esc(t + ' + ' + c), 'tecla + letra · ' + tCombo2[1] + ' teclas'))(tCombo2[0].split('|')) : tileTop('Combinación de colores que más sale')}
+        ${tileTop('Letras que más salen', tLetras.map(([k]) => esc(k)).join(' · '), tLetras.map(([k, v]) => esc(k) + ' ' + v).join(' · '))}
+        ${tCharm ? (([m, c]) => tileTop('Charm que más sale', sw(c) + esc(m + ' ' + c), tCharm[1] + ' vendidos'))(tCharm[0].split('|'))
+          : tileTop('Charm que más sale', tCharmSolo ? esc(tCharmSolo[0]) : '', tCharmSolo ? tCharmSolo[1] + ' vendidos' : '')}
+        ${tObj ? tileTop('Clicker de objeto que más sale', esc(tObj[0][0].toUpperCase() + tObj[0].slice(1)), tObj[1] + ' vendidos') : ''}
       </div>
       <div class="an-dos">
         ${sec('Clickers por cantidad de letras', lista(largos, { orden: ['1', '2', '3', '4', '5', '6', '7', '8 o más'], nom: k => k + (k === '1' ? ' letra' : ' letras') }))}
