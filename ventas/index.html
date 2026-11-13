@@ -901,7 +901,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261112200144';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261112202240';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1173,11 +1173,14 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       + (p.items.some(i => i.producto === 'Delivery') ? '<div class="vh-it chico"><span>+ delivery (lo pagó el cliente)</span><span></span></div>' : '')
       + (p.nota ? `<div class="chico" style="margin-top:4px">📝 ${esc(p.nota)}</div>` : '');
     const fila = (key, izq, der, cuerpo) => `<details class="vh" data-vk="${esc(key)}"${vhAbiertos.has(key) ? ' open' : ''}><summary class="stat"><span>${izq}</span>${der}</summary><div class="vh-det">${cuerpo}</div></details>`;
+    // detalle de una venta con su botón para corregirla (o el editor, si la estás corrigiendo)
+    const detVenta = p => editando === p.numero ? editorPedido(p)
+      : queCompro(p) + `<div class="acciones" style="margin-top:8px"><button type="button" class="btn chico" data-vh-editar="${esc(p.numero)}">✏️ Editar venta</button></div>`;
     let html = '';
     if (vhVista === 'venta') {
       html = ventas.filter(p => { if (!q) return true; const c = cli[p.cliente] || {}; return (p.numero + ' ' + p.cliente + ' ' + (c.telefono || '') + ' ' + (c.cedula || '')).toLowerCase().includes(q); })
         .map(p => fila('v:' + p.numero, `<b>${esc(p.cliente || 'Sin nombre')}</b><div class="chico">${esc(p.numero)} · ${esc(p.fecha)} · ${esc(p.canal || '')} · ${esc(p.estado)}</div>`,
-          hayG(p) ? derecha(vend(p), gan(p)) : `<b style="text-align:right">${fmt(vend(p))}<div class="chico">falta el costo</div></b>`, queCompro(p))).join('');
+          hayG(p) ? derecha(vend(p), gan(p)) : `<b style="text-align:right">${fmt(vend(p))}<div class="chico">falta el costo</div></b>`, detVenta(p))).join('');
     } else {
       const g = {};
       ventas.forEach(p => { const k = p.cliente || 'Sin nombre'; const x = g[k] = g[k] || { v: 0, g: 0, n: 0, ult: null, ultT: '' };
@@ -1186,7 +1189,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         .sort((a, b) => b[1].v - a[1].v)
         .map(([k, x]) => { const c = cli[k] || {};
           const suyas = ventas.filter(p => (p.cliente || 'Sin nombre') === k);
-          const cuerpo = suyas.map(p => `<div class="vh-venta"><div class="vh-it"><b>${esc(p.fecha)} · ${esc(p.numero)} · ${esc(p.estado)}</b><b>${fmt(vend(p))}${hayG(p) ? ` <span style="color:${gan(p) < 0 ? 'var(--warn)' : 'var(--accion)'}">${fmt(gan(p))} · ${pct(gan(p), vend(p))}</span>` : ''}</b></div>${queCompro(p)}</div>`).join('');
+          const cuerpo = suyas.map(p => `<div class="vh-venta"><div class="vh-it"><b>${esc(p.fecha)} · ${esc(p.numero)} · ${esc(p.estado)}</b><b>${fmt(vend(p))}${hayG(p) ? ` <span style="color:${gan(p) < 0 ? 'var(--warn)' : 'var(--accion)'}">${fmt(gan(p))} · ${pct(gan(p), vend(p))}</span>` : ''}</b></div>${detVenta(p)}</div>`).join('');
           return fila('c:' + k, `<b>${esc(k)}</b><div class="chico">${[c.cedula && 'C.I. ' + c.cedula, c.telefono].filter(Boolean).map(esc).join(' · ') || 'Sin cédula ni teléfono'}${x.ultT ? ' · última: ' + esc(x.ultT) : ''}</div>`,
             derecha(x.v, x.g, x.n + (x.n === 1 ? ' compra' : ' compras')), cuerpo); }).join('');
     }
@@ -1195,6 +1198,13 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     $('#rClientes').querySelectorAll('details.vh').forEach(d => d.addEventListener('toggle', () => { d.open ? vhAbiertos.add(d.dataset.vk) : vhAbiertos.delete(d.dataset.vk); }));
   }
   $('#buscaCliente').addEventListener('input', () => pintarClientes());
+  $('#rClientes').addEventListener('click', e => {
+    const ed = e.target.closest('[data-vh-editar]');
+    if (ed) { editando = ed.dataset.vhEditar; editDesde = 'ventas'; pintarClientes();
+      setTimeout(() => { const c = document.querySelector('#rClientes .editor'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50); return; }
+    const card = e.target.closest('.editor');
+    if (card) { editDesde = 'ventas'; clickEditor(e, card, pintarClientes); }
+  });
   $('#vhVista').addEventListener('click', e => { const b = e.target.closest('[data-vh]'); if (!b) return; vhVista = b.dataset.vh; $('#vhVista').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); pintarClientes(); });
   $('#vhPer').addEventListener('click', e => { const b = e.target.closest('[data-vp]'); if (!b) return; vhPer = b.dataset.vp; $('#vhPer').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); pintarClientes(); });
   let pagado = false, delQuien = 'cliente';
@@ -1844,7 +1854,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     document.querySelectorAll('#filtrosPedidos button').forEach(x => x.setAttribute('aria-pressed', x === b));
     pintarPedidos();
   });
-  let editando = null;
+  let editando = null, editDesde = 'pedidos';   // venta que se está corrigiendo y desde qué pestaña
   let abonoAbierto = null;   // número del pedido al que se le está anotando un abono
   // "¿Pidió varios iguales?": multiplica las cantidades originales del pedido y muestra el total
   function aplicarIguales(card) {
@@ -1920,8 +1930,9 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const num = agregandoA; agregandoA = null; $('#avisoAgregar').hidden = true;
     [...$('#cardDatosVenta').children].forEach(el => { if (el.dataset.ocultoAgregar !== undefined) { el.hidden = el.dataset.ocultoAgregar === '1'; delete el.dataset.ocultoAgregar; } });
     $('#btnGuardarVenta').textContent = modo === 'bazar' ? 'Guardar venta' : 'Guardar encargo';
-    if (volver && num) { editando = num; irA('pedidos'); pintarPedidos();
-      setTimeout(() => { const ed = document.querySelector('.editor'); if (ed) ed.scrollIntoView({ block: 'start' }); }, 50); }
+    if (volver && num) { editando = num;
+      if (editDesde === 'ventas') { vhAbiertos.add('v:' + num); irA('ventas'); pintarClientes(); } else { irA('pedidos'); pintarPedidos(); }
+      setTimeout(() => { const ed = document.querySelector('#tab-' + (editDesde === 'ventas' ? 'ventas' : 'pedidos') + ' .editor'); if (ed) ed.scrollIntoView({ block: 'start' }); }, 50); }
   }
   $('#agrCancelar').addEventListener('click', () => { carrito = []; pintarCarrito(); terminarAgregar(true); });
   // Suma el delivery a un pedido ya guardado: se le cobra al cliente (tú se lo pasas al motorizado, no es gasto)
@@ -3026,10 +3037,18 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   $('#listaPedidos').addEventListener('click', e => {
     const w1 = e.target.closest('[data-wa1]'); if (w1) { marcarEnviada(w1.dataset.wa1); setTimeout(pintarPedidos, 300); return; }
     const ed = e.target.closest('button[data-editar]');
-    if (ed) { editando = ed.dataset.editar; pintarPedidos(); return; }
+    if (ed) { editando = ed.dataset.editar; editDesde = 'pedidos'; pintarPedidos(); return; }
     const card = e.target.closest('.editor');
-    if (card) {
-      if (e.target.closest('[data-cerrar]')) { editando = null; pintarPedidos(); }
+    if (card) { editDesde = 'pedidos'; clickEditor(e, card, pintarPedidos); return; }
+    const bc = e.target.closest('button[data-cobro]');
+    if (bc) { const p = datos.ventas.find(v => v.numero === bc.dataset.cobro); if (p) mensajeDePago(p); return; }
+    const b = e.target.closest('button[data-nota]'); if (!b) return;
+    const p = datos.ventas.find(v => v.numero === b.dataset.nota); if (p) notaDeEntrega(p);
+  });
+  // botones dentro del editor de una venta (sirve igual en Pedidos y en el Histórico de ventas)
+  function clickEditor(e, card, repintar) {
+    {
+      if (e.target.closest('[data-cerrar]')) { editando = null; repintar(); }
       else if (e.target.closest('[data-quitar]')) { const row = e.target.closest('.ed-item'); row.classList.toggle('quitado'); }
       else if (e.target.closest('[data-guardar]')) guardarEdicion(card);
       else if (e.target.closest('[data-add-vender]')) empezarAgregar(card.dataset.ed);
@@ -3046,13 +3065,8 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         avisar(era ? 'Precios normales de vuelta: toca Guardar cambios' : 'Todo a $0: toca Guardar cambios');
       }
       else if (e.target.closest('[data-ig]')) { const inp = card.querySelector('[data-iguales]'); inp.value = Math.max(1, Math.min(500, (+inp.value || 1) + +e.target.closest('[data-ig]').dataset.ig)); aplicarIguales(card); }
-      return;
     }
-    const bc = e.target.closest('button[data-cobro]');
-    if (bc) { const p = datos.ventas.find(v => v.numero === bc.dataset.cobro); if (p) mensajeDePago(p); return; }
-    const b = e.target.closest('button[data-nota]'); if (!b) return;
-    const p = datos.ventas.find(v => v.numero === b.dataset.nota); if (p) notaDeEntrega(p);
-  });
+  }
   $('#listaPedidos').addEventListener('click', async e => {
     const b = e.target.closest('button[data-num]'); if (!b) return;
     const est = b.dataset.e;
