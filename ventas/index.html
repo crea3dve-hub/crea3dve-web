@@ -544,6 +544,8 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         <div><label for="otroPrecio">Precio c/u $</label><input id="otroPrecio" type="number" inputmode="decimal" step="0.01" min="0"></div>
         <div><label for="otroCant">Cantidad</label><input id="otroCant" type="number" inputmode="numeric" min="1" value="1"></div>
       </div>
+      <label for="otroCosto">Costo c/u $ <span class="chico">(opcional · lo que te costó hacerlo, sin tu trabajo)</span></label>
+      <input id="otroCosto" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Así sale la ganancia en tus cuentas">
       <p class="chico" id="kGan" style="margin:6px 0 0" hidden></p>
       <div class="dos" style="margin-top:10px">
         <button class="btn" id="btnCopiarPrecio">📋 Copiar mensaje</button>
@@ -794,6 +796,12 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
           <div><label for="kPrecioManMay">Precio al mayor $</label><input id="kPrecioManMay" type="number" inputmode="decimal" min="0" step="any" placeholder="el sugerido"></div>
         </div>
         <p class="chico" style="margin:6px 0 0">Si lo dejas vacío se usa el precio sugerido. Si lo llenas, ese es el precio que se guarda.</p>
+        <b class="ktit" style="margin-top:12px">O pon tú el costo</b>
+        <div class="dos">
+          <div><label for="kCostoMan">Costo real c/u $</label><input id="kCostoMan" type="number" inputmode="decimal" min="0" step="any" placeholder="lo calculo yo"></div>
+          <div></div>
+        </div>
+        <p class="chico" style="margin:6px 0 0">Si ya sabes cuánto te cuesta, escríbelo aquí y no hace falta poner horas ni gramos: con ese costo se sacan los precios y la ganancia, y así queda guardado en tu hoja.</p>
         <div id="kManInfo" class="r-tiles" style="margin-top:10px" hidden></div>
       </details>
       <div id="kRes" class="kres" hidden></div>
@@ -893,7 +901,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261112194619';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261112200144';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1457,7 +1465,8 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const c = conf(), imp = $('#kImp').value, fil = $('#kFil').value;
     const n = id => Math.max(0, parseFloat($(id).value) || 0);
     pintarInsumos();
-    const g = totGramos(), h = totHoras(), ins = costoInsumos();
+    const g = totGramos(), h = totHoras(), ins = costoInsumos(), cMan = n('#kCostoMan');
+    if (cMan > 0) return calcularConCosto(cMan);
     if (!g && !h) {
       $('#kRes').hidden = true; kSug = null; kCosto = null; actualizarGanancia();
       // sin horas ni gramos: si pusiste tu precio, igual se ve cuánto te queda (solo con insumos; tu trabajo es ganancia)
@@ -1495,6 +1504,29 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     $('#kUsar').hidden = false;
     // ganancia de tu precio (o del sugerido) al lado de las casillas, para verla mientras escribes
     const gt = (pr, lab) => tile(lab, fmt(pr - costo + trab) + `<em>${pr ? Math.round((pr - costo + trab) / pr * 100) : 0}%</em>`, 'ganancia a ' + fmt(pr));
+    $('#kManInfo').hidden = false; $('#kManInfo').innerHTML = gt(kSug, 'Al detal te quedan') + gt(may, 'Al mayor te quedan');
+    kCosto = costo; kTrab = trab;
+    if (!precioTocado) $('#otroPrecio').value = kSug.toFixed(2);
+    actualizarGanancia();
+  }
+  // Costo escrito a mano: no se calcula nada, se usa ese costo para los precios y la ganancia
+  function calcularConCosto(costo) {
+    const c = conf(), n = id => Math.max(0, parseFloat($(id).value) || 0);
+    const trab = n('#kT') / 60 * n('#kHora');
+    const mult = n('#kMultP') || (1 + c.ganancia), multM = n('#kMultMay') || 1.4, r = c.redondeo || 0.5;
+    const sugD = Math.ceil(costo * mult / r - 1e-9) * r, sugM = Math.ceil(costo * multM / r - 1e-9) * r;
+    const manD = n('#kPrecioMan'), manM = n('#kPrecioManMay');
+    kSug = manD || sugD; const may = manM || sugM; kMay = may;
+    const bs = v => datos && datos.tasa ? ' · ' + fmtBs(v * datos.tasa.valor) : '';
+    const pc = pr => pr ? Math.round((pr - costo + trab) / pr * 100) : 0;
+    $('#kRes').hidden = false;
+    $('#kRes').innerHTML = `<div class="stat"><span><b>Costo real</b> <span class="chico">(lo pusiste tú)</span></span><b>${fmt(costo)}</b></div>`
+      + `<div class="cobrar"><small>PRECIO AL DETAL · ${manD ? 'tu precio (sugerido ' + fmt(sugD) + ')' : '×' + String(mult).replace('.', ',')}</small><b>${fmt(kSug)} <span class="kpct">${pc(kSug)}% ganancia</span></b>`
+      + `<span>Te quedan ${fmt(kSug - costo + trab)} por pieza (${pc(kSug)}%)${bs(kSug)}</span></div>`
+      + `<div class="cobrar mayor"><small>PRECIO AL MAYOR · ${manM ? 'tu precio (sugerido ' + fmt(sugM) + ')' : '×' + String(multM).replace('.', ',')}</small><b>${fmt(may)} <span class="kpct">${pc(may)}% ganancia</span></b>`
+      + `<span>Te quedan ${fmt(may - costo + trab)} por pieza (${pc(may)}%)${bs(may)}</span></div>`;
+    $('#kUsar').hidden = false;
+    const gt = (pr, lab) => tile(lab, fmt(pr - costo + trab) + `<em>${pc(pr)}%</em>`, 'ganancia a ' + fmt(pr));
     $('#kManInfo').hidden = false; $('#kManInfo').innerHTML = gt(kSug, 'Al detal te quedan') + gt(may, 'Al mayor te quedan');
     kCosto = costo; kTrab = trab;
     if (!precioTocado) $('#otroPrecio').value = kSug.toFixed(2);
@@ -1540,13 +1572,13 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     if (!nom) { avisar('Ponle nombre al producto arriba', true); $('#kNom').focus(); return; }
     const n = id => Math.max(0, parseFloat($(id).value) || 0);
     // sin horas ni gramos se puede guardar igual si pusiste tú el precio
-    if (kSug === null && !n('#kPrecioMan')) { avisar('Pon las horas y los gramos, o escribe tú el precio en el paso 5', true); return; }
+    if (kSug === null && !n('#kPrecioMan')) { avisar('Pon las horas y los gramos, o escribe tú el precio o el costo en el paso 5', true); return; }
     const detalle = INSUMOS.filter(([id]) => kInsQ[id]).map(([id, nm]) => kInsQ[id] + ' ' + nm).concat(n('#kIns') ? ['otro ' + fmt(n('#kIns'))] : []).join(', ');
     const mayor = kSug === null ? (n('#kPrecioManMay') || null) : (kMay || Math.ceil(kCosto * (n('#kMultMay') || 1.4) / 0.5 - 1e-9) * 0.5);
     const cuerpo = { accion: 'guardarProducto', nombre: nom, nombreWeb: $('#kWeb').value.trim(), link: $('#kLink').value.trim(),
       categoria: $('#kCat').value, descripcion: $('#kDesc').value.trim(), filamento: $('#kFil').value, impresora: $('#kImp').value,
       gramos: +totGramos().toFixed(2), horas: +totHoras().toFixed(4), minTrabajo: n('#kT'), insumos: +costoInsumos().toFixed(3),
-      propio: $('#kPers').value === '1', precio: kSug === null ? n('#kPrecioMan') : kSug, mayor,
+      propio: $('#kPers').value === '1', precio: kSug === null ? n('#kPrecioMan') : kSug, mayor, costoManual: n('#kCostoMan') > 0 ? n('#kCostoMan') : '',
       nota: 'Calculadora: ' + (placas().length > 1 ? placas().length + ' placas (' + placas().map(p => horasTexto(p.h + p.m / 60) + ' ' + p.g + ' g').join(' + ') + ') = ' : '') + horasTexto(totHoras()) + ' · error ' + n('#kErr') + '%' + (detalle ? ' · insumos: ' + detalle : '') };
     $('#kGuardar').disabled = true;
     try { if (accionFondo(cuerpo, 'Producto guardado')) $('#kGuardarTxt').textContent = '✓ Guardado: ' + nom + (cuerpo.nombreWeb ? ' · sale en la web como "' + cuerpo.nombreWeb + '"' : ''); }
@@ -1564,7 +1596,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     $('#kPers').value = x.propio ? '1' : '0';
     document.querySelectorAll('#kDis button').forEach(b => b.setAttribute('aria-pressed', b.dataset.dis === $('#kPers').value));
     kInsQ = {}; $('#kIns').value = x.insumoCosto ? x.insumoCosto.toFixed(2) : '';
-    $('#kPrecioMan').value = x.precio || ''; $('#kPrecioManMay').value = x.mayor || '';
+    $('#kPrecioMan').value = x.precio || ''; $('#kPrecioManMay').value = x.mayor || ''; $('#kCostoMan').value = x.costoManual || '';
     ponerAjustes(); $('#kT').value = x.minTrabajo || $('#kT').value; pintarPerfilTxt(); precioTocado = false; calcular();
   }
   $('#kReset').addEventListener('click', () => {
@@ -1572,10 +1604,14 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     ['p_', 'v_', 'r_', 'w_', 'kwh_', 'h_', 't_'].forEach(k => { patch[k + imp] = null; });
     delete kAj.kwh; delete kAj.hora; guardarCalc(patch, 'Perfil de la ' + imp + ' como en la hoja', imp, true); ponerAjustes(); calcular(); });
   let kCosto = null, kTrab = 0;   // el costo incluye tu trabajo (para el precio); en la ganancia tu trabajo se suma de vuelta
+  let costoTocado = false;
   function actualizarGanancia() {
-    const p = parseFloat($('#otroPrecio').value), t = $('#kGan');
-    if (kCosto === null || !(p >= 0) || $('#kRes').hidden) { t.hidden = true; return; }
-    const gan = p - kCosto + kTrab;
+    const p = parseFloat($('#otroPrecio').value), t = $('#kGan'), cm = parseFloat($('#otroCosto').value);
+    // el costo que sale de la calculadora se pone solo (sin tu trabajo), si no lo escribiste tú
+    if (!costoTocado) $('#otroCosto').value = kCosto !== null && !$('#kRes').hidden ? Math.max(0, kCosto - kTrab).toFixed(2) : '';
+    const conCosto = cm >= 0 && costoTocado;
+    if ((!conCosto && (kCosto === null || $('#kRes').hidden)) || !(p >= 0)) { t.hidden = true; return; }
+    const gan = conCosto ? p - cm : p - kCosto + kTrab;
     t.hidden = false;
     t.style.color = gan < 0 ? 'var(--warn)' : '';
     t.textContent = (gan < 0 ? 'Pierdes ' + fmt(-gan) : 'Ganancia ' + fmt(gan) + ' (' + Math.round(gan / (p || 1) * 100) + '% del precio' + ')')
@@ -1590,8 +1626,9 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     m = t.match(/^(\d+(\.\d+)?)\s*h?$/); if (m) return +m[1];
     return 0;
   }
-  ['#kG', '#kHh', '#kMin', '#kIns', '#kT', '#kPrecioMan', '#kPrecioManMay'].forEach(sel => $(sel).addEventListener('input', calcular));
+  ['#kG', '#kHh', '#kMin', '#kIns', '#kT', '#kPrecioMan', '#kPrecioManMay', '#kCostoMan'].forEach(sel => $(sel).addEventListener('input', calcular));
   $('#otroPrecio').addEventListener('input', () => { precioTocado = $('#otroPrecio').value !== '' ; actualizarGanancia(); });
+  $('#otroCosto').addEventListener('input', () => { costoTocado = $('#otroCosto').value !== ''; actualizarGanancia(); });
   $('#btnCopiarPrecio').addEventListener('click', async () => {
     const n = $('#otroNombre').value.trim() || 'la pieza', p = parseFloat($('#otroPrecio').value), c = Math.max(1, parseInt($('#otroCant').value || '1', 10));
     if (!(p >= 0)) return avisar('Primero pon el precio', true);
@@ -1601,13 +1638,14 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     try { await navigator.clipboard.writeText(msg); avisar('Mensaje copiado, pégalo en WhatsApp'); }
     catch (e) { prompt('Copia este mensaje:', msg); }
   });
-  function limpiarCalc() { ['#kG', '#kHh', '#kMin', '#kIns'].forEach(s => { $(s).value = ''; }); $('#kPlacas').innerHTML = ''; $('#kPers').value = '0'; document.querySelectorAll('#kDis button').forEach(x => x.setAttribute('aria-pressed', x.dataset.dis === '0')); kInsQ = Object.assign({}, INS_BASE); pintarInsumos(); $('#kPrecioMan').value = ''; $('#kPrecioManMay').value = ''; ponerAjustes(); precioTocado = false; kCosto = null; $('#kRes').hidden = true; $('#kGan').hidden = true; }
+  function limpiarCalc() { ['#kG', '#kHh', '#kMin', '#kIns'].forEach(s => { $(s).value = ''; }); $('#kPlacas').innerHTML = ''; $('#kPers').value = '0'; document.querySelectorAll('#kDis button').forEach(x => x.setAttribute('aria-pressed', x.dataset.dis === '0')); kInsQ = Object.assign({}, INS_BASE); pintarInsumos(); $('#kPrecioMan').value = ''; $('#kPrecioManMay').value = ''; $('#kCostoMan').value = ''; ponerAjustes(); precioTocado = false; kCosto = null; $('#kRes').hidden = true; $('#kGan').hidden = true; }
   $('#btnAgregarOtro').addEventListener('click', () => {
     const n = $('#otroNombre').value.trim(); const pr = parseFloat($('#otroPrecio').value);
     const c = Math.max(1, parseInt($('#otroCant').value || '1', 10));
     if (!n || !(pr >= 0)) return avisar('Pon qué es y el precio', true);
-    carrito.push({ producto: n, precio: pr, base: null, cantidad: c, otro: true });
-    $('#otroNombre').value = ''; $('#otroPrecio').value = ''; $('#otroCant').value = '1'; limpiarCalc();
+    const co = parseFloat($('#otroCosto').value);
+    carrito.push(Object.assign({ producto: n, precio: pr, base: null, cantidad: c, otro: true }, co >= 0 ? { costo: +co.toFixed(2) } : {}));
+    $('#otroNombre').value = ''; $('#otroPrecio').value = ''; $('#otroCant').value = '1'; $('#otroCosto').value = ''; costoTocado = false; limpiarCalc();
     pintarCarrito();
   });
   // Punto de venta Ubii P14: débito 1,5% + 0,25% de transferencia; además $1,50 por día de uso
@@ -1764,7 +1802,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       metodo: descuento === 1 ? '' : metodoV(),
       // sin método de pago = no ha pagado: si se lo llevó queda "Entregado · debe", si no, "Sin pagar"
       estado: (descuento === 1 || (modo === 'bazar' && !metodoV())) && $('#vEstado').value === 'Pagado' ? 'Pedido' : $('#vEstado').value,
-      items: carrito.map(c => ({ producto: c.producto, cantidad: qt(c), precio: conDescuento(c.precio), precioManual: c.otro || descuento > 0 || c.precio !== c.base })),
+      items: carrito.map(c => Object.assign({ producto: c.producto, cantidad: qt(c), precio: conDescuento(c.precio), precioManual: c.otro || descuento > 0 || c.precio !== c.base }, c.costo != null ? { costo: c.costo } : {})),
       datosCliente: Object.fromEntries(CAMPOS_CLIENTE.map(([k, sel]) => [k, $(sel).value.trim()])),
       fecha: $('#vFecha').value || hoyISO(),
     };
@@ -1789,7 +1827,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
 
   async function guardarAgregado() {
     const p = datos.ventas.find(v => v.numero === agregandoA); if (!p) return terminarAgregar(false);
-    const items = carrito.map(c => ({ producto: c.producto, cantidad: qt(c), precio: conDescuento(c.precio), precioManual: c.otro || descuento > 0 || c.precio !== c.base }));
+    const items = carrito.map(c => Object.assign({ producto: c.producto, cantidad: qt(c), precio: conDescuento(c.precio), precioManual: c.otro || descuento > 0 || c.precio !== c.base }, c.costo != null ? { costo: c.costo } : {}));
     const nSw = carrito.reduce((n, c) => n + (esLetra(c.producto) || esObjeto(c.producto) ? qt(c) : 0), 0);
     const SW = 'Switch para clicker (sueltos, incluido en el precio)';
     if (nSw && datos.productos.some(x => x.nombre === SW) && !carrito.some(c => c.producto === SW)) items.push({ producto: SW, cantidad: nSw, precio: 0 });
@@ -3682,13 +3720,14 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         <div><label>Filamento</label><select data-f="fil">${ops('#kFil', x.filamento || '')}</select></div></div>
       <div class="dos">${inp('hh', 'Horas de impresión', hh || '', 'n')}${inp('mm', 'Minutos', mm || '', 'n')}</div>
       <div class="dos">${inp('gramos', 'Gramos', x.gramos || '', 'n')}${inp('trabajo', 'Minutos de tu trabajo', x.minTrabajo || 0, 'n')}</div>
+      <div class="dos">${inp('costoman', 'Costo real a mano $ <span class="chico">(vacío = lo calcula la hoja)</span>', x.costoManual || '', 'n', ' placeholder="lo calcula la hoja"')}<div></div></div>
       <div class="dos">${inp('insumos', 'Insumos $ <span class="chico">(switch, aros, bolsa…)</span>', x.insumoCosto ? +x.insumoCosto.toFixed(3) : '', 'n')}
         <div><label>Diseño</label><select data-f="propio"><option value="0"${x.propio ? '' : ' selected'}>Bambu / MakerWorld</option><option value="1"${x.propio ? ' selected' : ''}>Propio</option></select></div></div>
       ${inp('link', 'Link de impresión <span class="chico">(solo para ti)</span>', x.link || '')}
       ${inp('nota', 'Nota', x.nota || '')}
       <div class="dos" style="margin-top:12px"><button type="button" class="btn primario" data-cp-guardar>Guardar cambios</button>
         <button type="button" class="btn peligro" data-cp-borrar>🗑 Borrar producto</button></div>
-      <p class="chico" style="margin:6px 0 0">El costo real se recalcula solo en tu hoja con estos datos.</p>`;
+      <p class="chico" style="margin:6px 0 0">El costo real se recalcula solo en tu hoja con estos datos, a menos que lo escribas tú a mano.</p>`;
   }
   function pintarCatalogo(forzar) {
     // si estás editando un producto, la actualización automática no te borra lo que escribiste
@@ -3704,7 +3743,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
           <summary><span><b>${esc(x.nombre)}</b><small>${x.web ? '<span class="web-si">🌐 web</span> ' + esc(x.web) : 'Solo interno'}</small></span><span class="pr">${x.precio ? fmt(x.precio) : '—'}</span></summary>
           <div class="cat-ficha">
             ${fila('Precio al detal', x.precio ? fmt(x.precio) : '—')}${fila('Precio al mayor', x.mayor ? fmt(x.mayor) : '—')}
-            ${fila('Costo real <span class="chico">(filamento, máquina, insumos y tu trabajo)</span>', x.costoPend ? 'recalculando…' : x.costo ? fmt(x.costo) : '—')}${x.precio && x.costo && !x.costoPend ? (t => fila('Te quedan', fmt(x.precio - x.costo + t) + ' (' + Math.round((x.precio - x.costo + t) / x.precio * 100) + '%)'))((x.minTrabajo || 0) / 60 * conf().hora) : ''}
+            ${fila('Costo real <span class="chico">' + (x.costoManual ? '(lo pusiste tú a mano)' : '(filamento, máquina, insumos y tu trabajo)') + '</span>', x.costoPend ? 'recalculando…' : x.costo ? fmt(x.costo) : '—')}${x.precio && x.costo && !x.costoPend ? (t => fila('Te quedan', fmt(x.precio - x.costo + t) + ' (' + Math.round((x.precio - x.costo + t) / x.precio * 100) + '%)'))((x.minTrabajo || 0) / 60 * conf().hora) : ''}
             ${fila('Tiempo de impresión', horasTxt(x.horas))}${fila('Gramos', x.gramos ? x.gramos.toLocaleString('es-VE') + ' g' : '—')}
             ${fila('Impresora · filamento', esc((x.impresora || '—') + ' · ' + (x.filamento || '—')))}
             ${fila('Diseño', x.propio ? 'Propio' : 'Bambu / MakerWorld')}${fila('Insumos', x.insumoCosto ? fmt(x.insumoCosto) + (x.insumo ? ' · ' + esc(x.insumo) : '') : '—')}
@@ -3733,13 +3772,16 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       accionFondo({ accion: 'guardarProducto', nombre, nombreAnterior: nombre !== x.nombre ? x.nombre : '', nombreWeb: v('web'), link: v('link'),
         categoria: v('categoria'), descripcion: v('desc'), filamento: v('fil'), impresora: v('imp'), gramos: nm('gramos'), horas: +horas.toFixed(4),
         minTrabajo: nm('trabajo'), insumos: +Math.max(0, nm('insumos') - gIns).toFixed(3), propio: v('propio') === '1', precio, mayor: mayor > 0 ? mayor : null,
-        nota: v('nota') }, 'Producto guardado: ' + nombre);
+        costoManual: nm('costoman') > 0 ? nm('costoman') : '', nota: v('nota') }, 'Producto guardado: ' + nombre);
       const pr = (datos.productos || []).find(y => y.nombre === x.nombre); if (pr) { pr.nombre = nombre; pr.precio = precio; }
       // el costo se recalcula aquí mismo (igual que en la hoja) para no mostrar el viejo mientras llega el nuevo
       const hora = conf().hora || 3, trabViejo = (x.minTrabajo || 0) / 60 * hora, trabNuevo = nm('trabajo') / 60 * hora;
       const cambioImpresion = nm('gramos') !== (x.gramos || 0) || Math.abs(horas - (x.horas || 0)) > 1e-3 || v('imp') !== x.impresora || v('fil') !== x.filamento;
       x.costo = Math.max(0, (x.costo || 0) - trabViejo + trabNuevo - (x.insumoCosto || 0) + nm('insumos'));
       if (cambioImpresion) x.costoPend = true;
+      const cmNuevo = nm('costoman') > 0 ? nm('costoman') : null;
+      if (cmNuevo) { x.costo = cmNuevo; x.costoPend = false; } else if (x.costoManual) x.costoPend = true;   // si borraste el costo a mano, la hoja lo vuelve a calcular
+      x.costoManual = cmNuevo;
       Object.assign(x, { nombre, web: v('web'), link: v('link'), categoria: v('categoria'), descripcion: v('desc'), filamento: v('fil'), impresora: v('imp'),
         gramos: nm('gramos'), horas, minTrabajo: nm('trabajo'), insumoCosto: nm('insumos'), insumosExtra: Math.max(0, nm('insumos') - gIns), propio: v('propio') === '1',
         precio, mayor: mayor > 0 ? mayor : null, nota: v('nota') });
