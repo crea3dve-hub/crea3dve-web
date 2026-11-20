@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <title>Caja Crea3d</title>
-<meta name="theme-color" content="#5CBA2E">
+<meta name="theme-color" content="#53AB2A">
 <link rel="icon" type="image/png" href="../favicon.png">
 <link rel="apple-touch-icon" href="../favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,7 +13,7 @@
 <style>
 :root{
   --bg:#F2F4EE; --surface:#FFFFFF; --ink:#141712; --muted:#5E6659; --line:#DDE3D6;
-  --brand:#5CBA2E; --brand-ink:#0E1A08; --brand-soft:#E6F4DD; --warn:#B4231A; --warn-soft:#FBE9E7;
+  --brand:#53AB2A; --brand-ink:#0E1A08; --brand-soft:#E6F4DD; --warn:#B4231A; --warn-soft:#FBE9E7;
   --amber:#8A5A00; --amber-soft:#FFF3D6; --blue:#1F5FA8; --blue-soft:#E3EEFA;
   --display:"Orbitron","Arial Black",system-ui,sans-serif;
   --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -38,6 +38,7 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1p
 header.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-block:10px}
 .marca{font-family:var(--display);font-weight:900;letter-spacing:.5px;font-size:20px}
 .marca span{color:var(--brand)}
+.logo-img{height:34px;width:auto;box-sizing:border-box;padding:7px 10px;background:#000;border-radius:8px;display:block}
 .estado-red{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
 .icono-btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 10px;font-size:14px;font-weight:600}
 h2{font-size:20px;margin:10px 0 12px}
@@ -194,7 +195,7 @@ details.vh[open] > summary > span:first-child > b::after{content:" ▴"}
 #lotes .lt-cab{position:sticky;top:0;z-index:2;background:var(--bg);display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 0 10px;border-bottom:1px solid var(--line)}
 #lotes .lt-cab h2{margin:0;font-size:20px}
 #lotes .lt-prog{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:6px}
-#lotes .lt-prog i{display:block;height:100%;background:var(--brand,#5CBA2E);transition:width .2s}
+#lotes .lt-prog i{display:block;height:100%;background:var(--brand,#53AB2A);transition:width .2s}
 #lotes .lt-peds{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
 #lotes .lt-peds button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 11px;font-size:13px;font-weight:600}
 #lotes .lt-peds button[aria-pressed="false"]{opacity:.45;text-decoration:line-through}
@@ -487,7 +488,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
 <!-- Entrada con clave -->
 <section id="vistaLogin" class="login" hidden>
   <div class="card">
-    <div class="marca" style="text-align:center;margin-bottom:6px">CREA<span>3D</span></div>
+    <div class="marca" style="display:flex;justify-content:center;margin-bottom:8px"><img src="/img/logo-oscuro.png" alt="Crea3d" class="logo-img"></div>
     <p class="chico" style="text-align:center;margin:0 0 12px">Caja y control del negocio</p>
     <div id="bloqueUrl">
       <label for="inUrl">Dirección del puente (la URL que termina en /exec)</label>
@@ -502,7 +503,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
 
 <div id="app" hidden>
 <header class="top"><div class="wrap">
-  <div class="marca">CREA<span>3D</span></div>
+  <div class="marca"><img src="/img/logo-oscuro.png" alt="Crea3d" class="logo-img"></div>
   <div class="estado-red"><span id="txtTasa"></span><button class="icono-btn" id="btnRecargar" aria-label="Actualizar">↻</button></div>
 </div></header>
 
@@ -671,12 +672,12 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   <!-- GASTOS -->
   <section id="tab-gastos" data-tab hidden>
     <h2>Compras y gastos</h2>
-    <div class="ayuda">💡 <b>Por comprar</b> es tu lista de pendientes. Cuando lo compres, toca <b>Ya lo compré</b> y pasa solo a tus gastos. Todo se puede <b>✏️ editar</b> o <b>🗑️ borrar</b>.</div>
+    <div class="ayuda">💡 <b>Por pagar</b>: cosas que ya te cobraron (una factura, el resto de un abono); al pagarlas toca <b>Ya lo pagué</b>. <b>Por comprar</b>: tu lista de compras; al comprar toca <b>Ya lo compré</b> y pasa solo a tus gastos. Todo se puede <b>✏️ editar</b> o <b>🗑️ borrar</b>.</div>
     <div id="bloquePorPagar" hidden>
-      <h3>💸 Me falta pagar</h3>
+      <h3>💸 Por pagar <small class="chico">(ya lo tienes o te lo cobraron, falta pagarlo)</small></h3>
       <div id="listaPorPagar"></div>
     </div>
-    <h3>Por comprar</h3>
+    <h3>🛒 Por comprar <small class="chico">(todavía no lo has comprado)</small></h3>
     <div id="listaPorComprar"></div>
     <details class="card" id="cardNuevoPC">
       <summary>➕ Anotar algo que falta comprar</summary>
@@ -901,7 +902,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261120172552';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261120173532';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -2925,16 +2926,16 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const W = 1080, filaH = 74, H = 810 + items.length * filaH + (datos.tasa ? 60 : 0) + extras.length * 45 + (sinPagar ? 170 + lineasPago.length * 44 : 0) + (sinPagar && abonado(p) ? 110 : 0);
     const c = document.createElement('canvas'); c.width = W; c.height = H;
     const x = c.getContext('2d');
-    const verde = '#5CBA2E', tinta = '#141712', gris = '#5E6659', linea = '#DDE3D6';
+    const verde = '#53AB2A', tinta = '#141712', gris = '#5E6659', linea = '#DDE3D6';
     const txt = (t, px, py, font, color, align) => { x.font = font; x.fillStyle = color; x.textAlign = align || 'left'; x.fillText(t, px, py); };
     const cortar = (t, max, font) => { x.font = font; if (x.measureText(t).width <= max) return t; while (t.length && x.measureText(t + '…').width > max) t = t.slice(0, -1); return t + '…'; };
     const ff = 'Figtree, system-ui, sans-serif';
     x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, W, H);
-    x.fillStyle = verde; x.fillRect(0, 0, W, 150);
-    txt('CREA', 64, 100, '900 62px Orbitron, Arial Black, sans-serif', tinta);
-    const wCrea = x.measureText('CREA').width;
-    txt('3D', 64 + wCrea, 100, '900 62px Orbitron, Arial Black, sans-serif', '#FFFFFF');
-    txt('@crea3d.ve', W - 64, 96, '700 30px ' + ff, tinta, 'right');
+    x.fillStyle = '#000000'; x.fillRect(0, 0, W, 150);
+    const logo = await new Promise(r => { const im = new Image(); im.onload = () => r(im); im.onerror = () => r(null); im.src = '/img/logo-oscuro.png'; });
+    if (logo) x.drawImage(logo, 64, 43, 64 * logo.naturalWidth / logo.naturalHeight, 64);
+    else txt('crea3D', 64, 100, '800 62px ' + ff, '#FFFFFF');
+    txt('@crea3d.ve', W - 64, 96, '700 30px ' + ff, '#F2F2F2', 'right');
     txt(sinPagar ? 'NOTA DE PEDIDO' : 'NOTA DE ENTREGA', 64, 230, '800 40px ' + ff, tinta);
     txt('N° ' + p.numero, W - 64, 230, '800 40px ' + ff, tinta, 'right');
     txt('Fecha: ' + p.fecha, 64, 285, '400 30px ' + ff, gris);

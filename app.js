@@ -316,7 +316,7 @@ let cantidad = 1;
 const PRECIO_DELIVERY = 4;
 function entregaHTML(){
   const c = cliente(), r = (v, t, s) => `<label><input type="radio" name="ent" value="${v}"${c.ent === v ? " checked" : ""}><span><b>${t}</b><small>${s}</small></span></label>`;
-  return `<fieldset class="ent"><legend>¿Cómo lo recibes?</legend>
+  return `<fieldset class="ent"><legend>¿Cómo lo recibes? <small style="font-weight:500;color:var(--muted)">· listo en 2 a 3 días hábiles</small></legend>
     ${r("pickup", "Pickup en Sebucán", "Te confirmamos la ubicación por WhatsApp")}
     ${r("delivery", "Delivery en Caracas · $4", "Te lo llevamos a tu zona")}
     ${r("nacional", "Envío nacional", "Pago a destino · te pedimos los datos por WhatsApp")}</fieldset>

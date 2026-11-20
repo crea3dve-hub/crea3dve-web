@@ -1,6 +1,6 @@
 :root{
   --bg:#F2F4EE; --surface:#FFFFFF; --ink:#141712; --muted:#5E6659; --line:#DDE3D6;
-  --brand:#5CBA2E; --brand-ink:#0E1A08; --brand-soft:#E6F4DD; --dark:#141712; --dark-2:#232821; --on-dark:#F2F4EE; --on-dark-muted:#C9D1C2;
+  --brand:#53AB2A; --brand-ink:#000000; --brand-soft:#E6F4DD; --dark:#000000; --dark-2:#232821; --on-dark:#F2F4EE; --on-dark-muted:#C9D1C2;
   --accent:#2F7A12; --focus:#2F7D12; --err:#C0262D;
   color-scheme:light;
 }
@@ -30,7 +30,7 @@ section{padding:56px 16px;scroll-margin-top:72px}
 /* barra */
 header.top{position:sticky;top:0;z-index:30;background:var(--brand);padding:10px 16px;padding-top:max(10px,env(safe-area-inset-top))}
 header.top nav{display:flex;align-items:center;justify-content:space-between;gap:10px 20px;flex-wrap:wrap}
-header.top .logo img{height:26px;display:block}
+header.top .logo img{height:30px;width:auto;display:block}
 .links{display:flex;align-items:center;flex-wrap:wrap;gap:4px 18px;font-weight:700;font-size:15px}
 .links a{color:var(--brand-ink);text-decoration:none;padding:8px 0}
 .links .btn{padding:8px 16px;min-height:40px;font-size:15px}
@@ -164,7 +164,7 @@ header.top{position:sticky}
 .volver{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--ink);text-decoration:none;min-height:44px}
 @media (max-width:640px){
   header.top nav{flex-wrap:nowrap}
-  header.top .logo img{height:22px;width:auto}
+  header.top .logo img{height:26px;width:auto}
   .links{flex-wrap:nowrap;gap:8px}
 }
 
@@ -212,3 +212,5 @@ header.top{position:sticky}
 .ent b{display:block;font-size:15px}.ent small{display:block;color:var(--muted);font-size:13px;font-weight:500}
 .ent-dir{margin-top:10px}
 .ent-dir[hidden]{display:none}
+
+footer .marca img{height:40px;width:auto;display:block}
