@@ -902,7 +902,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261120182551';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261120183556';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -2923,7 +2923,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const sinPagar = (p.estado === 'Pedido' || debe(p)) && !regalo;
     if (sinPagar && faltanDatosPago()) return;
     const lineasPago = sinPagar ? datosPago().split('\n').map(l => l.trim()).filter(Boolean) : [];
-    const W = 1080, filaH = 74, H = 810 + items.length * filaH + (datos.tasa ? 60 : 0) + extras.length * 45 + (sinPagar ? 170 + lineasPago.length * 44 : 0) + (sinPagar && abonado(p) ? 110 : 0);
+    const W = 1080, filaH = 74, H = (sinPagar ? 750 : 830) + items.length * filaH + (datos.tasa ? 60 : 0) + extras.length * 45 + (sinPagar ? 170 + lineasPago.length * 44 : 0) + (sinPagar && abonado(p) ? 110 : 0);
     const c = document.createElement('canvas'); c.width = W; c.height = H;
     const x = c.getContext('2d');
     const verde = '#53AB2A', tinta = '#141712', gris = '#5E6659', linea = '#DDE3D6';
@@ -2963,21 +2963,20 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       y += 55; txt('FALTA', 64, y, '800 40px ' + ff, '#D33A2C'); txt(fmt(falta(p)), W - 64, y, '800 40px ' + ff, '#D33A2C', 'right');
     }
     if (datos.tasa && !regalo) { y += 52; txt(fmtBs((sinPagar && abonado(p) ? falta(p) : total) * datos.tasa.valor) + ' · tasa BCV ' + datos.tasa.valor.toLocaleString('es-VE', { maximumFractionDigits: 2 }), W - 64, y, '400 26px ' + ff, gris, 'right'); }
-    // sello PAGADO o PENDIENTE DE PAGO
-    const rojo = '#D33A2C';
-    x.save(); x.translate(250, y + 85); x.rotate(-0.12);
-    x.strokeStyle = sinPagar ? rojo : verde; x.lineWidth = 6; x.strokeRect(sinPagar ? -175 : -150, -48, sinPagar ? 350 : 300, 84);
-    txt(sinPagar ? 'POR PAGAR' : regalo ? 'REGALO' : 'PAGADO', 0, 16, '900 46px ' + ff, sinPagar ? rojo : verde, 'center'); x.restore();
-    // sello POR ENTREGAR si todavía no se ha entregado
-    if (p.estado !== 'Entregado') {
-      const naranja = '#E07B00';
-      x.save(); x.translate(W - 290, y + 85); x.rotate(0.08);
-      x.strokeStyle = naranja; x.lineWidth = 6; x.strokeRect(-200, -48, 400, 84);
-      txt('POR ENTREGAR', 0, 16, '900 44px ' + ff, naranja, 'center'); x.restore();
-    }
+    // estado del pedido: etiquetas suaves (en vez de sellos grandes)
+    const pill = (px, py, t, fg, bg) => {
+      x.font = '700 26px ' + ff; const w = x.measureText(t).width + 70, h = 52;
+      x.fillStyle = bg; x.beginPath(); x.roundRect(px, py - h / 2, w, h, h / 2); x.fill();
+      x.fillStyle = fg; x.beginPath(); x.arc(px + 26, py, 7, 0, Math.PI * 2); x.fill();
+      txt(t, px + 44, py + 9, '700 26px ' + ff, fg); return w;
+    };
+    let px = 64; const py = y + 75;
+    if (sinPagar) px += pill(px, py, abonado(p) ? 'Pago parcial' : 'Pendiente de pago', '#B4501A', '#FCEEE2') + 14;
+    else px += pill(px, py, regalo ? 'Regalo' : 'Pagado', '#2F7D12', '#EAF5E2') + 14;
+    if (p.estado !== 'Entregado') pill(px, py, 'En preparación', '#4B5563', '#EEF0EB');
     // datos de pago (solo si todavía no ha pagado)
     if (sinPagar) {
-      y += 230;
+      y += 170;
       const alto = 70 + lineasPago.length * 44;
       x.fillStyle = '#F2F7EC'; x.fillRect(64, y - 50, W - 128, alto);
       x.fillStyle = verde; x.fillRect(64, y - 50, 8, alto);
