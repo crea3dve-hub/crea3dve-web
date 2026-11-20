@@ -902,7 +902,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261120182432';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261120182551';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -3204,7 +3204,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       : `<div class="card pp-card" data-pp="${g.fila}">
         <div class="pedido-cab"><div><b>${esc(g.que)}</b><div class="chico">${esc(g.fecha || 'sin fecha')}${limpiarNotaPP(g.nota) ? ' · ' + esc(limpiarNotaPP(g.nota)) : ''}</div></div>
         <b>${fmt(g.miParte)}</b></div>
-        <div class="acciones" style="margin-top:10px"><button class="btn chico primario" data-pp-pagar>Ya lo pagué</button><button class="btn chico" data-pp-quitar>No está pendiente, quitar de aquí</button></div>
+        <div class="acciones" style="margin-top:10px"><button class="btn chico primario" data-pp-pagar>Ya lo pagué</button><button class="btn chico" data-pp-quitar>Quitar</button></div>
       </div>`).join('');
     document.querySelectorAll('#listaPorPagar .fg').forEach(actualizarConv);
   }
