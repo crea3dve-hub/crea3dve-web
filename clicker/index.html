@@ -118,6 +118,12 @@ body.sheet-open .bar{visibility:hidden}
 .fld input:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
 .fld-err{color:#C0262D;font-weight:700;font-size:14px;margin:0 0 6px;min-height:0}
 .fld-err:empty{display:none}
+.ent{border:0;margin:0 0 10px;padding:0;display:grid;gap:8px;min-width:0}
+.ent legend{font-weight:700;font-size:14px;margin:0 0 6px;padding:0}
+.ent label{display:flex;gap:10px;align-items:flex-start;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer;background:var(--surface)}
+.ent label:has(input:checked){border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.ent input{margin:3px 0 0;width:18px;height:18px;flex:none;accent-color:var(--ink)}
+.ent b{display:block;font-size:15px}.ent small{display:block;color:var(--muted);font-size:13px;font-weight:500}
 .fromlink{background:var(--brand-soft);border:1px solid var(--brand);border-radius:12px;padding:10px 12px;font-size:13.5px;margin:0 0 14px}
 .stagecap{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}
 .stagecap b{color:var(--ink)}
@@ -282,6 +288,7 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
         <h2><span class="step">4</span>Tu pedido</h2>
         <div id="cartbox"></div>
         <dl class="breakdown" id="breakdown"></dl>
+        <p class="hint" style="margin-top:8px"><b>Entrega:</b> pickup en Sebucán · delivery en Caracas $4 · envío nacional pago a destino.</p>
         <button class="btn addclk" id="addclk" type="button">＋ Armar otro clicker</button>
         <p class="hint" style="margin-top:6px">¿Quieres varios? Guarda este y arma el siguiente: todos van en el mismo pedido.</p>
         <p class="notice" style="margin:10px 0 8px">Precios en dólares a tasa BCV del día. Pagas por pago móvil, Zelle o Binance.</p>
@@ -330,6 +337,13 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
     <p class="ord-status">Primero, tus datos para anotar tu pedido:</p>
     <label class="fld">Tu nombre<input id="cli-nombre" autocomplete="name" maxlength="60" required></label>
     <label class="fld">Tu teléfono (WhatsApp)<input id="cli-tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="0414-1234567" maxlength="20" required></label>
+    <fieldset class="ent" id="cli-ent">
+      <legend>¿Cómo lo recibes?</legend>
+      <label><input type="radio" name="ent" value="pickup"><span><b>Pickup en Sebucán</b><small>Te confirmamos la ubicación por WhatsApp</small></span></label>
+      <label><input type="radio" name="ent" value="delivery"><span><b>Delivery en Caracas · $4</b><small>Te lo llevamos a tu zona</small></span></label>
+      <label><input type="radio" name="ent" value="nacional"><span><b>Envío nacional</b><small>Pago a destino</small></span></label>
+    </fieldset>
+    <label class="fld" id="cli-dir-l" hidden><span id="cli-dir-t">Tu zona en Caracas</span><input id="cli-dir" maxlength="120" autocomplete="street-address"></label>
     <p class="fld-err" id="cli-err" role="alert"></p>
     <button class="cta ord-cta ord-copybtn" type="submit">Continuar</button>
   </form>
@@ -742,7 +756,7 @@ function pricing(){
     txt = `✨ ¡Hola Crea3d! Quiero estos ${all.length} clickers ✨` + all.map((c,i)=>`\n\n*━━━ Clicker ${i+1} ━━━*\n${c.body}\nSubtotal: ${money(c.tot)}\n🔗 Diseño en 3D: ${c.link}`).join("")
       + `\n\n💰 *Total: ${money(tot)}* (tasa BCV)\n\n📸 A continuación te envío la foto de mis diseños 💚`;
   }
-  window.__pedidoCompleto = txt;
+  window.__pedidoCompleto = txt; window.__pedidoTot = tot;
   $("summary").textContent = txt;
   waURL = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(sinEmojis(txt))}`;
   const ok = canOrder();
@@ -887,16 +901,40 @@ function sinEmojis(t){
 const CLI_KEY = "crea3d-cliente";
 function cliente(){ try{ return JSON.parse(localStorage.getItem(CLI_KEY)) || {}; }catch(e){ return {}; } }
 function telOK(t){ const d = String(t||"").replace(/\D/g,""); return d.length >= 10 && d.length <= 15; }
-function waConNombre(){
-  const c = cliente(), txt = window.__pedidoCompleto || "";
-  if(!c.nombre) return waURL;
-  const i = txt.indexOf("\n\n"), t2 = i < 0 ? txt + `\n\n👤 Soy *${c.nombre}*` : txt.slice(0,i) + `\n\n👤 Soy *${c.nombre}*` + txt.slice(i);
-  return `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(sinEmojis(t2))}`;
+/* ---------- entrega: pickup en Sebucán, delivery en Caracas ($4) o envío nacional (pago a destino) ---------- */
+const PRECIO_DELIVERY = 4;
+function entregaTxt(c){
+  if(c.ent === "delivery") return `🛵 *Delivery en Caracas:* ${money(PRECIO_DELIVERY)}` + (c.dir ? `\n📍 Zona: ${c.dir}` : "");
+  if(c.ent === "nacional") return `🚚 *Envío nacional* (pago a destino)` + (c.dir ? `\n📍 Destino: ${c.dir}` : "");
+  if(c.ent === "pickup") return `📦 *Pickup en Sebucán* (me confirman la ubicación por WhatsApp)`;
+  return "";
 }
+// el pedido como se manda: con el nombre arriba y la entrega justo antes del total (el delivery se suma al total)
+function textoFinal(){
+  const c = cliente(); let t = window.__pedidoCompleto || "";
+  if(c.nombre){ const i = t.indexOf("\n\n"); t = i < 0 ? t + `\n\n👤 Soy *${c.nombre}*` : t.slice(0,i) + `\n\n👤 Soy *${c.nombre}*` + t.slice(i); }
+  const ent = entregaTxt(c);
+  if(ent) t = t.replace(/💰 \*Total: [^*]+\*/, m => `${ent}\n\n` + (c.ent === "delivery" ? `💰 *Total: ${money((window.__pedidoTot || 0) + PRECIO_DELIVERY)}*` : m));
+  return t;
+}
+function waConNombre(){
+  const c = cliente();
+  if(!c.nombre && !c.ent) return waURL;
+  return `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(sinEmojis(textoFinal()))}`;
+}
+function pintarEntrega(){
+  const v = (document.querySelector('#cli-ent input:checked') || {}).value || "";
+  $("cli-dir-l").hidden = !(v === "delivery" || v === "nacional");
+  $("cli-dir-t").textContent = v === "nacional" ? "Ciudad y agencia de envío" : "Tu zona en Caracas";
+  $("cli-dir").placeholder = v === "nacional" ? "Ej.: Valencia, MRW de la av. Bolívar" : "Ej.: Los Palos Grandes";
+}
+document.querySelectorAll('#cli-ent input').forEach(r => r.addEventListener("change", () => { pintarEntrega(); $("cli-err").textContent = ""; }));
 function openOrder(){
   $("order").hidden = false; document.body.classList.add("sheet-open");
   const c = cliente();
   $("cli-nombre").value = c.nombre || ""; $("cli-tel").value = c.telefono || ""; $("cli-err").textContent = "";
+  document.querySelectorAll('#cli-ent input').forEach(r => { r.checked = r.value === c.ent; });
+  $("cli-dir").value = c.dir || ""; pintarEntrega();
   $("ord-datos").hidden = false; $("ord-photo").hidden = true; $("ord-step2").hidden = true; $("ord-skip").hidden = true;
   $("ord-title").textContent = "Tu pedido está listo";
   setTimeout(()=>{ (c.nombre ? $("ord-datos").querySelector("button") : $("cli-nombre")).focus(); }, 60);
@@ -906,7 +944,11 @@ $("ord-datos").addEventListener("submit", e=>{
   const nombre = $("cli-nombre").value.trim().replace(/\s+/g," "), telefono = $("cli-tel").value.trim();
   if(nombre.length < 2){ $("cli-err").textContent = "Escribe tu nombre."; $("cli-nombre").focus(); return; }
   if(!telOK(telefono)){ $("cli-err").textContent = "Revisa el teléfono: escríbelo completo, ej. 0414-1234567."; $("cli-tel").focus(); return; }
-  try{ localStorage.setItem(CLI_KEY, JSON.stringify({nombre, telefono})); }catch(err){}
+  const ent = (document.querySelector('#cli-ent input:checked') || {}).value || "";
+  const dir = (ent === "delivery" || ent === "nacional") ? $("cli-dir").value.trim().replace(/\s+/g," ") : "";
+  if(!ent){ $("cli-err").textContent = "Elige cómo lo recibes: pickup, delivery o envío nacional."; document.querySelector('#cli-ent input').focus(); return; }
+  if((ent === "delivery" || ent === "nacional") && dir.length < 3){ $("cli-err").textContent = ent === "delivery" ? "Escribe tu zona para el delivery." : "Escribe la ciudad y la agencia de envío."; $("cli-dir").focus(); return; }
+  try{ localStorage.setItem(CLI_KEY, JSON.stringify({nombre, telefono, ent, dir})); }catch(err){}
   $("ord-datos").hidden = true;
   avisarCaja();            // el pedido queda anotado aunque no lo envíen por WhatsApp
   startPhoto();
@@ -985,11 +1027,12 @@ function avisarCaja(){
     const items = [], palabras = [];
     list.forEach(d=>withDesign(d, ()=>{ items.push(...itemsDiseno()); palabras.push(st.word || "objeto"); }));
     const cli = cliente();
-    const firma = JSON.stringify(items) + palabras.join() + (cli.telefono || "");
+    if(cli.ent === "delivery") items.push({producto:"Delivery", cantidad:1, precio:PRECIO_DELIVERY});
+    const firma = JSON.stringify(items) + palabras.join() + (cli.telefono || "") + (cli.ent || "") + (cli.dir || "");
     if(firma === pedidoEnviado) return;   // no mandar el mismo pedido dos veces
     pedidoEnviado = firma;
     const body = JSON.stringify({accion:"pedidoWeb", id: Date.now().toString(36) + Math.random().toString(36).slice(2,8),
-      palabras: palabras.join(", "), texto: window.__pedidoCompleto || $("summary").textContent, items,
+      palabras: palabras.join(", "), texto: window.__pedidoCompleto ? textoFinal() : $("summary").textContent, items,
       tipo: "Clicker", nombre: cli.nombre || "", telefono: cli.telefono || ""});
     enviarPedido(JSON.parse(body));
   }catch(e){}

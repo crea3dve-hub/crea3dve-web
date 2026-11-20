@@ -203,3 +203,12 @@ header.top{position:sticky}
 .fdot::after{content:"";width:9px;height:9px;border-radius:50%;background:#C5CBBE;transition:background .15s,transform .15s}
 .fdot[aria-pressed="true"]::after{background:var(--ink);transform:scale(1.15)}
 .dlg-foto{position:relative}
+/* entrega en el pedido: pickup, delivery o envío nacional */
+.ent{border:0;margin:14px 0 0;padding:0;display:grid;gap:8px;min-width:0}
+.ent legend{font-weight:700;font-size:15px;margin:0 0 6px;padding:0}
+.ent label{display:flex;gap:10px;align-items:flex-start;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer;background:var(--surface)}
+.ent label:has(input:checked){border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.ent input{margin:3px 0 0;width:18px;height:18px;flex:none;accent-color:var(--ink)}
+.ent b{display:block;font-size:15px}.ent small{display:block;color:var(--muted);font-size:13px;font-weight:500}
+.ent-dir{margin-top:10px}
+.ent-dir[hidden]{display:none}

@@ -606,11 +606,11 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         <label>¿Cómo se entrega?</label>
         <div class="segmento" role="group" aria-label="Cómo se entrega">
           <button id="entRetira" aria-pressed="true">Lo retira</button>
-          <button id="entDelivery" aria-pressed="false">🛵 Delivery $3</button>
+          <button id="entDelivery" aria-pressed="false">🛵 Delivery $4</button>
         </div>
         <div id="bloqueQuienDel" hidden>
-          <label for="vDelivery">Delivery $ <span class="chico">(siempre $3; cámbialo solo si fue distinto)</span></label>
-          <input id="vDelivery" type="number" inputmode="decimal" step="0.01" min="0" placeholder="3">
+          <label for="vDelivery">Delivery $ <span class="chico">(siempre $4; cámbialo solo si fue distinto)</span></label>
+          <input id="vDelivery" type="number" inputmode="decimal" step="0.01" min="0" placeholder="4">
           <label>¿Quién paga el delivery?</label>
           <div class="segmento" role="group" aria-label="Quién paga el delivery">
             <button id="delCliente" aria-pressed="true">El cliente</button>
@@ -901,7 +901,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261112202240';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261120172552';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -1240,8 +1240,8 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   $('#delCliente').addEventListener('click', () => ponerDel('cliente'));
   $('#delYo').addEventListener('click', () => ponerDel('yo'));
   $('#vDelivery').addEventListener('input', () => pintarCarrito());
-  // Delivery: siempre $3 (se puede cambiar el monto si un día fue distinto)
-  const PRECIO_DELIVERY = 3;
+  // Delivery: siempre $4 (se puede cambiar el monto si un día fue distinto)
+  const PRECIO_DELIVERY = 4;
   function ponerEntrega(conDelivery) {
     $('#entRetira').setAttribute('aria-pressed', !conDelivery); $('#entDelivery').setAttribute('aria-pressed', conDelivery);
     $('#bloqueQuienDel').hidden = !conDelivery;

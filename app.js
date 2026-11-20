@@ -312,9 +312,27 @@ $("#dlg-x").onclick = cerrarDlg;
 dlg.addEventListener("click", e => { if(e.target === dlg) cerrarDlg(); });
 
 let cantidad = 1;
+/* ---------- entrega: pickup en Sebucán, delivery en Caracas ($4) o envío nacional (pago a destino) ---------- */
+const PRECIO_DELIVERY = 4;
+function entregaHTML(){
+  const c = cliente(), r = (v, t, s) => `<label><input type="radio" name="ent" value="${v}"${c.ent === v ? " checked" : ""}><span><b>${t}</b><small>${s}</small></span></label>`;
+  return `<fieldset class="ent"><legend>¿Cómo lo recibes?</legend>
+    ${r("pickup", "Pickup en Sebucán", "Te confirmamos la ubicación por WhatsApp")}
+    ${r("delivery", "Delivery en Caracas · $4", "Te lo llevamos a tu zona")}
+    ${r("nacional", "Envío nacional", "Pago a destino")}</fieldset>
+    <label class="fld ent-dir" hidden><span class="ent-dir-t">Tu zona en Caracas</span><input name="entdir" maxlength="120" autocomplete="street-address" value="${esc(c.dir || "")}"></label>`;
+}
+const entElegida = () => { const r = fd.querySelector('input[name=ent]:checked'); return r ? r.value : ""; };
+function pintarEntrega(){
+  const box = fd.querySelector(".ent-dir"); if(!box) return;
+  const v = entElegida(); box.hidden = !(v === "delivery" || v === "nacional");
+  box.querySelector(".ent-dir-t").textContent = v === "nacional" ? "Ciudad y agencia de envío" : "Tu zona en Caracas";
+  fd.entdir.placeholder = v === "nacional" ? "Ej.: Valencia, MRW de la av. Bolívar" : "Ej.: Los Palos Grandes";
+  pintarTotal();
+}
 function pintarTotal(){
-  const p = modo && modo.p; $("#cant-n").textContent = cantidad;
-  const t = $("#dlg-total"); if(t && p && p.precio != null) t.textContent = money(p.precio * cantidad);
+  const p = modo && modo.p, n = $("#cant-n"); if(n) n.textContent = cantidad;
+  const t = $("#dlg-total"); if(t && p && p.precio != null) t.textContent = money(p.precio * cantidad + (entElegida() === "delivery" ? PRECIO_DELIVERY : 0));
 }
 function abrirProducto(p){
   modo = {tipo:"Producto", p}; cantidad = p.cotizar ? 10 : 1;
@@ -327,10 +345,13 @@ function abrirProducto(p){
       <div class="cant"><button type="button" data-c="-1" aria-label="Uno menos">−</button><output id="cant-n" aria-live="polite">${cantidad}</output><button type="button" data-c="1" aria-label="Uno más">+</button></div>
     </div>
     ${p.cotizar ? `<label class="fld" style="margin-top:14px">¿Qué te gustaría? <small>(opcional)</small><textarea name="detalle" maxlength="500" placeholder="Ej.: con el logo de mi tienda, para el 15 de diciembre"></textarea></label>` : ""}
+    ${entregaHTML()}
     ${p.precio != null ? `<div class="total" style="margin-top:14px"><span>Total</span><span id="dlg-total">${money(p.precio)}</span></div>` : ""}`;
+  pintarEntrega();
   pintarFoto(p);
   abrirDlg();
 }
+$("#dlg-cuerpo").addEventListener("change", e => { if(e.target.name === "ent"){ pintarEntrega(); fd.querySelector(".err").textContent = ""; } });
 $("#dlg-cuerpo").addEventListener("click", e => {
   const b = e.target.closest("[data-c]"); if(!b) return;
   cantidad = Math.max(1, Math.min(999, cantidad + Number(b.dataset.c))); pintarTotal();
@@ -355,18 +376,28 @@ if($("#btn-evento")) $("#btn-evento").onclick = () => {
 };
 fd.addEventListener("submit", e => {
   e.preventDefault();
+  let ent = "", dir = "";
+  if(modo.tipo === "Producto"){
+    const err = fd.querySelector(".err");
+    ent = entElegida(); dir = ent === "delivery" || ent === "nacional" ? fd.entdir.value.trim().replace(/\s+/g, " ") : "";
+    if(!ent){ err.textContent = "Elige cómo lo recibes: pickup, delivery o envío nacional."; fd.querySelector('input[name=ent]').focus(); return; }
+    if(dir.length < 3 && ent !== "pickup"){ err.textContent = ent === "delivery" ? "Escribe tu zona para el delivery." : "Escribe la ciudad y la agencia de envío."; fd.entdir.focus(); return; }
+  }
   const c = leerCliente(fd); if(!c) return;
+  if(ent) guardarCliente(Object.assign(c, {ent, dir}));
   let texto, datos;
   if(modo.tipo === "Producto"){
     const p = modo.p, pts = partesDe(p);
+    const conDel = ent === "delivery", entTxt = conDel ? `\n\n🛵 *Delivery en Caracas:* ${money(PRECIO_DELIVERY)}\n📍 Zona: ${dir}`
+      : ent === "nacional" ? `\n\n🚚 *Envío nacional* (pago a destino)\n📍 Destino: ${dir}` : `\n\n📦 *Pickup en Sebucán* (me confirman la ubicación por WhatsApp)`;
     const colTxt = pts.map(pt => (pts.length > 1 ? pt.nombre.toLowerCase() + " " : "") + "*" + elegido[p.id][pt.k].toLowerCase() + "*").join(" · ");
     const col = pts.map(pt => (pts.length > 1 ? pt.nombre + " " : "") + elegido[p.id][pt.k]).join(", ");
     const det = fd.detalle ? fd.detalle.value.trim() : "";
     texto = `✨ ¡Hola Crea3d! ${p.precio != null && !p.cotizar ? "Quiero" : "Quiero cotizar"} este producto ✨\n\n👤 Soy *${c.nombre}*\n\n🛍️ *${p.nombre}*` + (colTxt ? `\n🎨 Color: ${colTxt}` : "") + `\n🔢 Cantidad: *${cantidad}*`
-      + (det ? `\n📝 ${det}` : "")
-      + (p.precio != null ? `\n\n💰 *Total: ${money(p.precio * cantidad)}* (tasa BCV)` : "");
+      + (det ? `\n📝 ${det}` : "") + entTxt
+      + (p.precio != null ? `\n\n💰 *Total: ${money(p.precio * cantidad + (conDel ? PRECIO_DELIVERY : 0))}* (tasa BCV)` : "");
     datos = {tipo:"Producto", palabras: p.nombre + (col ? " · " + col : ""), texto, nombre:c.nombre, telefono:c.telefono,
-      items:[{producto:p.hoja, cantidad, precio:p.precio || 0}]};
+      items:[{producto:p.hoja, cantidad, precio:p.precio || 0}].concat(conDel ? [{producto:"Delivery", cantidad:1, precio:PRECIO_DELIVERY}] : [])};
     pintarProductos();
   } else {
     const v = k => (fd[k] && fd[k].value || "").trim();
