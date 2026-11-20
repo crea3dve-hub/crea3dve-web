@@ -341,7 +341,7 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
       <legend>¿Cómo lo recibes?</legend>
       <label><input type="radio" name="ent" value="pickup"><span><b>Pickup en Sebucán</b><small>Te confirmamos la ubicación por WhatsApp</small></span></label>
       <label><input type="radio" name="ent" value="delivery"><span><b>Delivery en Caracas · $4</b><small>Te lo llevamos a tu zona</small></span></label>
-      <label><input type="radio" name="ent" value="nacional"><span><b>Envío nacional</b><small>Pago a destino</small></span></label>
+      <label><input type="radio" name="ent" value="nacional"><span><b>Envío nacional</b><small>Pago a destino · te pedimos los datos por WhatsApp</small></span></label>
     </fieldset>
     <label class="fld" id="cli-dir-l" hidden><span id="cli-dir-t">Tu zona en Caracas</span><input id="cli-dir" maxlength="120" autocomplete="street-address"></label>
     <p class="fld-err" id="cli-err" role="alert"></p>
@@ -905,7 +905,7 @@ function telOK(t){ const d = String(t||"").replace(/\D/g,""); return d.length >=
 const PRECIO_DELIVERY = 4;
 function entregaTxt(c){
   if(c.ent === "delivery") return `🛵 *Delivery en Caracas:* ${money(PRECIO_DELIVERY)}` + (c.dir ? `\n📍 Zona: ${c.dir}` : "");
-  if(c.ent === "nacional") return `🚚 *Envío nacional* (pago a destino)` + (c.dir ? `\n📍 Destino: ${c.dir}` : "");
+  if(c.ent === "nacional") return `🚚 *Envío nacional* (pago a destino, les paso los datos por aquí)`;
   if(c.ent === "pickup") return `📦 *Pickup en Sebucán* (me confirman la ubicación por WhatsApp)`;
   return "";
 }
@@ -924,9 +924,8 @@ function waConNombre(){
 }
 function pintarEntrega(){
   const v = (document.querySelector('#cli-ent input:checked') || {}).value || "";
-  $("cli-dir-l").hidden = !(v === "delivery" || v === "nacional");
-  $("cli-dir-t").textContent = v === "nacional" ? "Ciudad y agencia de envío" : "Tu zona en Caracas";
-  $("cli-dir").placeholder = v === "nacional" ? "Ej.: Valencia, MRW de la av. Bolívar" : "Ej.: Los Palos Grandes";
+  $("cli-dir-l").hidden = v !== "delivery";
+  $("cli-dir").placeholder = "Ej.: Los Palos Grandes";
 }
 document.querySelectorAll('#cli-ent input').forEach(r => r.addEventListener("change", () => { pintarEntrega(); $("cli-err").textContent = ""; }));
 function openOrder(){
@@ -945,9 +944,9 @@ $("ord-datos").addEventListener("submit", e=>{
   if(nombre.length < 2){ $("cli-err").textContent = "Escribe tu nombre."; $("cli-nombre").focus(); return; }
   if(!telOK(telefono)){ $("cli-err").textContent = "Revisa el teléfono: escríbelo completo, ej. 0414-1234567."; $("cli-tel").focus(); return; }
   const ent = (document.querySelector('#cli-ent input:checked') || {}).value || "";
-  const dir = (ent === "delivery" || ent === "nacional") ? $("cli-dir").value.trim().replace(/\s+/g," ") : "";
+  const dir = ent === "delivery" ? $("cli-dir").value.trim().replace(/\s+/g," ") : "";
   if(!ent){ $("cli-err").textContent = "Elige cómo lo recibes: pickup, delivery o envío nacional."; document.querySelector('#cli-ent input').focus(); return; }
-  if((ent === "delivery" || ent === "nacional") && dir.length < 3){ $("cli-err").textContent = ent === "delivery" ? "Escribe tu zona para el delivery." : "Escribe la ciudad y la agencia de envío."; $("cli-dir").focus(); return; }
+  if(ent === "delivery" && dir.length < 3){ $("cli-err").textContent = "Escribe tu zona para el delivery."; $("cli-dir").focus(); return; }
   try{ localStorage.setItem(CLI_KEY, JSON.stringify({nombre, telefono, ent, dir})); }catch(err){}
   $("ord-datos").hidden = true;
   avisarCaja();            // el pedido queda anotado aunque no lo envíen por WhatsApp

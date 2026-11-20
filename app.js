@@ -319,15 +319,14 @@ function entregaHTML(){
   return `<fieldset class="ent"><legend>¿Cómo lo recibes?</legend>
     ${r("pickup", "Pickup en Sebucán", "Te confirmamos la ubicación por WhatsApp")}
     ${r("delivery", "Delivery en Caracas · $4", "Te lo llevamos a tu zona")}
-    ${r("nacional", "Envío nacional", "Pago a destino")}</fieldset>
+    ${r("nacional", "Envío nacional", "Pago a destino · te pedimos los datos por WhatsApp")}</fieldset>
     <label class="fld ent-dir" hidden><span class="ent-dir-t">Tu zona en Caracas</span><input name="entdir" maxlength="120" autocomplete="street-address" value="${esc(c.dir || "")}"></label>`;
 }
 const entElegida = () => { const r = fd.querySelector('input[name=ent]:checked'); return r ? r.value : ""; };
 function pintarEntrega(){
   const box = fd.querySelector(".ent-dir"); if(!box) return;
-  const v = entElegida(); box.hidden = !(v === "delivery" || v === "nacional");
-  box.querySelector(".ent-dir-t").textContent = v === "nacional" ? "Ciudad y agencia de envío" : "Tu zona en Caracas";
-  fd.entdir.placeholder = v === "nacional" ? "Ej.: Valencia, MRW de la av. Bolívar" : "Ej.: Los Palos Grandes";
+  const v = entElegida(); box.hidden = v !== "delivery";
+  fd.entdir.placeholder = "Ej.: Los Palos Grandes";
   pintarTotal();
 }
 function pintarTotal(){
@@ -379,9 +378,9 @@ fd.addEventListener("submit", e => {
   let ent = "", dir = "";
   if(modo.tipo === "Producto"){
     const err = fd.querySelector(".err");
-    ent = entElegida(); dir = ent === "delivery" || ent === "nacional" ? fd.entdir.value.trim().replace(/\s+/g, " ") : "";
+    ent = entElegida(); dir = ent === "delivery" ? fd.entdir.value.trim().replace(/\s+/g, " ") : "";
     if(!ent){ err.textContent = "Elige cómo lo recibes: pickup, delivery o envío nacional."; fd.querySelector('input[name=ent]').focus(); return; }
-    if(dir.length < 3 && ent !== "pickup"){ err.textContent = ent === "delivery" ? "Escribe tu zona para el delivery." : "Escribe la ciudad y la agencia de envío."; fd.entdir.focus(); return; }
+    if(ent === "delivery" && dir.length < 3){ err.textContent = "Escribe tu zona para el delivery."; fd.entdir.focus(); return; }
   }
   const c = leerCliente(fd); if(!c) return;
   if(ent) guardarCliente(Object.assign(c, {ent, dir}));
@@ -389,7 +388,7 @@ fd.addEventListener("submit", e => {
   if(modo.tipo === "Producto"){
     const p = modo.p, pts = partesDe(p);
     const conDel = ent === "delivery", entTxt = conDel ? `\n\n🛵 *Delivery en Caracas:* ${money(PRECIO_DELIVERY)}\n📍 Zona: ${dir}`
-      : ent === "nacional" ? `\n\n🚚 *Envío nacional* (pago a destino)\n📍 Destino: ${dir}` : `\n\n📦 *Pickup en Sebucán* (me confirman la ubicación por WhatsApp)`;
+      : ent === "nacional" ? `\n\n🚚 *Envío nacional* (pago a destino, les paso los datos por aquí)` : `\n\n📦 *Pickup en Sebucán* (me confirman la ubicación por WhatsApp)`;
     const colTxt = pts.map(pt => (pts.length > 1 ? pt.nombre.toLowerCase() + " " : "") + "*" + elegido[p.id][pt.k].toLowerCase() + "*").join(" · ");
     const col = pts.map(pt => (pts.length > 1 ? pt.nombre + " " : "") + elegido[p.id][pt.k]).join(", ");
     const det = fd.detalle ? fd.detalle.value.trim() : "";
