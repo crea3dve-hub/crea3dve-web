@@ -902,7 +902,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261120173532';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261120182432';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -3188,8 +3188,10 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     if (!v('metodo')) nota = '⚠️ POR PAGAR' + (nota ? ' · ' + nota : '');
     return { que: v('que').trim(), fecha: v('fecha'), monto, pct: v('pct'), para: v('para'), tipo: v('tipo'), metodo: v('metodo'), nota };
   }
-  function limpiarNotaPP(n) { return String(n || '').replace(/⚠️?\s*POR PAGAR\s*(·\s*)?/gi, '').trim(); }
-  const porPagar = () => (datos && datos.gastos || []).filter(g => /POR PAGAR/i.test(g.nota || ''));
+  // Solo cuenta como POR PAGAR si la nota EMPIEZA con esa marca (así una nota que diga "por pagar en USDT" no se confunde)
+  function esPP(n) { return /^\s*⚠️?\s*POR PAGAR/.test(String(n || '')); }
+  function limpiarNotaPP(n) { return String(n || '').replace(/^\s*⚠️?\s*POR PAGAR\s*(·\s*)?/, '').trim(); }
+  const porPagar = () => (datos && datos.gastos || []).filter(g => esPP(g.nota));
 
   let pagarG = null;
   function pintarPorPagar() {
@@ -3202,7 +3204,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       : `<div class="card pp-card" data-pp="${g.fila}">
         <div class="pedido-cab"><div><b>${esc(g.que)}</b><div class="chico">${esc(g.fecha || 'sin fecha')}${limpiarNotaPP(g.nota) ? ' · ' + esc(limpiarNotaPP(g.nota)) : ''}</div></div>
         <b>${fmt(g.miParte)}</b></div>
-        <div class="acciones" style="margin-top:10px"><button class="btn chico primario" data-pp-pagar>Ya lo pagué</button></div>
+        <div class="acciones" style="margin-top:10px"><button class="btn chico primario" data-pp-pagar>Ya lo pagué</button><button class="btn chico" data-pp-quitar>No está pendiente, quitar de aquí</button></div>
       </div>`).join('');
     document.querySelectorAll('#listaPorPagar .fg').forEach(actualizarConv);
   }
@@ -3211,6 +3213,12 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const card = e.target.closest('[data-pp]'); if (!card) return;
     const fila = +card.dataset.pp, g0 = datos.gastos.find(x => x.fila === fila); if (!g0) return;
     if (e.target.closest('[data-pp-pagar]')) { pagarG = fila; pintarPorPagar(); return; }
+    // quitar de Por pagar sin cambiar nada más (el gasto queda igual, solo se le borra la marca)
+    if (e.target.closest('[data-pp-quitar]')) {
+      if (!confirm('¿Quitar "' + g0.que + '" de Por pagar? El gasto se queda igual en tus gastos, solo deja de salir como pendiente.')) return;
+      if (await accion({ accion: 'editarGasto', fila, queOriginal: g0.que, que: g0.que, fecha: g0.fecha, monto: g0.monto, pct: g0.pct, para: g0.para, tipo: g0.tipo, metodo: g0.metodo, nota: limpiarNotaPP(g0.nota) })) { pagarG = null; pintarPorPagar(); }
+      return;
+    }
     if (e.target.closest('[data-cancelar-g]')) { pagarG = null; pintarPorPagar(); return; }
     if (e.target.closest('[data-guardar-g]')) {
       const g = leerFormGasto(card.querySelector('.fg')); if (!g) return;
