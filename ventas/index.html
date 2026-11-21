@@ -902,7 +902,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261120183556';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261121150828';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -2042,7 +2042,14 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
           else return;
           ch.id = numero + '-' + n + '-c' + (ci++); out.push(ch);
         });
-    return out;
+    // si el pedido ya es venta y quitaste ese charm (o clicker de objeto) de la venta, ya no se muestra
+    const vta = numero && datos && datos.ventas ? datos.ventas.find(x => x.numero === numero) : null;
+    if (!vta) return out;
+    const prods = vta.items.filter(i => (i.cantidad || 0) > 0).map(i => String(i.producto || '').toLowerCase());
+    const sigue = c => c.tipo === 'pers' ? prods.some(t => /charm personalizado/.test(t))
+      : c.tipo === 'obj' ? prods.some(t => /clicker de objeto/.test(t))
+      : prods.some(t => t.startsWith(String(c.modelo || '').toLowerCase()));
+    return out.filter(sigue);
   }
   // lo que hay que armar en cada clicker: teclas en la base, cómo se cuelga y los aros de metal
   function armadoDeBloque(b, numero, n) {
