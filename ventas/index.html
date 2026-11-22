@@ -902,7 +902,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261121150828';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261122062328';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -960,7 +960,28 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     const j = await leerRespuesta(r);
     if (!j.ok) throw new Error(j.error || 'Error');
     if (!completos(j)) throw new Error('La hoja respondió incompleto, intenta de nuevo');
+    aplicarSombra(j);
     return j;
+  }
+  // Cambios de estado que hiciste y que la hoja quizás todavía no tiene: si llega una lectura vieja,
+  // se vuelven a poner encima para que nunca "regrese" el estado anterior. Se olvidan cuando la hoja ya los tiene.
+  const sombra = {};
+  function anotarSombra(c) {
+    if (!c || !c.numero) return;
+    if (c.accion === 'estado' || (c.accion === 'editar' && (c.estado || c.metodo !== undefined))) {
+      sombra[c.numero] = { estado: c.estado || null, metodo: c.metodo !== undefined && c.metodo !== '' ? c.metodo : null, t: Date.now() };
+    }
+  }
+  function aplicarSombra(d) {
+    if (!d || !Array.isArray(d.ventas)) return;
+    cola.forEach(c => { if (c.numero && !sombra[c.numero]) anotarSombra(c); });   // cambios que siguen esperando señal
+    Object.keys(sombra).forEach(num => {
+      const s = sombra[num], v = d.ventas.find(x => x.numero === num);
+      if (!v || Date.now() - s.t > 5 * 60000) { delete sombra[num]; return; }
+      const igual = (!s.estado || v.estado === s.estado) && (!s.metodo || v.metodo === s.metodo);
+      if (igual && !cola.some(c => c.numero === num)) { delete sombra[num]; return; }   // la hoja ya lo tiene
+      if (s.estado) v.estado = s.estado; if (s.metodo) v.metodo = s.metodo;
+    });
   }
   async function enviar(cuerpo) {
     const r = await fetch(api, { method: 'POST', body: JSON.stringify(Object.assign({ pin }, cuerpo)) });
@@ -990,6 +1011,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   // Guarda sin bloquear la pantalla: queda en el teléfono y se envía a la hoja por detrás, uno por uno
   function accionFondo(cuerpo, okTexto) {
     cuerpo.id = cuerpo.id || idNuevo();
+    anotarSombra(cuerpo);
     cola.push(cuerpo); guardarCola();
     avisar((okTexto || 'Guardado') + ' ✓');
     vaciarCola();
@@ -1026,7 +1048,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         const c = cola[0];
         try {
           const j = await enviar(c); huboCambios = true;
-          if (j.rapido) rapido = true; else datos = j;
+          if (j.rapido) rapido = true; else { aplicarSombra(j); datos = j; }
           cola = cola.filter(x => x.id !== c.id); guardarCola();
         } catch (e) {
           if (e.delServidor) { cola = cola.filter(x => x.id !== c.id); guardarCola(); avisar('No se pudo guardar: ' + e.message, true); }
