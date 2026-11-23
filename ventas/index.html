@@ -907,7 +907,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261123133500';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261123134500';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -2232,6 +2232,12 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     }
     disEdit = null; pintarPedidos();
   }
+  // firma de un clicker de una sola tecla: todo igual menos la letra (null si tiene más de una tecla)
+  function firmaBloque(b) {
+    const ls = String(b || '').split('\n');
+    if (ls.filter(l => RE_TECLA.test(l)).length !== 1) return null;
+    return ls.map(l => l.trim()).filter(l => l && !/^(🔤|🔗|Subtotal|💰|📸)/.test(l)).map(l => RE_TECLA.test(l) ? l.replace(/^\s*\d+\.\s*\*[^*]+\*/, '#') : l).join('|');
+  }
   // varios clickers de una tecla iguales: una sola tarjeta con las letras una al lado de la otra
   function grupoHtml(bloques, g, numero) {
     const b0 = bloques[g[0]], base = /🧱 Base:\s*(?:\S+\s+)?\*([^*]+)\*\s*·\s*([^\n]+)/.exec(b0);
@@ -2293,8 +2299,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         bloques.forEach((b, n) => {
           if (!detAbierto.has(numero + '-' + n) && bloqueListo(b, numero, n)) return;
           if (disEdit && disEdit.numero === numero && disEdit.n === n) return;
-          const ts = b.split('\n').filter(l => RE_TECLA.test(l)); if (ts.length !== 1) return;
-          const f = b.split('\n').map(l => l.trim()).filter(l => l && !/^(🔤|🔗|Subtotal|💰|📸)/.test(l)).map(l => RE_TECLA.test(l) ? l.replace(/^\s*\d+\.\s*\*[^*]+\*/, '#') : l).join('|');
+          const f = firmaBloque(b); if (!f) return;
           (firma[f] = firma[f] || []).push(n);
         });
         Object.values(firma).filter(g => g.length > 1).forEach(g => g.forEach(n => { grupoDe[n] = g; }));
@@ -2781,16 +2786,23 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         ${enLista ? '' : '<button type="button" class="btn chico" data-lt-vercerrar>✕</button>'}</div>
       <div class="lt-prog"><i style="width:${todo.length ? Math.round(h / todo.length * 100) : 0}%"></i></div>
       ${ltRes && todo.some(t => t.id === ltRes) ? `<p class="chico" style="margin:8px 0 0">La pieza con el borde negro es la que tocaste: así ves dónde va en el llavero.</p>` : ''}
-      ${Object.values(por).map(ks0 => { const kk = ks0[0].id.split('-').slice(-2, -1)[0], pal0 = ks0[0].pal, n0 = ks0[0].n;
-        const bs = misBases.filter(x => String(x.k) === kk && ver(x)), cs = misCharms.filter(x => String(x.k) === kk && ver(x)), ks = ks0.filter(ver);
+      ${(() => {
+        // clickers de una sola tecla iguales (solo cambia la letra): juntos, para imprimirlos a la vez
+        const blqs = bloquesDe(p.diseno), grupos = [], porFirma = {};
+        Object.values(por).forEach(ks0 => { const kk = ks0[0].id.split('-').slice(-2, -1)[0], f = ks0[0].n > 1 ? null : firmaBloque(blqs[+kk]);
+          if (f && porFirma[f]) porFirma[f].push(ks0); else { const g = [ks0]; grupos.push(g); if (f) porFirma[f] = g; } });
+        return grupos;
+      })().map(gr => { const ks0 = [].concat(...gr), kks = gr.map(x => x[0].id.split('-').slice(-2, -1)[0]), kk = kks[0], n0 = ks0[0].n, junto = gr.length > 1;
+        const pal0 = junto ? gr.map(x => x[0].pal).join(' · ') : ks0[0].pal;
+        const bs = misBases.filter(x => kks.includes(String(x.k)) && ver(x)), cs = misCharms.filter(x => kks.includes(String(x.k)) && ver(x)), ks = ks0.filter(ver);
         const completo = ltCompleto.has(v), blq = bloquesDe(p.diseno)[+kk] || '';
         if (!bs.length && !cs.length && !ks.length && !completo) return '';
         const cuelga = armadoDeBloque(blq, v, kk).slice(1).map(a => a.ico + ' ' + a.nombre).join(' · ');
-        return `<div class="lt-clk"><div class="lt-clk-t">${esc(pal0)}${n0 > 1 ? ' · ×' + n0 : ''}</div>${cuelga ? `<div class="lt-cuelga">${esc(cuelga)}</div>` : ''}<div class="lt-fila">
-        ${bs.length ? `<div class="lt-col"><span class="lt-lab">Base</span>${bs.map(x => `<button type="button" class="lt-k lt-base${ltRes === x.id ? ' resalta' : ''}" data-lt-k="${esc(x.id)}" aria-pressed="${ltHechas.has(x.id)}" aria-label="Base ${esc(x.color)}">
-          <span class="cap" style="background:${/acanal/.test(x.tipo) ? RAYAS + ',' : ''}${fondo(x.color)};color:${oscuro(x.color) ? '#fff' : '#242424'}">${x.tam}</span><small>${esc(rc(x.color))} · ${esc(x.tipo)}</small></button>`).join('')}</div>` : ''}
-        ${ks.length ? `<div class="lt-col teclas"><span class="lt-lab">Teclas, en orden</span><div class="lt-tira">${ks.map(k => { const i = ks0.indexOf(k); return `<button type="button" class="lt-k${ltRes === k.id ? ' resalta' : ''}" data-lt-k="${esc(k.id)}" aria-pressed="${ltHechas.has(k.id)}" aria-label="Tecla ${i + 1}: ${esc(k.t)}, letra ${esc(k.l)} ${esc(k.lc)}">
-          <span class="cap" style="background:${fondo(k.t)};color:${hexDe(k.lc)}">${capDe(k.l, hexDe(k.lc), 30)}</span><small>${i + 1}. tecla ${esc(rc(k.t))}<br>letra ${esc(rc(k.lc))}</small></button>`; }).join('')}</div></div>` : ''}
+        return `<div class="lt-clk"><div class="lt-clk-t">${esc(pal0)}${n0 > 1 ? ' · ×' + n0 : ''}${junto ? ` <span class="chico">· ${gr.length} iguales, solo cambia la letra</span>` : ''}</div>${cuelga ? `<div class="lt-cuelga">${esc(cuelga)}${junto ? ' (cada uno)' : ''}</div>` : ''}<div class="lt-fila">
+        ${bs.length ? `<div class="lt-col${junto ? ' charms' : ''}"><span class="lt-lab">${junto ? bs.length + ' bases' : 'Base'}</span>${junto ? '<div class="lt-keys">' : ''}${bs.map(x => `<button type="button" class="lt-k lt-base${ltRes === x.id ? ' resalta' : ''}" data-lt-k="${esc(x.id)}" aria-pressed="${ltHechas.has(x.id)}" aria-label="Base ${esc(x.color)}">
+          <span class="cap" style="background:${/acanal/.test(x.tipo) ? RAYAS + ',' : ''}${fondo(x.color)};color:${oscuro(x.color) ? '#fff' : '#242424'}">${x.tam}</span><small>${esc(rc(x.color))} · ${esc(x.tipo)}</small></button>`).join('')}${junto ? '</div>' : ''}</div>` : ''}
+        ${ks.length ? `<div class="lt-col teclas"><span class="lt-lab">${junto ? 'Teclas' : 'Teclas, en orden'}</span><div class="lt-tira">${ks.map(k => { const i = ks0.indexOf(k); return `<button type="button" class="lt-k${ltRes === k.id ? ' resalta' : ''}" data-lt-k="${esc(k.id)}" aria-pressed="${ltHechas.has(k.id)}" aria-label="Tecla ${i + 1}: ${esc(k.t)}, letra ${esc(k.l)} ${esc(k.lc)}">
+          <span class="cap" style="background:${fondo(k.t)};color:${hexDe(k.lc)}">${capDe(k.l, hexDe(k.lc), 30)}</span><small>${junto ? '' : i + 1 + '. '}tecla ${esc(rc(k.t))}<br>letra ${esc(rc(k.lc))}</small></button>`; }).join('')}</div></div>` : ''}
         ${cs.length ? `<div class="lt-col charms"><span class="lt-lab">Charms</span><div class="lt-keys">${cs.map(x => `<button type="button" class="lt-k lt-charm${ltRes === x.id ? ' resalta' : ''}" data-lt-k="${esc(x.id)}" aria-pressed="${ltHechas.has(x.id)}" aria-label="${esc(charmNombre(x))}">
           <span class="cap dib">${charmDibujo(x, 44)}</span><small>${esc(charmNombre(x))}</small></button>`).join('')}</div></div>` : ''}
         </div>${completo ? `<div class="lt-det">${detalleBloque(blq)}</div>` : ''}</div>`; }).join('')}
