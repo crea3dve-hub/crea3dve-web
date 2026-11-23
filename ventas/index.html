@@ -119,6 +119,9 @@ button.tecla{padding:0;cursor:pointer}
 .card.listo{padding-block:12px}
 .tira-fila{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .tira-fila .teclas{margin:0}
+.grupo-letras{gap:8px}
+.grupo-ed{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.grupo-ed .btn{width:auto;min-width:36px;padding:4px 10px}
 .copias{background:var(--ink);color:var(--bg);font-weight:900;font-size:17px;border-radius:999px;padding:4px 12px}
 .dis-ed{display:grid;gap:10px;border:2px solid var(--ink);border-radius:12px;padding:12px;margin:6px 0}
 .dis-filas{display:grid;gap:6px}
@@ -904,7 +907,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261123132000';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261123133500';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -2229,6 +2232,41 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     }
     disEdit = null; pintarPedidos();
   }
+  // varios clickers de una tecla iguales: una sola tarjeta con las letras una al lado de la otra
+  function grupoHtml(bloques, g, numero) {
+    const b0 = bloques[g[0]], base = /🧱 Base:\s*(?:\S+\s+)?\*([^*]+)\*\s*·\s*([^\n]+)/.exec(b0);
+    const k0 = b0.split('\n').map(l => RE_TECLA.exec(l)).find(Boolean);
+    const hecho = id => !!(ltHechas && ltHechas.has(id));
+    const chip = (ids, txt) => { const todo = ids.every(hecho), algo = ids.filter(hecho).length;
+      return `<button type="button" class="imp-chip" data-imp-g="${esc(ids.join(' '))}" aria-pressed="${todo}">${todo ? '✓' : '○'} ${txt}${!todo && algo ? ` <span class="chico">(${algo} de ${ids.length})</span>` : ''}</button>`; };
+    const acan = /acanal/i.test(base ? base[2] : '');
+    const letras = g.map(n => { const m = bloques[n].split('\n').map(l => RE_TECLA.exec(l)).find(Boolean), id = numero + '-' + n + '-0';
+      const ch = SIMBOLO[m[1].trim().toLowerCase()] || m[1].trim();
+      return `<span class="teclas" style="background:${fondoBase(base && base[1], acan)}"><button type="button" class="tecla${hecho(id) ? ' hecha' : ''}" data-imp="${esc(id)}" aria-pressed="${hecho(id)}" title="Clicker ${n + 1} · toca para marcarla ${hecho(id) ? 'por imprimir' : 'impresa'}" style="background:${hexDe(m[2])};color:${hexDe(m[3])}">${capDe(ch, hexDe(m[3]), 20)}</button></span>`; }).join('');
+    const teclasIds = g.map(n => numero + '-' + n + '-0'), basesIds = base ? g.map(n => numero + '-' + n + '-base') : [];
+    const chs = g.map(n => charmsDeBloque(bloques[n], numero, n, '')), arm = g.map(n => armadoDeBloque(bloques[n], numero, n));
+    const piezas = (base ? [chip(basesIds, `🧱 ${g.length} bases ${esc(rc(base[1]))}`)] : [])
+      .concat(chs[0].map((x, i) => chip(chs.map(c => c[i] && c[i].id).filter(Boolean), `${charmDibujo(x, 20)} ${g.length} × ${esc(charmNombre(x))}`)));
+    const armar = arm[0].map((x, i) => chip(arm.map(a => a[i] && a[i].id).filter(Boolean), `${x.ico} ${esc(x.nombre)} (${g.length})`));
+    const cuenta = ids => ids.filter(id => !hecho(id)).length;
+    const fT = cuenta(teclasIds), fB = cuenta(basesIds), fC = chs.flat().filter(x => !hecho(x.id)).length, fA = arm.flat().filter(x => !hecho(x.id)).length;
+    const falta = [fT ? fT + ' de ' + g.length + ' teclas' : '', fB ? fB + (fB === 1 ? ' base' : ' bases') : '', fC ? fC + (fC === 1 ? ' charm' : ' charms') : ''].filter(Boolean);
+    const yFin = a => a.length > 1 ? a.slice(0, -1).join(', ') + ' y ' + a[a.length - 1] : a[0];
+    const lineas = b0.split('\n'), extras = []; let enEx = false;
+    lineas.forEach(l => { if (/^Extras:/.test(l.trim())) { enEx = true; return; } if (enEx) { if (!l.trim() || /^(Subtotal|🔗|💰|📸)/.test(l.trim())) enEx = false; else extras.push(sinAst(l.trim())); } });
+    const nums = g.map(n => n + 1), rango = nums.every((x, i) => !i || x === nums[i - 1] + 1) ? nums[0] + '–' + nums[nums.length - 1] : nums.join(', ');
+    return `<div class="web-clk">
+      <div class="tit">Clickers ${rango} · ${g.length} iguales, solo cambia la letra</div>
+      <div class="tira-fila grupo-letras">${letras}</div>
+      <div class="imp-chips"><span class="imp-lab">Imprimir</span>${piezas.join('')}</div>
+      ${armar.length ? `<div class="imp-chips"><span class="imp-lab">Armar</span>${armar.join('')}</div>` : ''}
+      <span class="imp-falta${falta.length || fA ? '' : ' ok'}">${falta.length ? '🖨️ Falta imprimir: ' + yFin(falta) + (fA ? ' · falta armar' : '') : fA ? '🔧 Impreso · falta armar' : '✓ Listo: impreso y armado'}</span>
+      <ul class="web-lin">${base ? `<li>🧱 Base <b>${esc(rc(base[1]))}</b> · ${esc(sinAst(base[2]))}</li>` : ''}
+        <li>Tecla ${esc(rc(k0[2]))} · letra ${esc(rc(k0[3]))}</li>
+        ${extras.map(x => `<li>${esc(x)} (cada uno)</li>`).join('')}</ul>
+      <div class="grupo-ed"><span class="chico">✏️ Cambiar uno:</span>${g.map(n => { const m = bloques[n].split('\n').map(l => RE_TECLA.exec(l)).find(Boolean); return `<button type="button" class="btn chico" data-dis-ed="${esc(numero)}" data-dis-n="${n}" title="Cambiar el clicker ${n + 1}">${esc(SIMBOLO[m[1].trim().toLowerCase()] || m[1].trim())}</button>`; }).join('')}</div>
+    </div>`;
+  }
   function detalleWeb(texto, items, numero) {
     let quedan = null;
     if (items) quedan = items.map(i => ({ w: palabras(i.producto), n: i.cantidad || 1 })).filter(x => x.w.length);
@@ -2248,8 +2286,22 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       const copias = numero && teclasDis && letrasPed > teclasDis && letrasPed % teclasDis === 0 ? letrasPed / teclasDis : 1;
       const hN = id => !ltHechas ? 0 : ltHechas.has(id) ? copias : Math.min(copias, (ltParcial && ltParcial.get(id)) || 0);
       const listos = [];
+      // clickers de una sola tecla iguales (misma base, colores y charms; solo cambia la letra): van juntos, uno al lado del otro
+      const grupoDe = {};
+      if (numero && bloques.length > 1 && copias === 1) {
+        const firma = {};
+        bloques.forEach((b, n) => {
+          if (!detAbierto.has(numero + '-' + n) && bloqueListo(b, numero, n)) return;
+          if (disEdit && disEdit.numero === numero && disEdit.n === n) return;
+          const ts = b.split('\n').filter(l => RE_TECLA.test(l)); if (ts.length !== 1) return;
+          const f = b.split('\n').map(l => l.trim()).filter(l => l && !/^(🔤|🔗|Subtotal|💰|📸)/.test(l)).map(l => RE_TECLA.test(l) ? l.replace(/^\s*\d+\.\s*\*[^*]+\*/, '#') : l).join('|');
+          (firma[f] = firma[f] || []).push(n);
+        });
+        Object.values(firma).filter(g => g.length > 1).forEach(g => g.forEach(n => { grupoDe[n] = g; }));
+      }
       const html = bloques.map((b, n) => {
         const base = /🧱 Base:\s*(?:\S+\s+)?\*([^*]+)\*\s*·\s*([^\n]+)/.exec(b);
+        if (grupoDe[n]) return grupoDe[n][0] === n ? grupoHtml(bloques, grupoDe[n], numero) : '';
         if (numero && bloques.length > 1 && !detAbierto.has(numero + '-' + n) && bloqueListo(b, numero, n)) {
           const ts = [...b.matchAll(/^\s*\d+\.\s*\*([^*]+)\*\s*→\s*tecla\s*(?:\S+\s+)?\*([^*]+)\*\s*·\s*letra\s*(?:\S+\s+)?\*([^*]+)\*/gm)];
           listos.push(`<button type="button" class="clk-listo" data-det="${esc(numero + '-' + n)}" title="Clicker ${n + 1} listo · toca para ver el detalle"><span class="teclas" style="background:${fondoBase(base && base[1], /acanal/i.test(base ? base[2] : ''))}">${ts.map(m => { const ch = SIMBOLO[m[1].trim().toLowerCase()] || m[1].trim(); return `<span class="tecla" style="background:${hexDe(m[2])};color:${hexDe(m[3])}">${capDe(ch, hexDe(m[3]), 20)}</span>`; }).join('')}</span></button>`);
@@ -3084,6 +3136,11 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     }
     const dt = e.target.closest('[data-det]');
     if (dt) { e.stopImmediatePropagation(); const v = dt.dataset.det; detAbierto.has(v) ? detAbierto.delete(v) : detAbierto.add(v); pintarPedidos(); return; }
+    const bg = e.target.closest('[data-imp-g]');
+    if (bg) { e.stopImmediatePropagation();
+      const ids = bg.dataset.impG.split(' ').filter(Boolean), sera = !ids.every(id => ltHechas.has(id));
+      ids.forEach(id => { if (ltHechas.has(id) !== sera) { sera ? ltHechas.add(id) : ltHechas.delete(id); ltCambio('hechas', id, sera); } });
+      avisar(sera ? '✓ Marcados ' + ids.length : 'Desmarcados'); pintarPedidos(); return; }
     const b = e.target.closest('[data-imp]'); if (!b) return;
     e.stopImmediatePropagation();
     const id = b.dataset.imp, sera = !ltHechas.has(id);
