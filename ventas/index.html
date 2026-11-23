@@ -127,6 +127,8 @@ button.tecla{padding:0;cursor:pointer}
 .dis-fila select{min-width:0}
 .dis-pers{display:grid;gap:6px;border-top:1px solid var(--line);padding-top:10px}
 .dis-pfila{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}
+.dis-cfila{display:grid;grid-template-columns:minmax(80px,auto) minmax(0,1fr) 22px;gap:8px;align-items:center;margin-bottom:6px}
+.dis-pto{width:22px;height:22px;border-radius:50%;border:1px solid rgba(0,0,0,.15)}
 .dis-n{font-weight:800;color:var(--muted);text-align:right}
 .clk-listos{background:var(--brand-soft);border-radius:12px;padding:10px;margin-bottom:10px}
 .clk-listos-f{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
@@ -902,7 +904,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261122062328';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261123132000';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -2123,6 +2125,24 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     disEdit.pers = b.split('\n').map(l => /Charm personalizado:\s*\*([^*]*)\*\s*—\s*(\$[\d.,]+)?/.exec(l)).filter(Boolean)
       .map(m => ({ nombre: /cuento/.test(m[1]) ? '' : m[1].trim(), precio: m[2] || '$1,50' }));
     disEdit.persAntes = disEdit.pers.length;
+    // charms con color (carita, flor, pelota): se puede cambiar el color
+    disEdit.charms = b.split('\n').map(l => RE_CHARM.exec(l.trim())).filter(Boolean).map(m => ({ nombre: m[2], c: m[3].trim().toLowerCase() }));
+    disEdit.bloqueAntes = b;
+  }
+  const RE_CHARM = /^(\S+\s+)?Charm (carita feliz|flor|pelota de fútbol)\s+(?:\S+\s+)?\*([^*]+)\*\s*(—.*)?$/;
+  // el link del diseño en 3D: se rehace con los colores nuevos (mismo orden de colores que la página de clickers)
+  function linkNuevo(linea, d, teclas) {
+    try {
+      const m = /(#c_)([A-Za-z0-9_-]+)/.exec(linea); if (!m) return linea;
+      let s = m[2].replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '=';
+      const o = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(s), ch => ch.charCodeAt(0))));
+      const CN = Object.keys(COLOR_HEX), ix = c => { const i = CN.indexOf(c); return i < 0 ? 0 : i; };
+      o.w = teclas.map(k => k.l.trim()).join(''); o.b = ix(d.base); o.s = /acanal/.test(d.tipo) ? 1 : 0;
+      o.t = teclas.map(k => ix(k.t)); o.l = teclas.map(k => ix(k.lc));
+      if (Array.isArray(o.c)) { let j = 0; o.c = o.c.map(x => { const ch = d.charms[j++]; return ch ? [x[0], ix(ch.c)] : x; }); }
+      const bytes = new TextEncoder().encode(JSON.stringify(o)); let bin = ''; bytes.forEach(x => bin += String.fromCharCode(x));
+      return linea.replace(m[0], '#c_' + btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''));
+    } catch (e) { return linea; }
   }
   const opColores = sel => Object.keys(COLOR_HEX).map(c => `<option${c === sel ? ' selected' : ''}>${esc(c)}</option>`).join('');
   // base acanalada: rayitas verticales y un borde marcado; lisa: color liso
@@ -2143,6 +2163,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         <button type="button" class="btn chico" data-de-del="${i}" aria-label="Quitar esta tecla">✕</button></div>`).join('')}</div>
       <div class="chico">Columnas: letra (puedes poner cualquier signo, como + o !) · color de la tecla · color de la letra</div>
       <div class="acciones"><button type="button" class="btn chico" data-de-add>＋ Agregar tecla</button></div>
+      ${d.charms.length ? `<div class="dis-pers"><label>Color de los charms</label>${d.charms.map((c, i) => `<div class="dis-cfila"><span>${esc(c.nombre[0].toUpperCase() + c.nombre.slice(1))}</span><select data-de-c="${i}" aria-label="Color del charm ${esc(c.nombre)}">${COLOR_HEX[c.c] ? '' : `<option selected>${esc(c.c)}</option>`}${opColores(c.c)}</select><span class="dis-pto" style="background:${hexDe(c.c)}"></span></div>`).join('')}</div>` : ''}
       <div class="dis-pers"><label>Charms personalizados</label>
         ${d.pers.map((c, i) => `<div class="dis-pfila"><input data-de-p="${i}" value="${esc(c.nombre)}" maxlength="60" placeholder="¿Qué charm pidió? Ej.: Kuromi, Stitch, un gato negro" aria-label="Charm personalizado ${i + 1}"><button type="button" class="btn chico" data-de-pdel="${i}" aria-label="Quitar este charm">✕</button></div>`).join('') || '<div class="chico">Este clicker no tiene charm personalizado.</div>'}
         <div class="acciones"><button type="button" class="btn chico" data-de-padd>＋ Agregar charm personalizado</button></div></div>
@@ -2177,12 +2198,18 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       }
       out.splice(ip, 0, ...lineasPers);
     }
+    // color de los charms
+    let jc = 0;
+    out = out.map(l => { const m = RE_CHARM.exec(l.trim()); if (!m) return l; const ch = d.charms[jc++]; if (!ch) return l;
+      return `${m[1] || ''}Charm ${m[2]} *${ch.c}*${m[4] ? ' ' + m[4].trim() : ''}`; });
+    out = out.map(l => /🔗/.test(l) ? linkNuevo(l, d, teclas) : l);
     partes[idx] = out.join('\n');
     const texto = partes.join('');
     const antes = bloquesDe(p.diseno)[d.n].split('\n').filter(l => RE_TECLA.test(l)).length, dif = teclas.length - antes;
     p.diseno = texto;
     const palabras = bloquesDe(texto).map(bb => sinAst((/Palabra:\s*\*([^*]+)\*/.exec(bb) || [])[1] || '').replace(/\[([^\]]+)\]/g, (m, x) => SIMBOLO[x.toLowerCase()] || '•')).join(', ');
-    accionFondo({ accion: 'editarDiseno', numero: d.numero, texto, palabras }, 'Diseño cambiado');
+    // se manda solo este clicker: si el pedido cambió en otro lado, no se pisan los demás
+    accionFondo({ accion: 'editarDiseno', numero: d.numero, texto, palabras, n: d.n, bloque: partes[idx], bloqueAntes: d.bloqueAntes, varios: partes.length > 1 }, 'Diseño cambiado');
     // si cambió la cantidad de letras, se ajusta el precio del pedido
     const it = p.items.find(i => esLetra(i.producto));
     if (dif && it && it.fila) {
@@ -3033,6 +3060,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     if (t.matches('[data-de-base]')) disEdit.base = t.value;
     else if (t.matches('[data-de-tipo]')) disEdit.tipo = t.value;
     else if (t.dataset.deP !== undefined) { disEdit.pers[+t.dataset.deP].nombre = t.value; return; }
+    else if (t.dataset.deC !== undefined) { disEdit.charms[+t.dataset.deC].c = t.value; const pt = t.parentNode.querySelector('.dis-pto'); if (pt) pt.style.background = hexDe(t.value); return; }
     else if (t.dataset.deI !== undefined) disEdit.teclas[+t.dataset.deI][t.dataset.deK] = t.dataset.deK === 'l' ? t.value.toUpperCase() : t.value;
     const pv = document.querySelector('[data-dis-prev]'); if (pv) pv.innerHTML = tiraDis(disEdit);
   };
