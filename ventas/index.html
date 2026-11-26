@@ -63,7 +63,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-o
 .segmento button{border:0;background:transparent;border-radius:9px;padding:10px;font-weight:700;color:var(--muted)}
 .segmento button[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink)}
 #kImpBtns{grid-template-columns:repeat(3,1fr)}
-.rapido .nums{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.rapido .nums{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
 .rapido .nums button{border:1px solid var(--line);background:var(--surface);border-radius:14px;font-size:24px;font-weight:800;padding:12px 0;cursor:pointer}
 .rapido .nums button:active,.grid-extra button:active{transform:scale(.96);background:var(--brand);color:var(--brand-ink)}
 .grid-extra{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:6px}
@@ -531,6 +531,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       <div class="nums" id="numsLetras">
         <button data-n="1">1</button><button data-n="2">2</button><button data-n="3">3</button><button data-n="4">4</button>
         <button data-n="5">5</button><button data-n="6">6</button><button data-n="7">7</button><button data-n="8">8</button>
+        <button data-n="9">9</button><button data-n="10">10</button>
       </div>
       <b style="display:block;margin-top:12px">Extras y clickers de objeto</b>
       <div class="grid-extra" id="gridExtras"></div>
@@ -907,7 +908,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261123134500';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261125231500';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
