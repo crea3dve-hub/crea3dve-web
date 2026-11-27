@@ -132,6 +132,16 @@ body.sheet-open .bar{visibility:hidden}
 .sec h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin:0 0 10px;display:flex;align-items:center;gap:8px;font-weight:800}
 .step{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--brand);color:var(--brand-ink);font-size:12px;align-items:center;justify-content:center;font-family:var(--display)}
 .hint{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+.paletas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.pal{display:flex;align-items:center;gap:7px;min-height:44px;padding:6px 9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;font:600 13px var(--body);cursor:pointer;text-align:left}
+.pal[aria-pressed="true"]{border-color:var(--brand);box-shadow:0 0 0 2px var(--brand) inset}
+.pal .pts{display:flex;flex:none}
+.pal .pts i{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--surface);margin-left:-6px;box-shadow:0 0 0 1px rgba(0,0,0,.12)}
+.pal .pts i:first-child{margin-left:0}
+.pal span.nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pal.spin .pts{animation:palgira .35s}
+@keyframes palgira{50%{transform:scale(1.15)}}
+@media (prefers-reduced-motion:reduce){.pal.spin .pts{animation:none}}
 input[type=text]{width:100%;font:800 22px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;padding:10px 12px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
 input[type=text]:focus{outline:none;border-color:var(--brand)}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
@@ -227,6 +237,9 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
         <h2><span class="step">2</span>Colores</h2>
         <button class="btn randbtn" id="randbtn" type="button">Colores al azar</button>
         <p class="hint" style="margin:-4px 0 10px">¿No sabes qué colores escoger? Toca las veces que quieras hasta que te guste.</p>
+        <span class="label">O parte de una paleta</span>
+        <div class="paletas" id="paletas" role="group" aria-label="Paletas de colores"></div>
+        <p class="hint" style="margin:6px 0 12px">Toca una paleta varias veces: cada vez combina sus colores de otra forma.</p>
         <span class="label">Base</span>
         <div class="swatches" id="sw-base"></div>
         <div class="row" style="margin-top:10px">
@@ -833,10 +846,71 @@ function randomize(){
   st.charms.forEach(c=>{ c.c = pick(CH.filter(x=>!st.tiles.includes(x)).concat(CH).slice(0,CH.length)); });
   render();
 }
+/* ---------- paletas: un punto de partida; cada toque combina sus colores de otra forma ---------- */
+const PALETAS = [
+  {n:"Rosados",          tiles:["Rosa","Rosado mate","Púrpura mate","Magenta claro"],            bases:["Blanco","Rosa","Rosado mate"],          letras:["Blanco","Morado","Rosa"]},
+  {n:"Rosa y morado",    tiles:["Rosa","Morado","Púrpura mate","Violeta"],                       bases:["Morado","Blanco","Rosa"],               letras:["Amarillo","Blanco","Morado"]},
+  {n:"Verdes",           tiles:["Verde","Verde grama","Verde claro","Amarillo mantequilla"],     bases:["Blanco","Verde","Azul oscuro"],         letras:["Blanco","Azul oscuro","Verde"]},
+  {n:"Oscuros",          tiles:["Negro","Azul oscuro","Morado","Gris"],                          bases:["Negro","Azul oscuro","Gris"],           letras:["Plateado","Dorado","Blanco"]},
+  {n:"Primarios", tiles:["Rojo","Azul","Amarillo","Verde grama"],                    bases:["Blanco","Azul","Negro"],                letras:["Blanco","Azul oscuro","Amarillo"]},
+  {n:"Pastel",           tiles:["Azul celeste","Verde claro","Púrpura mate","Amarillo mantequilla","Rosado mate"], bases:["Blanco","Beige"], letras:["Violeta","Azul","Rosa"]},
+  {n:"Océano",           tiles:["Azul","Azul celeste","Azul oscuro","Blanco"],                   bases:["Azul oscuro","Blanco","Azul"],          letras:["Blanco","Amarillo","Azul oscuro"]},
+  {n:"Atardecer",        tiles:["Naranja","Rojo","Amarillo","Rosa"],                             bases:["Morado","Azul oscuro","Blanco"],        letras:["Blanco","Amarillo","Morado"]},
+  {n:"Elegante",         tiles:["Negro","Blanco","Dorado","Plateado","Mármol"],                  bases:["Negro","Blanco","Beige"],               letras:["Dorado","Negro","Blanco"]},
+  {n:"Arcoíris",         tiles:["Rojo","Naranja","Amarillo","Verde grama","Azul","Violeta"],     bases:["Blanco","Negro"],                       letras:["Blanco","Negro"]},
+];
+PALETAS.forEach(p=>["tiles","bases","letras"].forEach(k=>{ p[k] = p[k].filter(c=>!FIL_AGOTADO.has(c) && COLORES.some(x=>x[0]===c)); }));
+let palActiva = -1, lastPal = "";
+function letraPara(tile, letras){
+  const ok = shuffle(letras).filter(c=>c!==tile && contrast(c,tile)>=2.6);
+  if(ok.length) return ok[0];
+  return contrast("Blanco",tile) >= contrast("Negro",tile) ? "Blanco" : "Negro";
+}
+function usarPaleta(i){
+  const p = PALETAS[i], n = keys().length; if(!p || !n) return;
+  let sig = "", tries = 0;
+  do{
+    const cols = shuffle(p.tiles), forma = pick(["mezcla","mezcla","alternado","seguido","espejo","uno"]);
+    let tiles;
+    if(forma==="alternado"){ const [a,b]=cols; tiles=Array.from({length:n},(_,k)=>k%2?b:a); }
+    else if(forma==="seguido"){ tiles=Array.from({length:n},(_,k)=>cols[k%cols.length]); }
+    else if(forma==="espejo"){ const m=Math.ceil(n/2), mitad=Array.from({length:m},(_,k)=>cols[k%cols.length]); tiles=mitad.concat(mitad.slice(0,n-m).reverse()); }
+    else if(forma==="uno"){ tiles=Array.from({length:n},()=>cols[0]); }
+    else { let bag=[]; while(bag.length<n) bag=bag.concat(shuffle(p.tiles)); tiles=bag.slice(0,n);
+      for(let k=1;k<n;k++) if(tiles[k]===tiles[k-1] && p.tiles.length>1) tiles[k]=pick(p.tiles.filter(c=>c!==tiles[k-1])); }
+    // misma tecla → misma letra (se ve ordenado y se imprime más fácil)
+    const porTecla = {}; const legs = tiles.map(x=> porTecla[x] || (porTecla[x] = letraPara(x, p.letras)));
+    const bases = p.bases.filter(b=>!tiles.every(x=>x===b));
+    st.tiles = tiles; st.legs = legs; st.base = pick(bases.length ? bases : p.bases); st.mode = forma==="uno" ? "one" : "mix";
+    sig = st.base + tiles.join() + legs.join(); tries++;
+  } while(sig===lastPal && tries<10);
+  lastPal = sig; st.mixTiles = null; st.mixLegs = null;
+  // charms y aros: solo cambia el color (de la misma paleta), no lo que la persona escogió
+  const tonos = p.tiles.concat(p.letras).filter((c,k,a)=>a.indexOf(c)===k);
+  st.charms.forEach(c=>{ c.c = pick(tonos); });
+  st.aros.forEach(x=>{ const a = AROS.find(y=>y.id===x.t); if(a) x.c = pick(a.colores)[0]; });
+  render();
+}
+function pintarPaletas(){
+  const el = $("paletas"); if(!el) return;
+  el.innerHTML = PALETAS.map((p,i)=>`<button type="button" class="pal" data-pal="${i}" aria-pressed="${i===palActiva}" aria-label="Paleta ${p.n}"><span class="pts">${p.tiles.slice(0,4).map(c=>`<i style="background:${(COLORES.find(x=>x[0]===c)||[])[2]||hex(c)}"></i>`).join("")}</span><span class="nm">${p.n}</span></button>`).join("");
+}
+pintarPaletas();
+$("paletas").addEventListener("click", e=>{
+  const b = e.target.closest("[data-pal]"); if(!b) return;
+  if(!keys().length){ $("word").focus(); return; }
+  palActiva = +b.dataset.pal;
+  $("paletas").querySelectorAll("[data-pal]").forEach(x=>x.setAttribute("aria-pressed", String(+x.dataset.pal===palActiva)));
+  b.classList.remove("spin"); void b.offsetWidth; b.classList.add("spin");
+  usarPaleta(palActiva);
+});
 function spinDice(btn){ btn.classList.remove("spin"); void btn.offsetWidth; btn.classList.add("spin"); setTimeout(()=>btn.classList.remove("spin"),380); }
 ["randtop","randbtn"].forEach(id=>$(id).onclick=()=>{
   if(!keys().length){ $("word").focus(); return; }
-  spinDice($(id)); randomize();
+  spinDice($(id));
+  if(id==="randtop" && palActiva>=0) return usarPaleta(palActiva);   // arriba: sigue con la paleta escogida
+  if(palActiva>=0){ palActiva=-1; pintarPaletas(); }
+  randomize();
 });
 $("homebtn").onclick = ()=>{ if(window.__homeView) window.__homeView(); };
 
