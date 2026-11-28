@@ -860,8 +860,8 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     <div class="card r-graf" id="rGraf"></div>
     <div class="dos solo-movil" style="margin-top:12px"><button type="button" class="btn" id="btnIrVentas">🧾 Histórico de ventas</button><button type="button" class="btn" id="btnIrAnalisis">📊 Análisis de ventas</button></div>
     <p class="chico" style="margin:8px 4px"><a id="probarPuente" href="#" target="_blank" rel="noopener">🔧 Probar el puente</a> (abre la conexión con la hoja; si sale un error, mándale captura a Claude)</p>
-    <h3>Bazar</h3>
-    <div class="card" id="rBazar"></div>
+    <h3>🎉 Eventos <small class="chico">(bazares, cumpleaños y pedidos grandes)</small></h3>
+    <div id="rEventos"></div>
     <details class="card" id="cardPago">
       <summary>💳 Mis datos de pago</summary>
       <p class="chico" style="margin:4px 0 8px">Salen en el mensaje de pago y en la nota de pedido cuando el cliente todavía no ha pagado. Una línea por dato.</p>
@@ -908,7 +908,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261125231500';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261128113000';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -3266,6 +3266,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     // Al marcar como pagado, propone Pago móvil y quita el aviso "POR PAGAR" de la nota
     const metodoIni = modo === 'pagar' ? 'Pago móvil' : modo === 'nuevo' || modo === 'comprado' ? 'Pago móvil' : (g.metodo || '');
     const notaIni = modo === 'pagar' ? limpiarNotaPP(g.nota) : (g.nota || '');
+    const evIni = eventoDeNota(g.nota);
     return `<div class="fg" data-modo="${modo}">
       ${modo === 'comprado' ? `<b>${esc(g.que)}</b>` : `<label>Qué compraste</label><input data-k="que" value="${esc(g.que || '')}" placeholder="Ej: 2 rollos PLA negro">`}
       <div class="dos">
@@ -3289,7 +3290,8 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         <div><label>Para</label><select data-k="para">${ops(['Negocio', 'Bazar'], g.para || 'Negocio')}</select></div>
       </div>
       <label>Cómo pagaste</label><select data-k="metodo">${modo === 'pagar' ? '' : `<option value=""${metodoIni ? '' : ' selected'}>⚠️ Todavía no lo he pagado</option>`}${ops(L.metodosCompra, metodoIni)}</select>
-      <label>Nota (opcional)</label><input data-k="nota" value="${esc(notaIni)}">
+      <label>¿De qué evento es? (opcional)</label><select data-k="evento"><option value="">Ninguno (gasto general)</option>${EVENTOS.map(x => `<option${x.nombre === evIni ? ' selected' : ''}>${esc(x.nombre)}</option>`).join('')}</select>
+      <label>Nota (opcional)</label><input data-k="nota" value="${esc((esPP(notaIni) ? '⚠️ POR PAGAR · ' : '') + quitarEvento(limpiarNotaPP(notaIni)))}">
       <div class="acciones" style="margin-top:12px">
         <button class="btn primario" data-guardar-g>${boton}</button>
         ${modo !== 'nuevo' ? '<button class="btn" data-cancelar-g>Cancelar</button>' : ''}
@@ -3310,7 +3312,8 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
     if (!(monto >= 0)) { avisar('Pon el monto', true); return null; }
     if (esFutura(v('fecha'))) { avisar(avisoFecha, true); return null; }
     // Sin método de pago = todavía no lo pagó: se marca en la nota para que se vea también en el Sheets
-    nota = limpiarNotaPP(nota);
+    nota = quitarEvento(limpiarNotaPP(nota));
+    if (v('evento')) nota = 'Evento: ' + v('evento') + (nota ? ' · ' + nota : '');
     if (!v('metodo')) nota = '⚠️ POR PAGAR' + (nota ? ' · ' + nota : '');
     return { que: v('que').trim(), fecha: v('fecha'), monto, pct: v('pct'), para: v('para'), tipo: v('tipo'), metodo: v('metodo'), nota };
   }
@@ -3716,15 +3719,77 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
       (porPagar().length ? tile('💸 Me falta pagar', fmt(porPagar().reduce((s, g) => s + g.miParte, 0)), '') : '');
     pintarSemana(); pintarMes(); pintarGrafico();
     if (!$('#tab-analisis').hidden) pintarAnalisis();
-    const fila = (a, b) => `<div class="stat"><span>${a}</span><b>${b}</b></div>`;
-    // la ganancia = vendido − costo de lo vendido − gastos del bazar (el costo se saca de lo otro para que las cuentas cuadren)
-    const costoBazar = (r.bazarVendido || 0) - (r.bazarGastos || 0) - (r.bazarGanancia || 0);
-    $('#rBazar').innerHTML = fila('Vendido en el bazar', fmt(r.bazarVendido)) +
-      fila('− Costo de lo que vendiste <span class="chico">(material, switches, aros, máquina, comisión del punto)</span>', fmt(costoBazar)) +
-      fila('− Gastos del bazar <span class="chico">(tu mitad del stand y la mesa, camisas, uso del punto)</span>', fmt(r.bazarGastos)) +
-      fila('<b>= Ganancia del bazar</b>', ganTxt(r.bazarGanancia, r.bazarVendido)) +
-      '<p class="chico" style="margin:8px 0 0">El stand y la mesa son de los dos días: con lo que vendas hoy domingo esto sube. El % es de lo vendido en el bazar.</p>';
+    pintarEventos();
   }
+
+
+  /* ---------- Eventos: bazares, cumpleaños y pedidos grandes ---------- */
+  // La lista la mantiene Claude (igual que la pestaña "Eventos" de la hoja).
+  // Ventas: en un bazar, las del canal Bazar entre esas fechas; en lo demás, los N° de venta de la lista.
+  // Gastos: los que en la nota empiezan con "Evento: <nombre>".
+  const EVENTOS = [
+    { nombre: 'Bazar 10–11 oct', tipo: 'Bazar', desde: '10/10/2026', hasta: '11/10/2026', nota: 'Aura Bazar, C.C. Cerro Verde · puesto compartido con tu amiga (50%)' },
+    { nombre: 'Zulia', tipo: 'Pedido grande', desde: '05/11/2026', hasta: '11/12/2026', ventas: ['V-0266'], nota: '1.500 soportes con placa, entrega en caja · presupuesto PR-0004' },
+    { nombre: 'Cumpleaños 31 niños', tipo: 'Cumpleaños', desde: '14/11/2026', hasta: '14/11/2026', ventas: ['V-0265'], nota: 'Presupuesto PR-0009 · clicker bar en el evento' },
+    { nombre: 'Bazar 19 nov', tipo: 'Bazar', desde: '19/11/2026', hasta: '19/11/2026', nota: 'Club Altamira · espacio compartido con tu amiga' },
+    { nombre: 'Cumpleaños Ale Carabaño', tipo: 'Cumpleaños', desde: '28/11/2026', hasta: '28/11/2026', ventas: ['V-0291'], nota: 'Presupuesto PR-0003, opción A · 65 invitados' },
+    { nombre: 'Bazar 19–21 dic', tipo: 'Bazar', desde: '19/12/2026', hasta: '21/12/2026', nota: '' },
+  ];
+  // "Evento: Zulia · resto de la nota" (puede venir después de "⚠️ POR PAGAR · ")
+  function eventoDeNota(n) { const m = /^\s*Evento:\s*([^·]+?)\s*(?:·|$)/.exec(limpiarNotaPP(n)); return m ? m[1].trim() : ''; }
+  function quitarEvento(n) { return String(n || '').replace(/^\s*Evento:\s*[^·]+?\s*(?:·\s*|$)/, '').trim(); }
+  const ES_MATERIAL = t => t === 'Filamento' || /^Insumos/.test(t || '');
+  let evAbierto = {};
+  function cuentaEvento(ev) {
+    const a = dDe(ev.desde), b = dDe(ev.hasta);
+    const ventas = datos.ventas.filter(p => {
+      if (p.estado === 'Cancelado') return false;
+      if (ev.ventas && ev.ventas.length) return ev.ventas.indexOf(p.numero) >= 0;
+      const d = dDe(p.fecha); return p.canal === 'Bazar' && d && a && b && d >= a && d <= b;
+    });
+    const gastos = datos.gastos.filter(g => eventoDeNota(g.nota).toLowerCase() === ev.nombre.toLowerCase());
+    const vendido = ventas.reduce((s, p) => s + sinDelivery(p), 0);
+    const ganProd = ventas.reduce((s, p) => s + p.items.reduce((x, i) => x + (typeof i.ganancia === 'number' ? i.ganancia : 0), 0), 0);
+    // el filamento e insumos comprados para el evento ya están dentro del costo de cada producto: se muestran pero no se restan dos veces
+    const material = gastos.filter(g => ES_MATERIAL(g.tipo)), otros = gastos.filter(g => !ES_MATERIAL(g.tipo));
+    const gastosEv = otros.reduce((s, g) => s + (g.miParte || 0), 0);
+    const porCobrar = ventas.filter(p => !yaCobrada(p)).reduce((s, p) => s + Math.max(0, sinDelivery(p) - (p.abonado || 0)), 0);
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    return { ventas, material, otros, vendido, ganProd, gastosEv, limpio: ganProd - gastosEv, porCobrar, futuro: a && a > hoy && !ventas.length };
+  }
+  function pintarEventos() {
+    const box = $('#rEventos'); if (!box) return;
+    const fila = (a, b) => `<div class="stat"><span>${a}</span><b>${b}</b></div>`;
+    const lista = EVENTOS.map(ev => ({ ev, c: cuentaEvento(ev), d: dDe(ev.desde) })).sort((x, y) => (y.d || 0) - (x.d || 0));
+    box.innerHTML = lista.map(({ ev, c }) => {
+      const fechas = ev.desde === ev.hasta ? ev.desde : ev.desde.slice(0, 5) + ' al ' + ev.hasta;
+      const cab = `<div class="pedido-cab"><div><b>${esc(ev.nombre)}</b><div class="chico">${esc(ev.tipo)} · ${esc(fechas)}${ev.nota ? ' · ' + esc(ev.nota) : ''}</div></div>
+        <div style="text-align:right">${c.futuro ? '<span class="pill">Próximo</span>' : `<span class="pill ${c.limpio >= 0 ? 'Pagado' : 'Cancelado'}">${c.limpio >= 0 ? 'Ganancia' : 'Pérdida'}</span><div style="font-weight:800;margin-top:4px">${fmt(c.limpio)}</div>`}</div></div>`;
+      if (c.futuro) return `<div class="card">${cab}<p class="chico" style="margin:8px 0 0">Todavía no ha pasado. Sus gastos se van sumando aquí: ${fmt(c.gastosEv)}.</p></div>`;
+      const abierto = !!evAbierto[ev.nombre];
+      const detalle = abierto ? `<div style="margin-top:8px">
+          <div class="chico" style="margin:6px 0 2px"><b>Ventas (${c.ventas.length})</b></div>
+          ${c.ventas.map(p => `<div class="stat"><span>${esc(p.numero)} · ${esc(p.cliente || 'Sin nombre')}<div class="chico">${esc(p.fecha)} · ${esc(PILL_TXT[p.estado] || p.estado)}${p.abonado && !yaCobrada(p) ? ' · abonó ' + fmt(p.abonado) : ''}</div></span><b>${fmt(sinDelivery(p))}</b></div>`).join('') || '<p class="chico">Sin ventas.</p>'}
+          <div class="chico" style="margin:10px 0 2px"><b>Gastos del evento (${c.otros.length})</b></div>
+          ${c.otros.map(g => `<div class="stat"><span>${esc(g.que)}<div class="chico">${esc(g.fecha || 'sin fecha')}${esPP(g.nota) ? ' · ⚠️ por pagar' : ''}</div></span><b>${fmt(g.miParte)}</b></div>`).join('') || '<p class="chico">Sin gastos anotados.</p>'}
+          ${c.material.length ? `<div class="chico" style="margin:10px 0 2px"><b>Material comprado para este evento</b> (ya va dentro del costo de lo vendido, no se resta otra vez)</div>
+          ${c.material.map(g => `<div class="stat"><span>${esc(g.que)}<div class="chico">${esc(g.fecha || 'sin fecha')}</div></span><b>${fmt(g.miParte)}</b></div>`).join('')}` : ''}
+        </div>` : '';
+      return `<div class="card" data-ev="${esc(ev.nombre)}">${cab}
+        <div style="margin-top:8px">
+          ${fila('Vendido' + (c.porCobrar > 0 ? ' <span class="chico">(incluye lo que falta cobrar)</span>' : ''), fmt(c.vendido))}
+          ${fila('− Costo de lo vendido <span class="chico">(material, switches, aros)</span>', fmt(c.vendido - c.ganProd))}
+          ${fila('− Gastos del evento <span class="chico">(puesto, ayuda, transporte…)</span>', fmt(c.gastosEv))}
+          ${fila('<b>= Te quedó limpio</b>', ganTxt(c.limpio, c.vendido))}
+          ${c.porCobrar > 0 ? fila('💵 Falta por cobrar', fmt(c.porCobrar)) : ''}
+        </div>
+        <button class="btn chico" data-ev-ver style="margin-top:8px">${abierto ? 'Ocultar detalle' : 'Ver ventas y gastos'}</button>${detalle}</div>`;
+    }).join('') + `<p class="chico" style="margin:8px 4px">Para un evento nuevo, mándale a Claude el nombre y las fechas. Para sumar un gasto a un evento, al anotarlo escoge el evento en "¿De qué evento es?". El stand modular no se carga a ningún bazar porque se usa en todos.</p>`;
+  }
+  $('#rEventos').addEventListener('click', e => {
+    const b = e.target.closest('[data-ev-ver]'); if (!b) return;
+    const n = b.closest('[data-ev]').dataset.ev; evAbierto[n] = !evAbierto[n]; pintarEventos();
+  });
 
   /* ---------- Análisis de ventas: qué es lo que más se vende ---------- */
   var anPer = 'todo';
