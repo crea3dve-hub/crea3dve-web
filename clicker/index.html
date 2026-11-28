@@ -235,6 +235,11 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
 
       <section class="sec">
         <h2><span class="step">2</span>Colores</h2>
+        <span class="label" style="margin-top:0">Teclas</span>
+        <div class="row" style="margin-bottom:12px">
+          <button class="btn" id="mode-one" aria-pressed="false">Todas iguales</button>
+          <button class="btn" id="mode-mix" aria-pressed="true">Combinadas</button>
+        </div>
         <button class="btn randbtn" id="randbtn" type="button">Colores al azar</button>
         <p class="hint" style="margin:-4px 0 10px">¿No sabes qué colores escoger? Toca las veces que quieras hasta que te guste.</p>
         <span class="label">O parte de una paleta</span>
@@ -246,11 +251,7 @@ input[type=text]:focus{outline:none;border-color:var(--brand)}
           <button class="btn" id="st-lisa" aria-pressed="true">Base lisa</button>
           <button class="btn" id="st-acan" aria-pressed="false">Base acanalada</button>
         </div>
-        <span class="label">Teclas</span>
-        <div class="row" style="margin-bottom:8px">
-          <button class="btn" id="mode-one" aria-pressed="false">Todas iguales</button>
-          <button class="btn" id="mode-mix" aria-pressed="true">Combinadas</button>
-        </div>
+        <span class="label">Tus teclas</span>
         <div class="keys" id="keychips" aria-label="Tus teclas"></div>
         <p class="hint" id="mixhint">Toca una tecla (aquí o en el 3D) para cambiarle el color o la letra.</p>
         <div id="onecolors">
@@ -824,18 +825,20 @@ let lastRand = "";
 function randomize(){
   const n = keys().length; let sig="", tries=0;
   do{
-    const t = pick(TEMAS.concat(TEMAS.slice(0,2)));   // pastel y vibrante salen un poco más
+    const uno = st.mode==="one";   // respeta lo que escogió: todas iguales o combinadas
+    const t = pick(TEMAS.concat(TEMAS.slice(0,2)).filter(x=> uno ? !x.seq : !x.one));   // pastel y vibrante salen un poco más
     let tiles=[];
-    if(t.seq){ const off=Math.floor(Math.random()*t.seq.length); tiles=Array.from({length:n},(_,i)=>t.seq[(off+i)%t.seq.length]); }
+    if(uno){ const c=pick(t.tiles); tiles=Array.from({length:n},()=>c); }
+    else if(t.seq){ const off=Math.floor(Math.random()*t.seq.length); tiles=Array.from({length:n},(_,i)=>t.seq[(off+i)%t.seq.length]); }
     else if(t.one){ const c=pick(t.tiles); tiles=Array.from({length:n},()=>c); }
     else if(t.n==="dos tonos"){ const [a,b]=shuffle(t.tiles); tiles=Array.from({length:n},(_,i)=>i%2?b:a); }
     else { let bag=[]; while(bag.length<n) bag=bag.concat(shuffle(t.tiles)); tiles=bag.slice(0,n);
       for(let i=1;i<n;i++) if(tiles[i]===tiles[i-1]) tiles[i]=pick(t.tiles.filter(c=>c!==tiles[i-1])); }
     let base = pick(t.bases.filter(b=>!tiles.every(x=>x===b)));
     let legs;
-    if(t.one || t.n==="dos tonos"){ const l = legFor(tiles[0], t.acc); legs = tiles.map(x=> contrast(l,x)>=2.6 ? l : legFor(x,t.acc)); }
+    if(uno || t.n==="dos tonos"){ const l = legFor(tiles[0], t.acc); legs = tiles.map(x=> contrast(l,x)>=2.6 ? l : legFor(x,t.acc)); }
     else legs = tiles.map(x=>legFor(x,t.acc));
-    st.tiles=tiles; st.legs=legs; st.base=base; st.mode = t.one ? "one" : "mix";
+    st.tiles=tiles; st.legs=legs; st.base=base;
     st.style = Math.random()<.3 ? "acanalada" : "lisa";
     sig = st.base+st.style+tiles.join()+legs.join(); tries++;
   } while(sig===lastRand && tries<8);
@@ -844,6 +847,7 @@ function randomize(){
   st.aros.forEach(x=>{ const a = AROS.find(y=>y.id===x.t); if(a) x.c = pick(a.colores)[0]; });
   const CH = ["Amarillo","Azul celeste","Rosa","Verde claro","Violeta","Blanco","Naranja","Rojo","Azul","Rosado mate","Magenta claro"].filter(c=>!FIL_AGOTADO.has(c));
   st.charms.forEach(c=>{ c.c = pick(CH.filter(x=>!st.tiles.includes(x)).concat(CH).slice(0,CH.length)); });
+  cadenaCon(st.tiles.concat([st.base]));
   render();
 }
 /* ---------- paletas: un punto de partida; cada toque combina sus colores de otra forma ---------- */
@@ -868,20 +872,20 @@ function letraPara(tile, letras){
 }
 function usarPaleta(i){
   const p = PALETAS[i], n = keys().length; if(!p || !n) return;
-  let sig = "", tries = 0;
+  let sig = "", tries = 0; const antes = st.tiles[0];
   do{
-    const cols = shuffle(p.tiles), forma = pick(["mezcla","mezcla","alternado","seguido","espejo","uno"]);
+    const cols = shuffle(p.tiles), forma = st.mode==="one" ? "uno" : pick(["mezcla","mezcla","alternado","seguido","espejo"]);
     let tiles;
     if(forma==="alternado"){ const [a,b]=cols; tiles=Array.from({length:n},(_,k)=>k%2?b:a); }
     else if(forma==="seguido"){ tiles=Array.from({length:n},(_,k)=>cols[k%cols.length]); }
     else if(forma==="espejo"){ const m=Math.ceil(n/2), mitad=Array.from({length:m},(_,k)=>cols[k%cols.length]); tiles=mitad.concat(mitad.slice(0,n-m).reverse()); }
-    else if(forma==="uno"){ tiles=Array.from({length:n},()=>cols[0]); }
+    else if(forma==="uno"){ const c = pick(p.tiles.length>1 ? p.tiles.filter(x=>x!==antes) : p.tiles); tiles=Array.from({length:n},()=>c); }
     else { let bag=[]; while(bag.length<n) bag=bag.concat(shuffle(p.tiles)); tiles=bag.slice(0,n);
       for(let k=1;k<n;k++) if(tiles[k]===tiles[k-1] && p.tiles.length>1) tiles[k]=pick(p.tiles.filter(c=>c!==tiles[k-1])); }
     // misma tecla → misma letra (se ve ordenado y se imprime más fácil)
     const porTecla = {}; const legs = tiles.map(x=> porTecla[x] || (porTecla[x] = letraPara(x, p.letras)));
     const bases = p.bases.filter(b=>!tiles.every(x=>x===b));
-    st.tiles = tiles; st.legs = legs; st.base = pick(bases.length ? bases : p.bases); st.mode = forma==="uno" ? "one" : "mix";
+    st.tiles = tiles; st.legs = legs; st.base = pick(bases.length ? bases : p.bases);
     sig = st.base + tiles.join() + legs.join(); tries++;
   } while(sig===lastPal && tries<10);
   lastPal = sig; st.mixTiles = null; st.mixLegs = null;
@@ -889,7 +893,17 @@ function usarPaleta(i){
   const tonos = p.tiles.concat(p.letras).filter((c,k,a)=>a.indexOf(c)===k);
   st.charms.forEach(c=>{ c.c = pick(tonos); });
   st.aros.forEach(x=>{ const a = AROS.find(y=>y.id===x.t); if(a) x.c = pick(a.colores)[0]; });
+  cadenaCon(st.tiles.concat([st.base]));
   render();
+}
+// si escogió cadenita de colores: se cambia al color de cadenita más parecido a uno de estos colores
+function cadenaCon(tonos){
+  if(st.colgar !== "colores") return;
+  const A = {"Rojo":"Rojo","Rosa":"Fucsia","Magenta claro":"Fucsia","Morado":"Fucsia","Violeta":"Fucsia","Rosado mate":"Rosado","Púrpura mate":"Rosado",
+    "Naranja":"Naranja","Marrón":"Naranja","Amarillo":"Amarillo","Amarillo mantequilla":"Amarillo","Dorado":"Amarillo",
+    "Verde":"Verde","Verde grama":"Verde limón","Verde claro":"Verde menta","Azul":"Azul","Azul oscuro":"Azul","Azul celeste":"Celeste","Blanco":"Blanco"};
+  const op = [...new Set(tonos.map(c=>A[c]).filter(c=>c && CADC[c]))];
+  st.cadColor = op.length ? pick(op) : "Blanco";
 }
 function pintarPaletas(){
   const el = $("paletas"); if(!el) return;
@@ -919,7 +933,7 @@ $("st-acan").onclick=()=>{st.style="acanalada";render();};
 $("mode-one").onclick=()=>{
   if(st.mode==="one") return;
   st.mixTiles=[...st.tiles]; st.mixLegs=[...st.legs];          // guarda cómo estaban
-  st.mode="one"; const t=st.tiles[st.sel]||"Morado metalizado", l=st.legs[st.sel]||"Blanco"; st.tiles=st.tiles.map(()=>t); st.legs=st.legs.map(()=>l); render();
+  st.mode="one"; const t=st.tiles[st.sel]||"Morado", l=st.legs[st.sel]||"Blanco"; st.tiles=st.tiles.map(()=>t); st.legs=st.legs.map(()=>l); render();
 };
 $("mode-mix").onclick=()=>{
   if(st.mode==="mix") return;
