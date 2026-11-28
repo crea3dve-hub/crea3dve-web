@@ -908,7 +908,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const API_FIJA = 'https://script.google.com/macros/s/AKfycbzkTdLOdeIBCpol8gBECUeZuJoHF0S_FhYn-aP_NrzS8QorEYJKSdxZlbY6yEtJ5VWY4A/exec';
 
   const $ = s => document.querySelector(s);
-  const VERSION_PAGINA = '20261128113000';   // igual que ventas/version.txt: al publicar cambios se suben los dos
+  const VERSION_PAGINA = '20261128114000';   // igual que ventas/version.txt: al publicar cambios se suben los dos
   const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
   const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const borrar = k => { try { localStorage.removeItem(k); } catch (e) {} };
@@ -3590,6 +3590,8 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
   const sinDelivery = p => p.items.reduce((a, i) => a + (i.producto === 'Delivery' ? 0 : (i.total || 0)), 0);
   const yaCobrada = p => p.estado === 'Pagado' || (p.estado === 'Entregado' && !!p.metodo);
   const esImpresora = g => /^impresora/i.test(g.que) && g.tipo === 'Impresoras y equipos';
+  // cuántas máquinas hay: una fila puede ser de varias, ej. "Impresoras Bambu Lab A1 sin combo (3)"
+  const nMaquinas = () => datos.gastos.filter(esImpresora).reduce((s, g) => { const m = /\((\d+)\)/.exec(g.que); return s + (m ? +m[1] : 1); }, 0);
   function cuentasPeriodo(desde, hasta) {   // hasta: sin incluir
     const c = { vendido: 0, cobrado: 0, ganancia: 0, hayGan: false, pedidos: 0, teclas: 0, gastado: 0 };
     datos.ventas.forEach(p => {
@@ -3711,7 +3713,7 @@ nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--a
         <p class="chico" style="margin:6px 0 0">Es la cuenta de caja: todo lo que te han pagado los clientes (sin el delivery, que es del motorizado, y sumando los abonos) dividido entre todo el dinero que ha salido para Crea3D. Cuando llegue a 100%, el negocio ya te devolvió todo lo que pusiste y lo que entre de ahí en adelante es dinero que te queda.</p></details>`;
     $('#rStats').innerHTML =
       tile('Inversión total', fmt(invTotal), 'con impresoras') +
-      tile('Inversión en impresoras', fmt(impresoras), datos.gastos.filter(esImpresora).length + ' máquinas') +
+      tile('Inversión en impresoras', fmt(impresoras), nMaquinas() + ' máquinas') +
       tile('Invertido para recuperar', fmt(sinImp), 'filamento, insumos, bazar, equipos') +
       tile('Cobrado', fmt(cobrado), abonosParciales ? 'incluye ' + fmt(abonosParciales) + ' de abonos' : 'sin delivery') +
       tile('Ganancia de lo vendido', ganB(r.ganancia, vendidoCerrado), 'el % es de lo vendido') +
